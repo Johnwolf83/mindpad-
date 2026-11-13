@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>MindPad X10 — Mentalism Peek</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  </script>
+</head>
+<body class="mode-setup">
+  <!-- PANTALLA DE CONFIGURACIÓN Y CONTROL (Para ti antes de empezar el acto) -->
+  <div id="setupView" class="view">
+    <header>
+      <div class="logo">
+        <span class="icon">🔮</span>
+        <h1>MindPad <span>X10</span></h1>
+      </div>
+      <div class="header-actions">
+        <button id="stealthBtn" class="primary pulse" title="Entrar en Modo Sigiloso">🤫 Modo Sigilo</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Tarjeta Conexión Bluetooth -->
+      <section class="card ble-card">
+        <div class="card-title">
+          <span>📡 Conexión Huion Note X10 (BLE)</span>
+          <span id="bleStatusBadge" class="badge disconnected">Desconectada</span>
+        </div>
+        <p class="desc">Conexión inalámbrica directa por Bluetooth Low Energy. Sin app oficial ni drivers.</p>
+        <div class="btn-group">
+          <button id="bleConnectBtn" class="btn cta">⚡ Conectar Tableta BLE</button>
+          <button id="bleDisconnectBtn" class="btn secondary" style="display:none;">Desconectar</button>
+        </div>
+        <div id="bleInfo" class="meta-row">
+          <span>Lápiz: <strong id="penState">Fuera de rango</strong></span>
+          <span>Presión: <strong id="penPressure">0</strong></span>
+          <span>Batería: <strong id="tabletBattery">--%</strong></span>
+        </div>
+      </section>
+
+      <!-- Tarjeta Mentalismo y Audio -->
+      <section class="card">
+        <div class="card-title">
+          <span>🎧 Susurro al Auricular (TTS)</span>
+        </div>
+        <div class="field-row">
+          <label for="ttsVoice">Voz:</label>
+          <select id="ttsVoice"></select>
+        </div>
+        <div class="field-row">
+          <label for="strokeWidthSlider">Grosor del Trazo (Peek):</label>
+          <input id="strokeWidthSlider" type="range" min="0.6" max="3.5" step="0.2" value="1.2" />
+          <span id="strokeWidthVal">1.2 (Fino)</span>
+        </div>
+        <div class="field-row">
+          <label for="ttsRate">Velocidad del susurro:</label>
+          <input id="ttsRate" type="range" min="0.8" max="1.8" step="0.1" value="1.2" />
+          <span id="ttsRateVal">1.2x</span>
+        </div>
+        <div class="field-row">
+          <label for="detectMode">Modo de Detección:</label>
+          <select id="detectMode">
+            <option value="both" selected>Híbrido (Detecta Dibujo y Texto)</option>
+            <option value="drawing">Solo Dibujos / Formas</option>
+            <option value="text">Solo Palabras / Ciudades / Números</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label for="delayTimeout">Tiempo tras dejar de escribir:</label>
+          <select id="delayTimeout">
+            <option value="1200">1.2 segundos (Rápido)</option>
+            <option value="1800" selected>1.8 segundos (Recomendado)</option>
+            <option value="2500">2.5 segundos (Tranquilo)</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label class="toggle-label">
+            <input id="vibrateCheck" type="checkbox" checked />
+            <span>Vibración silenciosa en bolsillo al completar</span>
+          </label>
+        </div>
+        <button id="testAudioBtn" class="btn secondary">🔊 Probar Audio en Auricular</button>
+      </section>
+
+      <!-- Tarjeta Calibración de Orientación -->
+      <section class="card">
+        <div class="card-title">
+          <span>📐 Orientación del Bloc</span>
+        </div>
+        <div class="field-row">
+          <label for="orientationSelect">Posición de la Libreta:</label>
+          <select id="orientationSelect">
+            <option value="portrait_cw" selected>Vertical (Espiral / Logo a la Izquierda)</option>
+            <option value="portrait_ccw">Vertical (Espiral / Logo a la Derecha)</option>
+            <option value="landscape">Horizontal (Apaisada)</option>
+            <option value="inverted">Invertida 180°</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Monitor de Prueba en Pantalla -->
+      <section class="card">
+        <div class="card-title">
+          <span>👁️ Monitor de Prueba</span>
+          <button id="clearMonitorBtn" class="btn small">Limpiar</button>
+        </div>
+        <div class="preview-box">
+          <canvas id="previewCanvas"></canvas>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Último Reconocimiento:</div>
+          <div id="lastResult" class="result-text">— Esperando que alguien escriba —</div>
+          <div id="confidenceList" class="alts"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- PANTALLA SIGILOSA / MENTALISM STEALTH PEEK (La que dejas activa en tu bolsillo o mesa) -->
+  <div id="stealthView" class="view" style="display: none;">
+    <!-- Reloj ultra tenue disimulado (parece pantalla de bloqueo o reloj AOD) -->
+    <div id="aodClock" class="aod-display">
+      <div id="clockTime" class="aod-time">12:00</div>
+      <div class="aod-battery">🔋 84%</div>
+      <div class="aod-hint">Mantén presionado para ver trazo</div>
+    </div>
+
+    <!-- Indicador de estado microscópico en la esquina (punto tenue) -->
+    <div id="stealthStatusDot" class="stealth-dot"></div>
+
+    <!-- Visualizador de Peek instantáneo (aparece al tocar y mantener presionado la pantalla) -->
+    <div id="peekContainer" class="peek-overlay">
+      <canvas id="stealthCanvas"></canvas>
+      <div id="stealthOverlayText" class="stealth-text"></div>
+    </div>
+
+    <!-- Botón invisible para salir del modo sigilo (triple toque en la esquina superior derecha) -->
+    <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
+  </div>
+
+  <script src="mindpad.js" type="module"></script>
+</body>
+</html>

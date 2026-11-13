@@ -1,0 +1,337 @@
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #090b14;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+body.mode-stealth {
+  background: #000000 !important;
+  overflow: hidden;
+}
+
+/* ===================================================
+   VISTA DE SETUP / CONFIGURACIÓN
+   =================================================== */
+.view {
+  width: 100%;
+  height: 100%;
+}
+
+#setupView {
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: #111528;
+  border-bottom: 1px solid #1f2747;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.logo h1 span {
+  color: #7c8cff;
+}
+
+.content {
+  flex: 1;
+  padding: 16px;
+  max-width: 650px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.card {
+  background: #111528;
+  border: 1px solid #1f2747;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.badge.disconnected { background: #371b22; color: #f87171; }
+.badge.searching { background: #3b2d14; color: #fbbf24; }
+.badge.connected { background: #133324; color: #4ade80; }
+
+.btn {
+  background: #1e2544;
+  color: #f1f5f9;
+  border: 1px solid #2e3866;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:active { background: #28325a; }
+.btn.cta {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border: none;
+  width: 100%;
+}
+.btn.small {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+.meta-row strong {
+  color: #e2e8f0;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 13px;
+  gap: 8px;
+}
+.field-row select, .field-row input[type=range] {
+  background: #090b14;
+  color: #f1f5f9;
+  border: 1px solid #2e3866;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  max-width: 60%;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.preview-box {
+  background: #090b14;
+  border: 1px dashed #242c52;
+  border-radius: 10px;
+  height: 260px;
+  position: relative;
+  overflow: hidden;
+}
+
+#previewCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.result-box {
+  margin-top: 10px;
+  background: #090b14;
+  border: 1px solid #1f2747;
+  border-radius: 8px;
+  padding: 10px;
+}
+.result-label {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+.result-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #38bdf8;
+  margin: 4px 0 8px 0;
+}
+.alts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cand-badge {
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  cursor: pointer;
+}
+
+/* Botón Modo Sigilo */
+button.primary {
+  background: #e11d48;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pulse {
+  animation: pulse-glow 2s infinite;
+}
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(225, 29, 72, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+}
+
+/* ===================================================
+   VISTA DE PEEK SIGILOSO (AMOLED BLACK SCREEN)
+   =================================================== */
+#stealthView {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000000;
+  z-index: 9999;
+}
+
+/* Reloj Always-On ultra discreto */
+.aod-display {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  opacity: 0.85;
+  pointer-events: auto;
+  transition: opacity 0.15s ease;
+}
+
+.aod-time {
+  font-size: 64px;
+  font-weight: 200;
+  font-family: -apple-system, system-ui, sans-serif;
+  color: #333333;
+  letter-spacing: -1px;
+}
+
+.aod-battery {
+  font-size: 13px;
+  color: #222222;
+  margin-top: -6px;
+}
+
+.aod-hint {
+  font-size: 10px;
+  color: #1a1a1a;
+  margin-top: 14px;
+  letter-spacing: 0.5px;
+}
+
+/* Punto de estado microscópico en la esquina */
+.stealth-dot {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #000000;
+}
+.stealth-dot.active { background: #1a1a1a; }
+.stealth-dot.drawing { background: #450a0a; box-shadow: 0 0 4px #b91c1c; }
+.stealth-dot.recognizing { background: #422006; }
+.stealth-dot.ready { background: #052e16; }
+
+/* Contenedor del trazo que se devela al tocar la pantalla */
+.peek-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+#stealthCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.stealth-text {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #b91c1c;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(185, 28, 28, 0.4);
+}
+
+/* Hotspot invisible para salir de la pantalla negra */
+.stealth-exit-hotspot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 90px;
+  height: 90px;
+  z-index: 10000;
+}
