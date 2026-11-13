@@ -9,10 +9,12 @@
   <title>MindPad X10 — Mentalism Peek Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js?v=2').then((reg) => {
+        reg.update();
+      }).catch(() => {});
     }
   </script>
 </head>
@@ -204,6 +206,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js" type="module"></script>
+  <script src="mindpad.js?v=2" type="module"></script>
 </body>
 </html>
