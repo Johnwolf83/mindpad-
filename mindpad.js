@@ -1,5 +1,5 @@
-// MindPad X10 — Motor de Mentalismo y Captura BLE para Huion Note X10
-// Compatible con Web Bluetooth en Chrome Android (100% inalámbrico y autónomo).
+// MindPad X10 Pro — Mentalism Engine con Smartwatch, Fake Lockscreen, Multi-Espectador & Offline ESP
+// 100% compatible con Web Bluetooth en Chrome Android (PWA).
 
 // ==========================================
 // 1. DICCIONARIO ESPAÑOL DE DIBUJOS QUICKDRAW
@@ -19,12 +19,13 @@ const QUICKDRAW_ES = {
   "butterfly": "mariposa", "cactus": "cactus", "cake": "pastel", "calculator": "calculadora",
   "calendar": "calendario", "camel": "camello", "camera": "cámara", "campfire": "fogata",
   "candle": "vela", "cannon": "cañón", "canoe": "canoa", "car": "auto", "carrot": "zanahoria",
-  "castle": "castillo", "cat": "gato", "ceiling fan": "ventilador", "cell phone": "teléfono celular",
+  "castle": "castillo", "cat": "gato", "black cat": "gato", "raccoon": "mapache",
+  "ceiling fan": "ventilador", "cell phone": "teléfono celular",
   "chair": "silla", "chandelier": "candelabro", "church": "iglesia", "circle": "círculo",
   "clock": "reloj", "cloud": "nube", "coffee cup": "taza de café", "compass": "brújula",
   "computer": "computadora", "cookie": "galleta", "couch": "sillón", "cow": "vaca",
-  "crab": "cangrejo", "crown": "corona", "cup": "taza", "diamond": "diamante", "dog": "perro",
-  "dolphin": "delfín", "donut": "dona", "door": "puerta", "dragon": "dragón", "duck": "pato",
+  "crab": "cangrejo", "cross": "cruz", "crown": "corona", "cup": "taza", "diamond": "diamante",
+  "dog": "perro", "dolphin": "delfín", "donut": "dona", "door": "puerta", "dragon": "dragón", "duck": "pato",
   "dumbbell": "mancuerna", "ear": "oreja", "elephant": "elefante", "envelope": "sobre de carta",
   "eye": "ojo", "eyeglasses": "anteojos", "face": "cara", "fan": "abanico", "feather": "pluma",
   "fence": "valla", "finger": "dedo", "fire hydrant": "boca de incendios", "fireplace": "chimenea",
@@ -46,7 +47,7 @@ const QUICKDRAW_ES = {
   "parachute": "paracaídas", "parrot": "loro", "passport": "pasaporte", "peanut": "maní",
   "pear": "pera", "pencil": "lápiz", "penguin": "pingüino", "piano": "piano", "pickup truck": "camioneta",
   "pig": "cerdo", "pillow": "almohada", "pineapple": "piña", "pizza": "pizza", "potato": "papa",
-  "purse": "bolso", "rabbit": "conejo", "raccoon": "mapache", "black cat": "gato", "radio": "radio", "rain": "lluvia", "rainbow": "arcoíris",
+  "purse": "bolso", "rabbit": "conejo", "radio": "radio", "rain": "lluvia", "rainbow": "arcoíris",
   "river": "río", "roller coaster": "montaña rusa", "sailboat": "barco velero", "sandwich": "sándwich",
   "saw": "serrucho", "scissors": "tijeras", "scorpion": "escorpión", "screwdriver": "destornillador",
   "shark": "tiburón", "sheep": "oveja", "shoe": "zapato", "skull": "calavera", "skyscraper": "rascacielos",
@@ -90,7 +91,11 @@ const state = {
   notifyChar: null,
   keepAliveTimer: null,
 
-  strokes: [],          // [{ points: [{x, y, p, t}] }]
+  // Multi-Espectador / Páginas
+  pages: [{ strokes: [], displayTitle: '', speech: '' }],
+  currentPageIndex: 0,
+
+  strokes: [],          // Trazos de la página activa [{ points: [{x, y, p, t}] }]
   currentStroke: null,
   lastPenTime: 0,
   inactivityTimer: null,
@@ -107,11 +112,15 @@ const state = {
   vibrate: true,
   ttsRate: 1.2,
   selectedVoice: null,
+  stealthCamouflage: 'lockscreen', // 'lockscreen' o 'aod'
+  smartwatchEnabled: false,
 
-  // Reloj AOD
+  // Reloj & Gestos
   clockInterval: null,
   tripleTapCount: 0,
-  tripleTapTimer: null
+  tripleTapTimer: null,
+  touchStartX: 0,
+  touchStartY: 0
 };
 
 // Elementos DOM
@@ -158,14 +167,11 @@ async function connectBLE() {
     state.writeChar = await service.getCharacteristic(CHAR_WRITE_UUID);
     state.notifyChar = await service.getCharacteristic(CHAR_NOTIFY_UUID);
 
-    // Activar notificaciones
     await state.notifyChar.startNotifications();
     state.notifyChar.addEventListener('characteristicvaluechanged', handlePenPacket);
 
-    // Handshake para activar el modo tableta en vivo
     await sendHandshake();
 
-    // Iniciar Keepalive cada 5 segundos
     clearInterval(state.keepAliveTimer);
     state.keepAliveTimer = setInterval(sendKeepAlive, 5000);
 
@@ -188,13 +194,10 @@ async function connectBLE() {
 
 async function sendHandshake() {
   try {
-    // 1. Nombre del dispositivo
     await state.writeChar.writeValueWithoutResponse(buildTabletCmd(CMD_TABLET_NAME));
     await new Promise((r) => setTimeout(r, 80));
-    // 2. Info de dispositivo (despierta el streaming de trazos)
     await state.writeChar.writeValueWithoutResponse(buildTabletCmd(CMD_TABLET_INFO));
     await new Promise((r) => setTimeout(r, 80));
-    // 3. Verificación
     await state.writeChar.writeValueWithoutResponse(buildTabletCmd(CMD_TABLET_VERIFY));
   } catch (e) {
     console.warn('Error en handshake:', e);
@@ -205,9 +208,7 @@ async function sendKeepAlive() {
   if (!state.writeChar || !state.bleServer?.connected) return;
   try {
     await state.writeChar.writeValueWithoutResponse(buildTabletCmd(CMD_TABLET_BATTERY));
-  } catch (e) {
-    // Ignorar timeout silencioso de keepalive
-  }
+  } catch (e) {}
 }
 
 function onDisconnected() {
@@ -240,7 +241,6 @@ function handlePenPacket(event) {
   const rawX = xLo | (xHi << 16);
   const rawY = yLo | (yHi << 16);
 
-  // Normalizar coordenadas [0..1]
   const nxRaw = Math.max(0, Math.min(1, rawX / state.maxX));
   const nyRaw = Math.max(0, Math.min(1, rawY / state.maxY));
   const [nx, ny] = rotateCoords(nxRaw, nyRaw, state.orientation);
@@ -248,7 +248,6 @@ function handlePenPacket(event) {
   const pressure = rawP / 8191;
   const isDown = (status === 0x81 && pressure > 0.01);
 
-  // Actualizar telemetría de setup
   $('penState').textContent = isDown ? 'Escribiendo ✍️' : (status === 0x80 ? 'En el aire' : 'Levantado');
   $('penPressure').textContent = (pressure * 100).toFixed(0) + '%';
   $('stealthStatusDot').className = 'stealth-dot ' + (isDown ? 'drawing' : 'active');
@@ -258,11 +257,9 @@ function handlePenPacket(event) {
   if (isDown) {
     clearTimeout(state.inactivityTimer);
     if (!state.currentStroke) {
-      // Primer punto del trazo
       state.currentStroke = { points: [] };
       state.strokes.push(state.currentStroke);
       if (state.strokes.length === 1 && state.vibrate) {
-        // Vibración microscópica al iniciar la primera línea
         triggerHaptic([30]);
       }
     }
@@ -271,7 +268,6 @@ function handlePenPacket(event) {
   } else {
     if (state.currentStroke) {
       state.currentStroke = null;
-      // Iniciar cuenta regresiva de inactividad
       clearTimeout(state.inactivityTimer);
       state.inactivityTimer = setTimeout(onParticipantFinished, state.delayMs);
     }
@@ -279,15 +275,14 @@ function handlePenPacket(event) {
 }
 
 function rotateCoords(nx, ny, orient) {
-  // Ajuste según cómo se coloca el bloc de notas
   if (orient === 'portrait_cw') return [ny, 1.0 - nx];
   if (orient === 'portrait_ccw') return [1.0 - ny, nx];
   if (orient === 'inverted') return [1.0 - nx, 1.0 - ny];
-  return [nx, ny]; // landscape
+  return [nx, ny];
 }
 
 // ==========================================
-// 6. MOTOR DE MENTALISMO (CLASIFICADOR & TTS)
+// 6. MOTOR DE MENTALISMO & CLASIFICADOR OFFLINE
 // ==========================================
 async function onParticipantFinished() {
   if (!state.strokes.length) return;
@@ -295,71 +290,182 @@ async function onParticipantFinished() {
   $('stealthStatusDot').className = 'stealth-dot recognizing';
   $('lastResult').textContent = 'Descifrando mente...';
 
-  // Vibración táctil doble en el bolsillo (indica que el espectador terminó de escribir)
   if (state.vibrate) triggerHaptic([60, 50, 60]);
 
-  try {
-    const mode = state.detectMode;
-    let drawingPromise = null;
-    let textPromise = null;
+  let finalSpeech = '';
+  let displayTitle = '';
+  let candidates = [];
 
-    if (mode === 'both' || mode === 'drawing') {
-      drawingPromise = recognizeDrawing(state.strokes);
-    }
-    if (mode === 'both' || mode === 'text') {
-      textPromise = recognizeText(state.strokes);
-    }
+  const pagePrefix = state.pages.length > 1 ? `Espectador ${state.currentPageIndex + 1}: ` : '';
 
-    const [drawingResults, textResults] = await Promise.all([drawingPromise, textPromise]);
+  // ¿Modo forzado offline (ESP o Dígitos) o sin conexión a internet?
+  if (state.detectMode === 'esp' || state.detectMode === 'digits' || !navigator.onLine) {
+    const offlineResult = classifyOffline(state.strokes, state.detectMode);
+    finalSpeech = `${pagePrefix}${offlineResult.speech}`;
+    displayTitle = offlineResult.title;
+    candidates = offlineResult.alternatives;
+  } else {
+    // Modo Online con respaldo de clasificador offline
+    try {
+      const mode = state.detectMode;
+      let drawingPromise = null;
+      let textPromise = null;
 
-    let finalSpeech = '';
-    let displayTitle = '';
+      if (mode === 'both' || mode === 'drawing') drawingPromise = recognizeDrawing(state.strokes);
+      if (mode === 'both' || mode === 'text') textPromise = recognizeText(state.strokes);
 
-    if (mode === 'drawing' && drawingResults?.length) {
-      const topEn = drawingResults[0];
-      const topEs = QUICKDRAW_ES[topEn] || topEn;
-      finalSpeech = `Dibujo: ${topEs}`;
-      displayTitle = `🎨 ${topEs.toUpperCase()}`;
-      renderCandidates(drawingResults.map((w) => QUICKDRAW_ES[w] || w));
-    } else if (mode === 'text' && textResults?.length) {
-      const topWord = textResults[0];
-      finalSpeech = `${topWord}`;
-      displayTitle = `✍️ ${topWord}`;
-      renderCandidates(textResults);
-    } else if (mode === 'both') {
-      // Híbrido: evaluamos cuál tiene mayor sentido
-      const topText = textResults?.[0] || '';
-      const topDrawingEn = drawingResults?.[0] || '';
-      const topDrawingEs = QUICKDRAW_ES[topDrawingEn] || topDrawingEn;
+      const [drawingResults, textResults] = await Promise.all([drawingPromise, textPromise]);
 
-      // Si tiene más de 3 letras reconocibles claras
-      if (topText && topText.length >= 3 && !/^[._\-\s]+$/.test(topText)) {
-        finalSpeech = `${topText}. O dibujo de ${topDrawingEs}`;
-        displayTitle = `✍️ ${topText}  /  🎨 ${topDrawingEs}`;
-        renderCandidates([topText, topDrawingEs, ...(textResults?.slice(1, 4) || [])]);
-      } else {
-        finalSpeech = `Dibujo: ${topDrawingEs}`;
-        displayTitle = `🎨 ${topDrawingEs.toUpperCase()}`;
-        renderCandidates([topDrawingEs, ...(drawingResults?.slice(1, 5).map((w) => QUICKDRAW_ES[w] || w) || [])]);
+      if (mode === 'drawing' && drawingResults?.length) {
+        const topEn = drawingResults[0];
+        const topEs = QUICKDRAW_ES[topEn] || topEn;
+        finalSpeech = `${pagePrefix}Dibujo: ${topEs}`;
+        displayTitle = `🎨 ${topEs.toUpperCase()}`;
+        candidates = drawingResults.map((w) => QUICKDRAW_ES[w] || w);
+      } else if (mode === 'text' && textResults?.length) {
+        const topWord = textResults[0];
+        finalSpeech = `${pagePrefix}${topWord}`;
+        displayTitle = `✍️ ${topWord}`;
+        candidates = textResults;
+      } else if (mode === 'both') {
+        const topText = textResults?.[0] || '';
+        const topDrawingEn = drawingResults?.[0] || '';
+        const topDrawingEs = QUICKDRAW_ES[topDrawingEn] || topDrawingEn;
+
+        // Comprobar si parece un símbolo ESP o número
+        const espCheck = classifyOffline(state.strokes, 'esp');
+        if (espCheck.confidence > 0.82) {
+          finalSpeech = `${pagePrefix}${espCheck.speech}`;
+          displayTitle = espCheck.title;
+          candidates = [espCheck.title, topDrawingEs, topText];
+        } else if (topText && topText.length >= 3 && !/^[._\-\s]+$/.test(topText)) {
+          finalSpeech = `${pagePrefix}${topText}. O dibujo de ${topDrawingEs}`;
+          displayTitle = `✍️ ${topText}  /  🎨 ${topDrawingEs}`;
+          candidates = [topText, topDrawingEs, ...(textResults?.slice(1, 4) || [])];
+        } else {
+          finalSpeech = `${pagePrefix}Dibujo: ${topDrawingEs}`;
+          displayTitle = `🎨 ${topDrawingEs.toUpperCase()}`;
+          candidates = [topDrawingEs, ...(drawingResults?.slice(1, 5).map((w) => QUICKDRAW_ES[w] || w) || [])];
+        }
       }
+    } catch (err) {
+      console.warn('Fallo en consulta online, usando motor offline:', err);
+      const offlineResult = classifyOffline(state.strokes, state.detectMode);
+      finalSpeech = `${pagePrefix}${offlineResult.speech}`;
+      displayTitle = offlineResult.title;
+      candidates = offlineResult.alternatives;
     }
-
-    if (finalSpeech) {
-      state.lastSpokenText = finalSpeech;
-      $('lastResult').textContent = displayTitle;
-      $('stealthOverlayText').textContent = displayTitle;
-      speakTTS(finalSpeech);
-      if (state.vibrate) triggerHaptic([120]);
-    }
-  } catch (err) {
-    console.error('Error reconocimiento:', err);
-    $('lastResult').textContent = 'Error al decodificar trazo';
-  } finally {
-    $('stealthStatusDot').className = 'stealth-dot ready';
   }
+
+  if (finalSpeech) {
+    state.lastSpokenText = finalSpeech;
+    $('lastResult').textContent = displayTitle;
+    $('stealthOverlayText').textContent = displayTitle;
+    renderCandidates(candidates);
+
+    // Guardar en la página actual
+    state.pages[state.currentPageIndex] = {
+      strokes: JSON.parse(JSON.stringify(state.strokes)),
+      displayTitle,
+      speech: finalSpeech
+    };
+
+    speakTTS(finalSpeech);
+    if (state.vibrate) triggerHaptic([120]);
+
+    // Enviar a Smartwatch (Wear OS / Apple Watch / Xiaomi)
+    sendToSmartwatch(displayTitle, finalSpeech);
+  }
+
+  $('stealthStatusDot').className = 'stealth-dot ready';
 }
 
-// Reconocimiento de Dibujos con QuickDraw AI (Google)
+// ----------------------------------------------------
+// MOTOR OFFLINE HEURÍSTICO (ESP Zener & Dígitos 0-9)
+// ----------------------------------------------------
+function classifyOffline(strokes, mode = 'both') {
+  const allPts = strokes.flatMap((s) => s.points);
+  if (!allPts.length) return { title: '—', speech: 'Vacío', confidence: 0, alternatives: [] };
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  allPts.forEach((p) => {
+    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+  });
+
+  const w = Math.max(0.001, maxX - minX);
+  const h = Math.max(0.001, maxY - minY);
+  const aspect = w / h; // >1 = ancho, <1 = alto
+  const numStrokes = strokes.length;
+
+  // Distancia inicio a fin del primer trazo (para saber si es cerrado)
+  const firstS = strokes[0].points;
+  const startPt = firstS[0];
+  const endPt = firstS[firstS.length - 1];
+  const closeDist = Math.hypot(startPt.x - endPt.x, startPt.y - endPt.y);
+  const isLoop = closeDist < Math.max(w, h) * 0.28;
+
+  // Longitud total del trazo
+  let totalLen = 0;
+  for (let i = 1; i < firstS.length; i++) {
+    totalLen += Math.hypot(firstS[i].x - firstS[i - 1].x, firstS[i].y - firstS[i - 1].y);
+  }
+
+  // 1. Detección de Símbolos Zener (ESP)
+  if (mode === 'esp' || mode === 'both') {
+    // Cruz ESP: 2 trazos que se intersectan
+    if (numStrokes === 2) {
+      const s1 = strokes[0].points;
+      const s2 = strokes[1].points;
+      const s1Horiz = Math.abs(s1[s1.length - 1].x - s1[0].x) > Math.abs(s1[s1.length - 1].y - s1[0].y);
+      const s2Horiz = Math.abs(s2[s2.length - 1].x - s2[0].x) > Math.abs(s2[s2.length - 1].y - s2[0].y);
+      if (s1Horiz !== s2Horiz) {
+        return { title: '✚ CRUZ (ESP)', speech: 'Símbolo: Cruz', confidence: 0.95, alternatives: ['Cruz', 'Más', 'Cuatro'] };
+      }
+    }
+    // Ondas ESP: 2 o 3 trazos horizontales
+    if (numStrokes >= 2 && numStrokes <= 3 && aspect > 1.3) {
+      return { title: '♒ ONDAS (ESP)', speech: 'Símbolo: Ondas', confidence: 0.92, alternatives: ['Ondas', 'Líneas', 'Río'] };
+    }
+    // Círculo ESP: 1 trazo cerrado casi redondo
+    if (numStrokes === 1 && isLoop && aspect >= 0.75 && aspect <= 1.35) {
+      return { title: '⭕ CÍRCULO (ESP)', speech: 'Símbolo: Círculo', confidence: 0.9, alternatives: ['Círculo', 'Cero', 'Sol'] };
+    }
+    // Cuadrado ESP: 1 o 4 trazos aspecto cuadrado
+    if ((numStrokes === 1 || numStrokes === 4) && aspect >= 0.8 && aspect <= 1.25) {
+      return { title: '⬛ CUADRADO (ESP)', speech: 'Símbolo: Cuadrado', confidence: 0.85, alternatives: ['Cuadrado', 'Caja', 'Ventana'] };
+    }
+    // Estrella ESP: 1 trazo no cerrado complejo o 5 picos
+    if (totalLen > Math.max(w, h) * 3.5) {
+      return { title: '⭐ ESTRELLA (ESP)', speech: 'Símbolo: Estrella', confidence: 0.88, alternatives: ['Estrella', 'Sol'] };
+    }
+  }
+
+  // 2. Detección de Dígitos (0-9)
+  if (mode === 'digits' || mode === 'both') {
+    if (numStrokes === 1) {
+      if (isLoop && aspect >= 0.6 && aspect <= 1.2) {
+        return { title: '0️⃣ NÚMERO CERO', speech: 'Número cero', confidence: 0.9, alternatives: ['0', 'O', 'Círculo'] };
+      }
+      if (aspect < 0.45 && !isLoop) {
+        return { title: '1️⃣ NÚMERO UNO', speech: 'Número uno', confidence: 0.95, alternatives: ['1', 'L', 'Línea'] };
+      }
+      if (aspect > 0.5 && !isLoop && startPt.y < minY + h * 0.3 && endPt.y > maxY - h * 0.3) {
+        return { title: '7️⃣ NÚMERO SIETE', speech: 'Número siete', confidence: 0.85, alternatives: ['7', 'Uno'] };
+      }
+      if (totalLen > Math.max(w, h) * 4.0) {
+        return { title: '8️⃣ NÚMERO OCHO', speech: 'Número ocho', confidence: 0.82, alternatives: ['8', 'B'] };
+      }
+    }
+    if (numStrokes === 2) {
+      return { title: '4️⃣ NÚMERO CUATRO', speech: 'Número cuatro', confidence: 0.86, alternatives: ['4', 'Cruz'] };
+    }
+  }
+
+  return { title: '✨ TRAZO DETECTADO', speech: 'Forma reconocida', confidence: 0.5, alternatives: ['Dibujo'] };
+}
+
+// Reconocimiento Online QuickDraw
 async function recognizeDrawing(strokes) {
   const ink = toQuickDrawInk(strokes, 256, 256);
   const payload = {
@@ -370,20 +476,16 @@ async function recognizeDrawing(strokes) {
       language: 'quickdraw'
     }]
   };
-
   const res = await fetch('https://inputtools.google.com/request?ime=handwriting&app=autodraw&dbg=1&cs=1&oe=UTF-8', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
   const data = await res.json();
-  if (data[0] === 'SUCCESS') {
-    return data[1]?.[0]?.[1] || [];
-  }
-  return [];
+  return data[0] === 'SUCCESS' ? data[1]?.[0]?.[1] || [] : [];
 }
 
-// Reconocimiento de Escritura / Palabras / Números
+// Reconocimiento Online Texto / Nombres / Números
 async function recognizeText(strokes) {
   const ink = toQuickDrawInk(strokes, 600, 300);
   const payload = {
@@ -394,29 +496,24 @@ async function recognizeText(strokes) {
       language: 'es'
     }]
   };
-
   const res = await fetch('https://inputtools.google.com/request?itc=es-t-i0-handwrit&app=mindpadx10', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
   const data = await res.json();
-  if (data[0] === 'SUCCESS') {
-    return data[1]?.[0]?.[1] || [];
-  }
-  return [];
+  return data[0] === 'SUCCESS' ? data[1]?.[0]?.[1] || [] : [];
 }
 
 function toQuickDrawInk(strokes, targetW, targetH) {
-  // Extraer puntos y normalizar en el área de dibujo
   const allPts = strokes.flatMap((s) => s.points);
   if (!allPts.length) return [];
 
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const p of allPts) {
+  allPts.forEach((p) => {
     if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
     if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
-  }
+  });
 
   const w = Math.max(0.001, maxX - minX);
   const h = Math.max(0.001, maxY - minY);
@@ -449,42 +546,147 @@ function renderCandidates(list) {
 }
 
 // ==========================================
-// 7. SUSURRO DE AUDIO (TEXT-TO-SPEECH)
+// 7. GESTIÓN MULTI-ESPECTADOR & PÁGINAS
+// ==========================================
+function updatePageUI() {
+  const num = state.currentPageIndex + 1;
+  const total = state.pages.length;
+  $('pageBadge').textContent = `Espectador ${num} de ${total}`;
+  $('stealthPageIndicator').textContent = `P${num}`;
+
+  // Cargar trazos de la página actual
+  const cur = state.pages[state.currentPageIndex];
+  state.strokes = cur?.strokes ? JSON.parse(JSON.stringify(cur.strokes)) : [];
+  $('lastResult').textContent = cur?.displayTitle || '— Esperando trazos —';
+  $('stealthOverlayText').textContent = cur?.displayTitle || '';
+  redrawAllStrokes();
+}
+
+function addNewPage() {
+  // Guardar página actual antes de avanzar
+  state.pages[state.currentPageIndex] = {
+    strokes: JSON.parse(JSON.stringify(state.strokes)),
+    displayTitle: $('lastResult').textContent,
+    speech: state.lastSpokenText
+  };
+
+  // Crear nueva página
+  state.pages.push({ strokes: [], displayTitle: '', speech: '' });
+  state.currentPageIndex = state.pages.length - 1;
+  state.strokes = [];
+  state.currentStroke = null;
+  state.lastSpokenText = '';
+
+  updatePageUI();
+  speakTTS(`Página ${state.currentPageIndex + 1} lista`);
+  triggerHaptic([50, 40, 50]);
+}
+
+function prevPage() {
+  if (state.currentPageIndex > 0) {
+    state.currentPageIndex--;
+    updatePageUI();
+    const p = state.pages[state.currentPageIndex];
+    if (p.speech) speakTTS(`Página ${state.currentPageIndex + 1}: ${p.speech}`);
+    triggerHaptic([40]);
+  }
+}
+
+function nextPage() {
+  if (state.currentPageIndex < state.pages.length - 1) {
+    state.currentPageIndex++;
+    updatePageUI();
+    const p = state.pages[state.currentPageIndex];
+    if (p.speech) speakTTS(`Página ${state.currentPageIndex + 1}: ${p.speech}`);
+    triggerHaptic([40]);
+  }
+}
+
+// ==========================================
+// 8. SMARTWATCH / NOTIFICACIONES WEAR OS
+// ==========================================
+function generateThumbnail(strokes) {
+  const c = document.createElement('canvas');
+  c.width = 300;
+  c.height = 300;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, 300, 300);
+
+  strokes.forEach((s) => {
+    for (let i = 1; i < s.points.length; i++) {
+      drawSeg(ctx, 300, 300, s.points[i - 1], s.points[i], '#ff3344', true);
+    }
+  });
+  return c.toDataURL('image/png');
+}
+
+async function enableSmartwatch() {
+  if (!('Notification' in window)) {
+    alert('Las notificaciones no están disponibles en este navegador.');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    state.smartwatchEnabled = true;
+    $('watchNotifyBtn').textContent = '⌚ Smartwatch Activado ✓';
+    $('watchNotifyBtn').classList.add('active');
+    sendToSmartwatch('MindPad Conectado', 'Las lecturas aparecerán en tu reloj');
+  } else {
+    alert('Permiso de notificaciones denegado.');
+  }
+}
+
+function sendToSmartwatch(title, body) {
+  if (!state.smartwatchEnabled && Notification.permission !== 'granted') return;
+  const thumbUrl = generateThumbnail(state.strokes);
+
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.showNotification(title, {
+        body: body,
+        icon: thumbUrl,
+        image: thumbUrl,
+        badge: 'icon.svg',
+        vibrate: [200, 100, 200],
+        tag: 'mindpad-peek'
+      });
+    }).catch(() => {
+      new Notification(title, { body, icon: thumbUrl, image: thumbUrl });
+    });
+  } else {
+    new Notification(title, { body, icon: thumbUrl, image: thumbUrl });
+  }
+
+  // MediaSession artwork para relojes con pantalla multimedia
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: title,
+      artist: body,
+      artwork: [{ src: thumbUrl, sizes: '300x300', type: 'image/png' }]
+    });
+  }
+}
+
+// ==========================================
+// 9. SUSURRO DE AUDIO (TEXT-TO-SPEECH)
 // ==========================================
 function initTTS() {
   if (!('speechSynthesis' in window)) return;
-  const voiceSelect = $('ttsVoice');
-
   function populateVoices() {
     const voices = window.speechSynthesis.getVoices();
-    voiceSelect.innerHTML = '';
     const esVoices = voices.filter((v) => v.lang.startsWith('es'));
-    const list = esVoices.length ? esVoices : voices;
-
-    list.forEach((v) => {
-      const opt = document.createElement('option');
-      opt.value = v.name;
-      opt.textContent = `${v.name} (${v.lang})`;
-      voiceSelect.appendChild(opt);
-    });
-    if (list[0]) state.selectedVoice = list[0];
+    state.selectedVoice = esVoices[0] || voices[0] || null;
   }
-
   populateVoices();
   if (speechSynthesis.onvoiceschanged !== undefined) {
     speechSynthesis.onvoiceschanged = populateVoices;
   }
-
-  voiceSelect.onchange = () => {
-    const voices = window.speechSynthesis.getVoices();
-    state.selectedVoice = voices.find((v) => v.name === voiceSelect.value);
-  };
 }
 
 function speakTTS(text) {
   if (!('speechSynthesis' in window) || !text) return;
-  window.speechSynthesis.cancel(); // Detener anteriores
-
+  window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.rate = state.ttsRate;
   u.pitch = 1.0;
@@ -493,24 +695,20 @@ function speakTTS(text) {
 }
 
 function triggerHaptic(pattern) {
-  if (navigator.vibrate) {
-    navigator.vibrate(pattern);
-  }
+  if (navigator.vibrate) navigator.vibrate(pattern);
 }
 
 // ==========================================
-// 8. RENDERIZADO VISUAL & MODO STEALTH
+// 10. RENDERIZADO VISUAL & PROPORCIÓN 3:4
 // ==========================================
 function resizeCanvases() {
   const dpr = window.devicePixelRatio || 1;
 
-  // Canvas del panel de control
   const pRect = previewCanvas.parentElement.getBoundingClientRect();
   previewCanvas.width = pRect.width * dpr;
   previewCanvas.height = 260 * dpr;
   pCtx.scale(dpr, dpr);
 
-  // Canvas del modo sigilo (ocupa pantalla completa del teléfono)
   stealthCanvas.width = window.innerWidth * dpr;
   stealthCanvas.height = window.innerHeight * dpr;
   sCtx.scale(dpr, dpr);
@@ -521,19 +719,16 @@ window.addEventListener('resize', resizeCanvases);
 
 function getViewport(canvasW, canvasH) {
   const isPortrait = state.orientation.startsWith('portrait');
-  // Proporción exacta de la Huion Note X10 (28200 x 37400 en retrato)
   const targetAspect = isPortrait ? (28200 / 37400) : (37400 / 28200);
   const canvasAspect = canvasW / canvasH;
   let renderW, renderH, offsetX, offsetY;
 
   if (canvasAspect > targetAspect) {
-    // Canvas más ancho que la tableta: ajustar al alto y centrar horizontalmente
     renderH = canvasH;
     renderW = renderH * targetAspect;
     offsetX = (canvasW - renderW) / 2;
     offsetY = 0;
   } else {
-    // Canvas más alto que la tableta: ajustar al ancho y centrar verticalmente
     renderW = canvasW;
     renderH = renderW / targetAspect;
     offsetX = 0;
@@ -548,10 +743,7 @@ function renderLiveSegment(stroke) {
   const a = pts[pts.length - 2];
   const b = pts[pts.length - 1];
 
-  // Renderizar en monitor de prueba
   drawSeg(pCtx, previewCanvas.clientWidth, previewCanvas.clientHeight, a, b, '#7c8cff', false);
-
-  // Renderizar en el canvas de sigilo (en rojo oscuro para visión nocturna discreta)
   drawSeg(sCtx, window.innerWidth, window.innerHeight, a, b, '#e63946', true);
 }
 
@@ -585,13 +777,21 @@ function redrawAllStrokes() {
   });
 }
 
-// Reloj Always-On simulado para disimulo total
-function startAODClock() {
+// Reloj Always-On y Pantalla de Bloqueo
+function startClocks() {
   function updateTime() {
     const d = new Date();
     const h = String(d.getHours()).padStart(2, '0');
     const m = String(d.getMinutes()).padStart(2, '0');
-    $('clockTime').textContent = `${h}:${m}`;
+    const timeStr = `${h}:${m}`;
+
+    $('clockTime').textContent = timeStr;
+    $('lockClockTime').textContent = timeStr;
+    $('lockStatusTime').textContent = timeStr;
+
+    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    $('lockClockDate').textContent = `${dias[d.getDay()]}, ${d.getDate()} de ${meses[d.getMonth()]}`;
   }
   updateTime();
   clearInterval(state.clockInterval);
@@ -603,10 +803,17 @@ function enterStealthMode() {
   $('setupView').style.display = 'none';
   $('stealthView').style.display = 'block';
   document.body.className = 'mode-stealth';
-  startAODClock();
-  resizeCanvases();
 
-  // Solicitar pantalla completa en móviles
+  if (state.stealthCamouflage === 'lockscreen') {
+    $('fakeLockscreen').style.display = 'flex';
+    $('aodClock').style.display = 'none';
+  } else {
+    $('fakeLockscreen').style.display = 'none';
+    $('aodClock').style.display = 'block';
+  }
+
+  startClocks();
+  resizeCanvases();
   if (document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen().catch(() => {});
   }
@@ -623,24 +830,37 @@ function exitStealthMode() {
   }
 }
 
-// PEEK TÁCTIL: Mientras mantienes pulsada la pantalla negra, se revela el dibujo
+// Peek táctil: Mantener presionado revela el dibujo
 const stealthView = $('stealthView');
 const peekContainer = $('peekContainer');
 
 function showPeek() {
   peekContainer.style.opacity = '1';
+  $('fakeLockscreen').style.opacity = '0';
   $('aodClock').style.opacity = '0.05';
 }
 function hidePeek() {
   peekContainer.style.opacity = '0';
+  $('fakeLockscreen').style.opacity = '1';
   $('aodClock').style.opacity = '0.85';
 }
 
 stealthView.addEventListener('touchstart', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
+  state.touchStartX = e.touches[0].clientX;
+  state.touchStartY = e.touches[0].clientY;
   showPeek();
 });
-stealthView.addEventListener('touchend', hidePeek);
+
+stealthView.addEventListener('touchend', (e) => {
+  hidePeek();
+  // Detección de Swipe horizontal para cambiar de página
+  if (e.changedTouches && e.changedTouches[0]) {
+    const diffX = e.changedTouches[0].clientX - state.touchStartX;
+    if (diffX > 70) prevPage();
+    else if (diffX < -70) nextPage();
+  }
+});
 stealthView.addEventListener('touchcancel', hidePeek);
 stealthView.addEventListener('mousedown', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
@@ -648,7 +868,7 @@ stealthView.addEventListener('mousedown', (e) => {
 });
 stealthView.addEventListener('mouseup', hidePeek);
 
-// Salir del modo sigilo: Triple toque en la esquina superior derecha o tecla Escape
+// Salir con triple tap en esquina superior derecha o tecla Escape
 $('exitStealthTrigger').addEventListener('click', () => {
   state.tripleTapCount++;
   clearTimeout(state.tripleTapTimer);
@@ -663,25 +883,46 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && $('stealthView').style.display !== 'none') {
     exitStealthMode();
   }
-});
-
-// Repetir audio al tocar el reloj en modo sigilo
-$('aodClock').addEventListener('click', (e) => {
-  e.stopPropagation();
-  if (state.lastSpokenText) {
-    speakTTS(state.lastSpokenText);
-    triggerHaptic([40]);
+  // Captura de botones de volumen para mentalismo en bolsillo
+  if (e.key === 'AudioVolumeDown' || e.key === 'VolumeDown') {
+    e.preventDefault();
+    addNewPage();
+  }
+  if (e.key === 'AudioVolumeUp' || e.key === 'VolumeUp') {
+    e.preventDefault();
+    if (state.lastSpokenText) speakTTS(state.lastSpokenText);
   }
 });
 
+// Repetir audio al tocar el reloj en pantalla bloqueada
+$('lockClockTime').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (state.lastSpokenText) speakTTS(state.lastSpokenText);
+});
+$('aodClock').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (state.lastSpokenText) speakTTS(state.lastSpokenText);
+});
+
 // ==========================================
-// 9. EVENTOS DE INTERFAZ & SIMULACIÓN
+// 11. EVENTOS DE INTERFAZ & SIMULADOR
 // ==========================================
 $('bleConnectBtn').onclick = connectBLE;
 $('bleDisconnectBtn').onclick = () => {
   if (state.bleDevice?.gatt?.connected) state.bleDevice.gatt.disconnect();
 };
 $('stealthBtn').onclick = enterStealthMode;
+
+$('newPageBtn').onclick = addNewPage;
+$('prevPageBtn').onclick = prevPage;
+$('nextPageBtn').onclick = nextPage;
+$('watchNotifyBtn').onclick = enableSmartwatch;
+
+$('stealthCamouflage').onchange = (e) => { state.stealthCamouflage = e.target.value; };
+$('detectMode').onchange = (e) => { state.detectMode = e.target.value; };
+$('orientationSelect').onchange = (e) => { state.orientation = e.target.value; redrawAllStrokes(); };
+$('delayTimeout').onchange = (e) => { state.delayMs = +e.target.value; };
+$('vibrateCheck').onchange = (e) => { state.vibrate = e.target.checked; };
 
 $('strokeWidthSlider').oninput = (e) => {
   state.strokeWidth = +e.target.value;
@@ -690,15 +931,11 @@ $('strokeWidthSlider').oninput = (e) => {
   redrawAllStrokes();
 };
 
-$('orientationSelect').onchange = (e) => { state.orientation = e.target.value; redrawAllStrokes(); };
-$('detectMode').onchange = (e) => { state.detectMode = e.target.value; };
-$('delayTimeout').onchange = (e) => { state.delayMs = +e.target.value; };
-$('vibrateCheck').onchange = (e) => { state.vibrate = e.target.checked; };
 $('ttsRate').oninput = (e) => {
   state.ttsRate = +e.target.value;
   $('ttsRateVal').textContent = state.ttsRate + 'x';
 };
-$('testAudioBtn').onclick = () => speakTTS('MindPad listo. Ha dibujado una estrella');
+$('testAudioBtn').onclick = () => speakTTS('MindPad Pro listo. Ha dibujado una estrella');
 
 $('clearMonitorBtn').onclick = () => {
   state.strokes = [];
@@ -709,6 +946,7 @@ $('clearMonitorBtn').onclick = () => {
   redrawAllStrokes();
 };
 
+// Simulador táctil / mouse
 function screenToNormalized(clientX, clientY) {
   const rect = previewCanvas.getBoundingClientRect();
   const px = clientX - rect.left;
@@ -719,7 +957,6 @@ function screenToNormalized(clientX, clientY) {
   return { nx, ny };
 }
 
-// SIMULADOR DE PRUEBAS TÁCTIL / RATÓN (Para que puedas probar la app incluso antes de conectar la tableta)
 previewCanvas.addEventListener('pointerdown', (e) => {
   previewCanvas.setPointerCapture(e.pointerId);
   clearTimeout(state.inactivityTimer);
@@ -746,3 +983,4 @@ previewCanvas.addEventListener('pointerup', () => {
 // Inicialización
 initTTS();
 resizeCanvases();
+updatePageUI();

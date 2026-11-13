@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>MindPad X10 — Mentalism Peek</title>
+  <title>MindPad X10 — Mentalism Peek Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
@@ -17,12 +17,12 @@
   </script>
 </head>
 <body class="mode-setup">
-  <!-- PANTALLA DE CONFIGURACIÓN Y CONTROL (Para ti antes de empezar el acto) -->
+  <!-- PANTALLA DE CONFIGURACIÓN Y CONTROL -->
   <div id="setupView" class="view">
     <header>
       <div class="logo">
         <span class="icon">🔮</span>
-        <h1>MindPad <span>X10</span></h1>
+        <h1>MindPad <span>X10 Pro</span></h1>
       </div>
       <div class="header-actions">
         <button id="stealthBtn" class="primary pulse" title="Entrar en Modo Sigiloso">🤫 Modo Sigilo</button>
@@ -48,14 +48,44 @@
         </div>
       </section>
 
-      <!-- Tarjeta Mentalismo y Audio -->
+      <!-- Tarjeta Multi-Espectador & Smartwatch -->
       <section class="card">
         <div class="card-title">
-          <span>🎧 Susurro al Auricular (TTS)</span>
+          <span>👥 Multi-Espectador & Smartwatch ⌚</span>
+          <span id="pageBadge" class="badge page-num">Espectador 1</span>
+        </div>
+        <div class="multi-row">
+          <button id="prevPageBtn" class="btn small">◀ Anterior</button>
+          <button id="newPageBtn" class="btn small primary">+ Nuevo Espectador</button>
+          <button id="nextPageBtn" class="btn small">Siguiente ▶</button>
+        </div>
+        <p class="desc" style="margin-top:8px;">Usa los botones de volumen del teléfono en el bolsillo: <strong>Volumen Abajo</strong> = Nuevo Espectador, <strong>Volumen Arriba</strong> = Repetir Audio.</p>
+        <div class="field-row" style="margin-top:10px;">
+          <button id="watchNotifyBtn" class="btn secondary full">⌚ Activar Notificaciones Smartwatch</button>
+        </div>
+      </section>
+
+      <!-- Tarjeta Mentalismo, Audio & Camuflaje -->
+      <section class="card">
+        <div class="card-title">
+          <span>🎭 Ajustes de Mentalismo & Camuflaje</span>
         </div>
         <div class="field-row">
-          <label for="ttsVoice">Voz:</label>
-          <select id="ttsVoice"></select>
+          <label for="stealthCamouflage">Camuflaje de Pantalla:</label>
+          <select id="stealthCamouflage">
+            <option value="lockscreen" selected>Pantalla de Bloqueo Real (WhatsApp)</option>
+            <option value="aod">AOD Reloj Minimalista Negro</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label for="detectMode">Modo de Detección:</label>
+          <select id="detectMode">
+            <option value="both" selected>Híbrido (Dibujos + Texto + ESP)</option>
+            <option value="esp">Símbolos Zener / ESP (Offline)</option>
+            <option value="digits">Números / Códigos PIN (Offline)</option>
+            <option value="drawing">Solo Dibujos / Formas</option>
+            <option value="text">Solo Palabras / Ciudades</option>
+          </select>
         </div>
         <div class="field-row">
           <label for="strokeWidthSlider">Grosor del Trazo (Peek):</label>
@@ -66,14 +96,6 @@
           <label for="ttsRate">Velocidad del susurro:</label>
           <input id="ttsRate" type="range" min="0.8" max="1.8" step="0.1" value="1.2" />
           <span id="ttsRateVal">1.2x</span>
-        </div>
-        <div class="field-row">
-          <label for="detectMode">Modo de Detección:</label>
-          <select id="detectMode">
-            <option value="both" selected>Híbrido (Detecta Dibujo y Texto)</option>
-            <option value="drawing">Solo Dibujos / Formas</option>
-            <option value="text">Solo Palabras / Ciudades / Números</option>
-          </select>
         </div>
         <div class="field-row">
           <label for="delayTimeout">Tiempo tras dejar de escribir:</label>
@@ -92,7 +114,7 @@
         <button id="testAudioBtn" class="btn secondary">🔊 Probar Audio en Auricular</button>
       </section>
 
-      <!-- Tarjeta Calibración de Orientación -->
+      <!-- Tarjeta Orientación del Bloc -->
       <section class="card">
         <div class="card-title">
           <span>📐 Orientación del Bloc</span>
@@ -126,19 +148,53 @@
     </div>
   </div>
 
-  <!-- PANTALLA SIGILOSA / MENTALISM STEALTH PEEK (La que dejas activa en tu bolsillo o mesa) -->
+  <!-- PANTALLA SIGILOSA / MENTALISM STEALTH PEEK -->
   <div id="stealthView" class="view" style="display: none;">
-    <!-- Reloj ultra tenue disimulado (parece pantalla de bloqueo o reloj AOD) -->
-    <div id="aodClock" class="aod-display">
+    <!-- CAMUFLAJE 1: Pantalla de Bloqueo Real (Fake Lockscreen) -->
+    <div id="fakeLockscreen" class="fake-lockscreen">
+      <div class="fake-status-bar">
+        <span id="lockStatusTime">12:00</span>
+        <div class="fake-icons">
+          <span>📶 5G</span>
+          <span>Wi-Fi</span>
+          <span>🔋 84%</span>
+        </div>
+      </div>
+      <div class="fake-clock-box">
+        <div id="lockClockTime" class="fake-time">12:00</div>
+        <div id="lockClockDate" class="fake-date">Viernes, 13 de noviembre</div>
+      </div>
+
+      <!-- Notificación falsa de WhatsApp para disimulo total en la mesa -->
+      <div class="fake-notification">
+        <div class="notif-header">
+          <span class="notif-app">💬 WhatsApp</span>
+          <span class="notif-time">hace 3 min</span>
+        </div>
+        <div class="notif-title">Mamá</div>
+        <div class="notif-body">¿A qué hora llegas a comer hoy? Te guardo comida.</div>
+      </div>
+
+      <div class="fake-lock-footer">
+        <div class="fake-lock-icon">🔒</div>
+        <div class="fake-swipe-hint">Desliza para desbloquear</div>
+      </div>
+    </div>
+
+    <!-- CAMUFLAJE 2: Reloj Always-On Minimalista (AOD) -->
+    <div id="aodClock" class="aod-display" style="display: none;">
       <div id="clockTime" class="aod-time">12:00</div>
       <div class="aod-battery">🔋 84%</div>
       <div class="aod-hint">Mantén presionado para ver trazo</div>
     </div>
 
-    <!-- Indicador de estado microscópico en la esquina (punto tenue) -->
-    <div id="stealthStatusDot" class="stealth-dot"></div>
+    <!-- Indicador de página y estado microscópico en la esquina -->
+    <div class="stealth-corner-info">
+      <span id="stealthPageIndicator" class="stealth-page-tag">P1</span>
+      <div id="stealthStatusDot" class="stealth-dot"></div>
+    </div>
 
-    <!-- Visualizador de Peek instantáneo (aparece al tocar y mantener presionado la pantalla) -->
+    <!-- Visualizador de Peek instantáneo (aparece al mantener presionado) -->
     <div id="peekContainer" class="peek-overlay">
       <canvas id="stealthCanvas"></canvas>
       <div id="stealthOverlayText" class="stealth-text"></div>
