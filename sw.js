@@ -1,5 +1,5 @@
-// MindPad Service Worker v2 — Cache para funcionamiento offline
-const CACHE_NAME = 'mindpad-x10-v2';
+// MindPad Service Worker v3 — Cache para funcionamiento offline
+const CACHE_NAME = 'mindpad-x10-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -30,14 +30,12 @@ self.addEventListener('fetch', (e) => {
   }
   e.respondWith(
     fetch(e.request).then((networkRes) => {
-      // Si hay red, actualiza la caché
       if (networkRes && networkRes.status === 200) {
         const resClone = networkRes.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(e.request, resClone));
       }
       return networkRes;
     }).catch(() => {
-      // Si no hay red, usa la caché
       return caches.match(e.request);
     })
   );

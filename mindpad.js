@@ -1,4 +1,4 @@
-// MindPad X10 Pro — Mentalism Engine con Smartwatch, Fake Lockscreen, Multi-Espectador & Offline ESP
+// MindPad X10 Pro — Mentalism Engine con Smartwatch Haylou, Fake Lockscreen, Multi-Espectador & Nano Banana AI
 // 100% compatible con Web Bluetooth en Chrome Android (PWA).
 
 // ==========================================
@@ -18,7 +18,7 @@ const QUICKDRAW_ES = {
   "bucket": "balde", "bulldozer": "excavadora", "bus": "autobús", "bush": "arbusto",
   "butterfly": "mariposa", "cactus": "cactus", "cake": "pastel", "calculator": "calculadora",
   "calendar": "calendario", "camel": "camello", "camera": "cámara", "campfire": "fogata",
-  "candle": "vela", "cannon": "cañón", "canoe": "canoa", "car": "auto", "carrot": "zanahoria",
+  "candle": "vela", "cannon": "cañón", "canoe": "canoa", "car": "automóvil", "carrot": "zanahoria",
   "castle": "castillo", "cat": "gato", "black cat": "gato", "raccoon": "mapache",
   "ceiling fan": "ventilador", "cell phone": "teléfono celular",
   "chair": "silla", "chandelier": "candelabro", "church": "iglesia", "circle": "círculo",
@@ -59,7 +59,7 @@ const QUICKDRAW_ES = {
   "sword": "espada", "syringe": "jeringa", "t-shirt": "remera", "table": "mesa", "teapot": "tetera",
   "teddy-bear": "osito de peluche", "telephone": "teléfono", "television": "televisor", "tent": "carpa",
   "tiger": "tigre", "toaster": "tostadora", "toilet": "inodoro", "tooth": "diente", "tornado": "tornado",
-  "tractor": "tractor", "traffic light": "semáforo", "train": "tren", "tree": "árbol",
+  "tractor": "tractor", "traffic light": "semáforo", "train": "tren", "tree": "árbol de navidad",
   "triangle": "triángulo", "truck": "camión", "umbrella": "paraguas", "van": "camioneta",
   "vase": "jarrón", "violin": "violín", "washing machine": "lavarropas", "watermelon": "sandía",
   "whale": "ballena", "wheel": "rueda", "windmill": "molino de viento", "wine bottle": "botella de vino",
@@ -70,15 +70,15 @@ const QUICKDRAW_ES = {
 // 2. CONSTANTES BLE DE LA HUION NOTE X10
 // ==========================================
 const HUION_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
-const CHAR_NOTIFY_UUID   = '0000ffe1-0000-1000-8000-00805f9b34fb'; // Trazos en vivo (55 54)
-const CHAR_WRITE_UUID    = '0000ffe2-0000-1000-8000-00805f9b34fb'; // Handshake / Keepalive
+const CHAR_NOTIFY_UUID   = '0000ffe1-0000-1000-8000-00805f9b34fb';
+const CHAR_WRITE_UUID    = '0000ffe2-0000-1000-8000-00805f9b34fb';
 
 const CMD_TABLET_NAME    = 0xC9; // 201
-const CMD_TABLET_INFO    = 0xC8; // 200 (Activa Pen-Tablet mode en firmware)
+const CMD_TABLET_INFO    = 0xC8; // 200 (Activa Pen-Tablet mode)
 const CMD_TABLET_VERIFY  = 0xCA; // 202
 const CMD_TABLET_BATTERY = 0xD1; // 209 (Keepalive)
 
-const DEFAULT_MAX_X = 37400; // Dimensiones nativas X10
+const DEFAULT_MAX_X = 37400;
 const DEFAULT_MAX_Y = 28200;
 
 // ==========================================
@@ -92,10 +92,10 @@ const state = {
   keepAliveTimer: null,
 
   // Multi-Espectador / Páginas
-  pages: [{ strokes: [], displayTitle: '', speech: '' }],
+  pages: [{ strokes: [], displayTitle: '', speech: '', drawing: '', word: '', number: '' }],
   currentPageIndex: 0,
 
-  strokes: [],          // Trazos de la página activa [{ points: [{x, y, p, t}] }]
+  strokes: [],
   currentStroke: null,
   lastPenTime: 0,
   inactivityTimer: null,
@@ -103,6 +103,12 @@ const state = {
   maxX: DEFAULT_MAX_X,
   maxY: DEFAULT_MAX_Y,
   lastSpokenText: '',
+
+  // Conceptos detectados para la IA
+  currentDrawing: 'árbol de navidad',
+  currentWord: 'Navidad',
+  currentNumber: '532142',
+  generatedImageBlob: null,
 
   // Ajustes de mentalismo
   orientation: 'portrait_cw',
@@ -112,7 +118,7 @@ const state = {
   vibrate: true,
   ttsRate: 1.2,
   selectedVoice: null,
-  stealthCamouflage: 'lockscreen', // 'lockscreen' o 'aod'
+  stealthCamouflage: 'lockscreen',
   smartwatchEnabled: false,
 
   // Reloj & Gestos
@@ -120,7 +126,8 @@ const state = {
   tripleTapCount: 0,
   tripleTapTimer: null,
   touchStartX: 0,
-  touchStartY: 0
+  touchStartY: 0,
+  touchStartTime: 0
 };
 
 // Elementos DOM
@@ -129,6 +136,8 @@ const previewCanvas = $('previewCanvas');
 const pCtx = previewCanvas.getContext('2d');
 const stealthCanvas = $('stealthCanvas');
 const sCtx = stealthCanvas.getContext('2d');
+
+let silentAudioEl = null;
 
 // ==========================================
 // 4. PROTOCOLO BLE & COMUNICACIÓN HUION
@@ -232,7 +241,7 @@ function handlePenPacket(event) {
   const b1 = v.getUint8(1);
   if (b0 !== 0x55 || b1 !== 0x54) return;
 
-  const status = v.getUint8(2); // 0x80 = hover, 0x81 = touch, 0x00 = levantado
+  const status = v.getUint8(2);
   const xLo = v.getUint8(3) | (v.getUint8(4) << 8);
   const yLo = v.getUint8(5) | (v.getUint8(6) << 8);
   const rawP = v.getUint16(7, true);
@@ -282,7 +291,7 @@ function rotateCoords(nx, ny, orient) {
 }
 
 // ==========================================
-// 6. MOTOR DE MENTALISMO & CLASIFICADOR OFFLINE
+// 6. MOTOR DE MENTALISMO & EXTRACCIÓN DE CONCEPTOS
 // ==========================================
 async function onParticipantFinished() {
   if (!state.strokes.length) return;
@@ -295,17 +304,19 @@ async function onParticipantFinished() {
   let finalSpeech = '';
   let displayTitle = '';
   let candidates = [];
+  let detectedDrawing = '';
+  let detectedWord = '';
+  let detectedNumber = '';
 
   const pagePrefix = state.pages.length > 1 ? `Espectador ${state.currentPageIndex + 1}: ` : '';
 
-  // ¿Modo forzado offline (ESP o Dígitos) o sin conexión a internet?
   if (state.detectMode === 'esp' || state.detectMode === 'digits' || !navigator.onLine) {
     const offlineResult = classifyOffline(state.strokes, state.detectMode);
     finalSpeech = `${pagePrefix}${offlineResult.speech}`;
     displayTitle = offlineResult.title;
     candidates = offlineResult.alternatives;
+    detectedDrawing = offlineResult.title;
   } else {
-    // Modo Online con respaldo de clasificador offline
     try {
       const mode = state.detectMode;
       let drawingPromise = null;
@@ -316,25 +327,29 @@ async function onParticipantFinished() {
 
       const [drawingResults, textResults] = await Promise.all([drawingPromise, textPromise]);
 
+      const topText = textResults?.[0] || '';
+      const topDrawingEn = drawingResults?.[0] || '';
+      const topDrawingEs = QUICKDRAW_ES[topDrawingEn] || topDrawingEn;
+
+      detectedDrawing = topDrawingEs;
+
+      // Extraer números y palabras del texto reconocido
+      const numMatch = topText.match(/\b\d{2,8}\b/);
+      if (numMatch) detectedNumber = numMatch[0];
+      const wordClean = topText.replace(/[\d\W_]+/g, ' ').trim();
+      if (wordClean) detectedWord = wordClean;
+
       if (mode === 'drawing' && drawingResults?.length) {
-        const topEn = drawingResults[0];
-        const topEs = QUICKDRAW_ES[topEn] || topEn;
-        finalSpeech = `${pagePrefix}Dibujo: ${topEs}`;
-        displayTitle = `🎨 ${topEs.toUpperCase()}`;
+        finalSpeech = `${pagePrefix}Dibujo: ${topDrawingEs}`;
+        displayTitle = `🎨 ${topDrawingEs.toUpperCase()}`;
         candidates = drawingResults.map((w) => QUICKDRAW_ES[w] || w);
       } else if (mode === 'text' && textResults?.length) {
-        const topWord = textResults[0];
-        finalSpeech = `${pagePrefix}${topWord}`;
-        displayTitle = `✍️ ${topWord}`;
+        finalSpeech = `${pagePrefix}${topText}`;
+        displayTitle = `✍️ ${topText}`;
         candidates = textResults;
       } else if (mode === 'both') {
-        const topText = textResults?.[0] || '';
-        const topDrawingEn = drawingResults?.[0] || '';
-        const topDrawingEs = QUICKDRAW_ES[topDrawingEn] || topDrawingEn;
-
-        // Comprobar si parece un símbolo ESP o número
         const espCheck = classifyOffline(state.strokes, 'esp');
-        if (espCheck.confidence > 0.82) {
+        if (espCheck.confidence > 0.85) {
           finalSpeech = `${pagePrefix}${espCheck.speech}`;
           displayTitle = espCheck.title;
           candidates = [espCheck.title, topDrawingEs, topText];
@@ -349,32 +364,48 @@ async function onParticipantFinished() {
         }
       }
     } catch (err) {
-      console.warn('Fallo en consulta online, usando motor offline:', err);
+      console.warn('Fallo consulta online, usando motor offline:', err);
       const offlineResult = classifyOffline(state.strokes, state.detectMode);
       finalSpeech = `${pagePrefix}${offlineResult.speech}`;
       displayTitle = offlineResult.title;
       candidates = offlineResult.alternatives;
+      detectedDrawing = offlineResult.title;
     }
   }
 
   if (finalSpeech) {
     state.lastSpokenText = finalSpeech;
+    state.currentDrawing = detectedDrawing || state.currentDrawing;
+    state.currentWord = detectedWord || state.currentWord;
+    state.currentNumber = detectedNumber || state.currentNumber;
+
     $('lastResult').textContent = displayTitle;
     $('stealthOverlayText').textContent = displayTitle;
     renderCandidates(candidates);
 
-    // Guardar en la página actual
+    // Actualizar prompt dinámico de IA
+    updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
+
     state.pages[state.currentPageIndex] = {
       strokes: JSON.parse(JSON.stringify(state.strokes)),
       displayTitle,
-      speech: finalSpeech
+      speech: finalSpeech,
+      drawing: state.currentDrawing,
+      word: state.currentWord,
+      number: state.currentNumber
     };
 
     speakTTS(finalSpeech);
     if (state.vibrate) triggerHaptic([120]);
 
-    // Enviar a Smartwatch (Wear OS / Apple Watch / Xiaomi)
-    sendToSmartwatch(displayTitle, finalSpeech);
+    // Enviar a Smartwatch (formato compatible con Haylou Solar)
+    const haylouText = `${state.currentDrawing ? '🎨 ' + state.currentDrawing : ''} ${state.currentWord ? '• ✍️ ' + state.currentWord : ''} ${state.currentNumber ? '• 🔢 ' + state.currentNumber : ''}`.trim() || finalSpeech;
+    sendToSmartwatch('MindPad Peek', haylouText);
+
+    // Si tiene activado autogenerar IA
+    if ($('autoGenerateAICheck') && $('autoGenerateAICheck').checked) {
+      generateAIImage();
+    }
   }
 
   $('stealthStatusDot').className = 'stealth-dot ready';
@@ -395,70 +426,61 @@ function classifyOffline(strokes, mode = 'both') {
 
   const w = Math.max(0.001, maxX - minX);
   const h = Math.max(0.001, maxY - minY);
-  const aspect = w / h; // >1 = ancho, <1 = alto
+  const aspect = w / h;
   const numStrokes = strokes.length;
 
-  // Distancia inicio a fin del primer trazo (para saber si es cerrado)
   const firstS = strokes[0].points;
   const startPt = firstS[0];
   const endPt = firstS[firstS.length - 1];
   const closeDist = Math.hypot(startPt.x - endPt.x, startPt.y - endPt.y);
   const isLoop = closeDist < Math.max(w, h) * 0.28;
 
-  // Longitud total del trazo
   let totalLen = 0;
   for (let i = 1; i < firstS.length; i++) {
     totalLen += Math.hypot(firstS[i].x - firstS[i - 1].x, firstS[i].y - firstS[i - 1].y);
   }
 
-  // 1. Detección de Símbolos Zener (ESP)
   if (mode === 'esp' || mode === 'both') {
-    // Cruz ESP: 2 trazos que se intersectan
     if (numStrokes === 2) {
       const s1 = strokes[0].points;
       const s2 = strokes[1].points;
       const s1Horiz = Math.abs(s1[s1.length - 1].x - s1[0].x) > Math.abs(s1[s1.length - 1].y - s1[0].y);
       const s2Horiz = Math.abs(s2[s2.length - 1].x - s2[0].x) > Math.abs(s2[s2.length - 1].y - s2[0].y);
       if (s1Horiz !== s2Horiz) {
-        return { title: '✚ CRUZ (ESP)', speech: 'Símbolo: Cruz', confidence: 0.95, alternatives: ['Cruz', 'Más', 'Cuatro'] };
+        return { title: '✚ CRUZ (ESP)', speech: 'Símbolo: Cruz', confidence: 0.95, alternatives: ['Cruz', 'Más'] };
       }
     }
-    // Ondas ESP: 2 o 3 trazos horizontales
     if (numStrokes >= 2 && numStrokes <= 3 && aspect > 1.3) {
-      return { title: '♒ ONDAS (ESP)', speech: 'Símbolo: Ondas', confidence: 0.92, alternatives: ['Ondas', 'Líneas', 'Río'] };
+      return { title: '♒ ONDAS (ESP)', speech: 'Símbolo: Ondas', confidence: 0.92, alternatives: ['Ondas', 'Líneas'] };
     }
-    // Círculo ESP: 1 trazo cerrado casi redondo
     if (numStrokes === 1 && isLoop && aspect >= 0.75 && aspect <= 1.35) {
-      return { title: '⭕ CÍRCULO (ESP)', speech: 'Símbolo: Círculo', confidence: 0.9, alternatives: ['Círculo', 'Cero', 'Sol'] };
+      return { title: '⭕ CÍRCULO (ESP)', speech: 'Símbolo: Círculo', confidence: 0.9, alternatives: ['Círculo', 'Cero'] };
     }
-    // Cuadrado ESP: 1 o 4 trazos aspecto cuadrado
     if ((numStrokes === 1 || numStrokes === 4) && aspect >= 0.8 && aspect <= 1.25) {
-      return { title: '⬛ CUADRADO (ESP)', speech: 'Símbolo: Cuadrado', confidence: 0.85, alternatives: ['Cuadrado', 'Caja', 'Ventana'] };
+      return { title: '⬛ CUADRADO (ESP)', speech: 'Símbolo: Cuadrado', confidence: 0.85, alternatives: ['Cuadrado', 'Caja'] };
     }
-    // Estrella ESP: 1 trazo no cerrado complejo o 5 picos
     if (totalLen > Math.max(w, h) * 3.5) {
-      return { title: '⭐ ESTRELLA (ESP)', speech: 'Símbolo: Estrella', confidence: 0.88, alternatives: ['Estrella', 'Sol'] };
+      return { title: '⭐ ESTRELLA (ESP)', speech: 'Símbolo: Estrella', confidence: 0.88, alternatives: ['Estrella'] };
     }
   }
 
-  // 2. Detección de Dígitos (0-9)
   if (mode === 'digits' || mode === 'both') {
     if (numStrokes === 1) {
       if (isLoop && aspect >= 0.6 && aspect <= 1.2) {
-        return { title: '0️⃣ NÚMERO CERO', speech: 'Número cero', confidence: 0.9, alternatives: ['0', 'O', 'Círculo'] };
+        return { title: '0️⃣ NÚMERO CERO', speech: 'Número cero', confidence: 0.9, alternatives: ['0'] };
       }
       if (aspect < 0.45 && !isLoop) {
-        return { title: '1️⃣ NÚMERO UNO', speech: 'Número uno', confidence: 0.95, alternatives: ['1', 'L', 'Línea'] };
+        return { title: '1️⃣ NÚMERO UNO', speech: 'Número uno', confidence: 0.95, alternatives: ['1'] };
       }
       if (aspect > 0.5 && !isLoop && startPt.y < minY + h * 0.3 && endPt.y > maxY - h * 0.3) {
-        return { title: '7️⃣ NÚMERO SIETE', speech: 'Número siete', confidence: 0.85, alternatives: ['7', 'Uno'] };
+        return { title: '7️⃣ NÚMERO SIETE', speech: 'Número siete', confidence: 0.85, alternatives: ['7'] };
       }
       if (totalLen > Math.max(w, h) * 4.0) {
-        return { title: '8️⃣ NÚMERO OCHO', speech: 'Número ocho', confidence: 0.82, alternatives: ['8', 'B'] };
+        return { title: '8️⃣ NÚMERO OCHO', speech: 'Número ocho', confidence: 0.82, alternatives: ['8'] };
       }
     }
     if (numStrokes === 2) {
-      return { title: '4️⃣ NÚMERO CUATRO', speech: 'Número cuatro', confidence: 0.86, alternatives: ['4', 'Cruz'] };
+      return { title: '4️⃣ NÚMERO CUATRO', speech: 'Número cuatro', confidence: 0.86, alternatives: ['4'] };
     }
   }
 
@@ -485,7 +507,7 @@ async function recognizeDrawing(strokes) {
   return data[0] === 'SUCCESS' ? data[1]?.[0]?.[1] || [] : [];
 }
 
-// Reconocimiento Online Texto / Nombres / Números
+// Reconocimiento Online Texto
 async function recognizeText(strokes) {
   const ink = toQuickDrawInk(strokes, 600, 300);
   const payload = {
@@ -554,7 +576,6 @@ function updatePageUI() {
   $('pageBadge').textContent = `Espectador ${num} de ${total}`;
   $('stealthPageIndicator').textContent = `P${num}`;
 
-  // Cargar trazos de la página actual
   const cur = state.pages[state.currentPageIndex];
   state.strokes = cur?.strokes ? JSON.parse(JSON.stringify(cur.strokes)) : [];
   $('lastResult').textContent = cur?.displayTitle || '— Esperando trazos —';
@@ -563,15 +584,16 @@ function updatePageUI() {
 }
 
 function addNewPage() {
-  // Guardar página actual antes de avanzar
   state.pages[state.currentPageIndex] = {
     strokes: JSON.parse(JSON.stringify(state.strokes)),
     displayTitle: $('lastResult').textContent,
-    speech: state.lastSpokenText
+    speech: state.lastSpokenText,
+    drawing: state.currentDrawing,
+    word: state.currentWord,
+    number: state.currentNumber
   };
 
-  // Crear nueva página
-  state.pages.push({ strokes: [], displayTitle: '', speech: '' });
+  state.pages.push({ strokes: [], displayTitle: '', speech: '', drawing: '', word: '', number: '' });
   state.currentPageIndex = state.pages.length - 1;
   state.strokes = [];
   state.currentStroke = null;
@@ -603,7 +625,7 @@ function nextPage() {
 }
 
 // ==========================================
-// 8. SMARTWATCH / NOTIFICACIONES WEAR OS
+// 8. SMARTWATCH / NOTIFICACIONES (HAYLOU & WEAR OS)
 // ==========================================
 function generateThumbnail(strokes) {
   const c = document.createElement('canvas');
@@ -631,46 +653,85 @@ async function enableSmartwatch() {
     state.smartwatchEnabled = true;
     $('watchNotifyBtn').textContent = '⌚ Smartwatch Activado ✓';
     $('watchNotifyBtn').classList.add('active');
-    sendToSmartwatch('MindPad Conectado', 'Las lecturas aparecerán en tu reloj');
+    sendToSmartwatch('MindPad Conectado', 'Lecturas sincronizadas con tu reloj');
   } else {
-    alert('Permiso de notificaciones denegado.');
+    alert('Permiso de notificaciones denegado en Chrome.');
   }
 }
 
 function sendToSmartwatch(title, body) {
-  if (!state.smartwatchEnabled && Notification.permission !== 'granted') return;
   const thumbUrl = generateThumbnail(state.strokes);
+  const cleanBody = (body || title || 'Nuevo trazo detectado').replace(/[\r\n]+/g, ' ').slice(0, 120);
+
+  const notifOptions = {
+    body: cleanBody,
+    icon: thumbUrl,
+    image: thumbUrl,
+    badge: 'icon.svg',
+    vibrate: [300, 150, 300],
+    tag: 'mindpad-peek'
+  };
 
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.ready.then((reg) => {
-      reg.showNotification(title, {
-        body: body,
-        icon: thumbUrl,
-        image: thumbUrl,
-        badge: 'icon.svg',
-        vibrate: [200, 100, 200],
-        tag: 'mindpad-peek'
-      });
+      reg.showNotification('MindPad Peek', notifOptions);
     }).catch(() => {
-      new Notification(title, { body, icon: thumbUrl, image: thumbUrl });
+      new Notification('MindPad Peek', notifOptions);
     });
   } else {
-    new Notification(title, { body, icon: thumbUrl, image: thumbUrl });
+    try {
+      new Notification('MindPad Peek', notifOptions);
+    } catch (e) {}
   }
 
-  // MediaSession artwork para relojes con pantalla multimedia
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: title,
-      artist: body,
+      title: 'MindPad',
+      artist: cleanBody,
       artwork: [{ src: thumbUrl, sizes: '300x300', type: 'image/png' }]
     });
   }
 }
 
+function testHaylouSolar() {
+  if (Notification.permission !== 'granted') {
+    Notification.requestPermission().then((p) => {
+      if (p === 'granted') {
+        state.smartwatchEnabled = true;
+        sendToSmartwatch('MindPad Peek', '🎄 Árbol • ✍️ Navidad • 🔢 532142');
+      } else {
+        alert('Permiso de notificaciones denegado en Chrome.');
+      }
+    });
+  } else {
+    state.smartwatchEnabled = true;
+    sendToSmartwatch('MindPad Peek', '🎄 Árbol • ✍️ Navidad • 🔢 532142');
+  }
+}
+
 // ==========================================
-// 9. SUSURRO DE AUDIO (TEXT-TO-SPEECH)
+// 9. AUDIO DE FONDO & BOTONES DE AURICULAR
 // ==========================================
+function startSilentAudioLoop() {
+  if (!silentAudioEl) {
+    silentAudioEl = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+    silentAudioEl.loop = true;
+    silentAudioEl.volume = 0.01;
+  }
+  silentAudioEl.play().catch(() => {});
+
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.setActionHandler('previoustrack', () => prevPage());
+    navigator.mediaSession.setActionHandler('nexttrack', () => addNewPage());
+    navigator.mediaSession.setActionHandler('pause', () => {
+      if (state.lastSpokenText) speakTTS(state.lastSpokenText);
+    });
+    navigator.mediaSession.setActionHandler('play', () => {
+      if (state.lastSpokenText) speakTTS(state.lastSpokenText);
+    });
+  }
+}
+
 function initTTS() {
   if (!('speechSynthesis' in window)) return;
   function populateVoices() {
@@ -813,6 +874,7 @@ function enterStealthMode() {
   }
 
   startClocks();
+  startSilentAudioLoop();
   resizeCanvases();
   if (document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen().catch(() => {});
@@ -830,7 +892,7 @@ function exitStealthMode() {
   }
 }
 
-// Peek táctil: Mantener presionado revela el dibujo
+// Peek táctil & Zonas de control ciego en el bolsillo
 const stealthView = $('stealthView');
 const peekContainer = $('peekContainer');
 
@@ -849,18 +911,41 @@ stealthView.addEventListener('touchstart', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
   state.touchStartX = e.touches[0].clientX;
   state.touchStartY = e.touches[0].clientY;
+  state.touchStartTime = performance.now();
   showPeek();
 });
 
 stealthView.addEventListener('touchend', (e) => {
   hidePeek();
-  // Detección de Swipe horizontal para cambiar de página
+  const touchDuration = performance.now() - state.touchStartTime;
+
   if (e.changedTouches && e.changedTouches[0]) {
-    const diffX = e.changedTouches[0].clientX - state.touchStartX;
-    if (diffX > 70) prevPage();
-    else if (diffX < -70) nextPage();
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const diffX = endX - state.touchStartX;
+    const diffY = endY - state.touchStartY;
+
+    // Swipe horizontal claro (> 70px) para cambiar de espectador
+    if (Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 70) prevPage();
+      else if (diffX < -70) nextPage();
+      return;
+    }
+
+    // Tap rápido a ciegas en el bolsillo (< 280ms)
+    if (touchDuration < 280 && Math.hypot(diffX, diffY) < 25) {
+      const screenH = window.innerHeight;
+      if (endY < screenH * 0.45) {
+        // Mitad superior = Nueva página / Siguiente espectador
+        addNewPage();
+      } else if (endY > screenH * 0.55) {
+        // Mitad inferior = Repetir susurro de audio
+        if (state.lastSpokenText) speakTTS(state.lastSpokenText);
+      }
+    }
   }
 });
+
 stealthView.addEventListener('touchcancel', hidePeek);
 stealthView.addEventListener('mousedown', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
@@ -883,18 +968,9 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && $('stealthView').style.display !== 'none') {
     exitStealthMode();
   }
-  // Captura de botones de volumen para mentalismo en bolsillo
-  if (e.key === 'AudioVolumeDown' || e.key === 'VolumeDown') {
-    e.preventDefault();
-    addNewPage();
-  }
-  if (e.key === 'AudioVolumeUp' || e.key === 'VolumeUp') {
-    e.preventDefault();
-    if (state.lastSpokenText) speakTTS(state.lastSpokenText);
-  }
 });
 
-// Repetir audio al tocar el reloj en pantalla bloqueada
+// Repetir audio al tocar el reloj
 $('lockClockTime').addEventListener('click', (e) => {
   e.stopPropagation();
   if (state.lastSpokenText) speakTTS(state.lastSpokenText);
@@ -905,7 +981,114 @@ $('aodClock').addEventListener('click', (e) => {
 });
 
 // ==========================================
-// 11. EVENTOS DE INTERFAZ & SIMULADOR
+// 11. PREDICCIÓN IA (NANO BANANA STYLE) & INSTAGRAM
+// ==========================================
+function buildAIPrompt(drawing = '', word = '', number = '', preset = 'car_rain') {
+  const d = drawing || 'árbol de navidad';
+  const w = word || 'Navidad';
+  const n = number || '532142';
+
+  if (preset === 'car_rain') {
+    return `Hyperrealistic photograph taken from inside a vintage car looking through the wet windshield at a rainy city street at dusk. Hanging from the rearview mirror is a red wooden ${d} keychain ornament air freshener. In the blurred background, a glowing neon billboard displays the word '${w}'. In front of the car, a black vehicle clearly displays the license plate numbers '${n}'. Cinematic lighting, photorealistic, 8k resolution, authentic camera bokeh.`;
+  } else if (preset === 'child_paper') {
+    return `An authentic top-down photograph of a child's crayon drawing on wrinkled white paper lying on a rustic wooden table. The drawing looks like it was drawn by a 6-year-old child using a red crayon: showing a ${d}, with the word '${w}' written in red crayon next to it, and the number '${n}' clearly legible. Realistic paper texture, wax crayon smudges, natural soft room lighting.`;
+  } else if (preset === 'polaroid') {
+    return `A vintage authentic polaroid photograph lying on an old wooden table. The polaroid shows a real ${d}, with the handwritten word '${w}' at the bottom margin in black marker, and a receipt beside it with the numbers '${n}'. 1980s film grain, flash photography, hyperrealistic.`;
+  }
+  return `Photorealistic image containing a ${d}, the word '${w}' naturally integrated, and the number '${n}' on a sign or object. High quality, realistic.`;
+}
+
+function updateAIPromptFromDetection(drawing, word, number) {
+  state.currentDrawing = drawing || state.currentDrawing || '';
+  state.currentWord = word || state.currentWord || '';
+  state.currentNumber = number || state.currentNumber || '';
+
+  const preset = $('aiStylePreset') ? $('aiStylePreset').value : 'car_rain';
+  const prompt = buildAIPrompt(state.currentDrawing, state.currentWord, state.currentNumber, preset);
+  if ($('aiPromptText')) $('aiPromptText').value = prompt;
+}
+
+async function generateAIImage() {
+  const prompt = $('aiPromptText') && $('aiPromptText').value ? $('aiPromptText').value : buildAIPrompt(state.currentDrawing, state.currentWord, state.currentNumber);
+  if (!prompt) return;
+
+  $('aiImageContainer').style.display = 'block';
+  $('aiStatusText').textContent = 'Generando predicción con IA... (4-8 seg)';
+  $('aiResultImg').style.display = 'none';
+
+  try {
+    const seed = Math.floor(Math.random() * 999999);
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=1024&nologo=true&seed=${seed}&model=flux`;
+
+    const res = await fetch(imageUrl);
+    const blob = await res.blob();
+    state.generatedImageBlob = blob;
+
+    const localUrl = URL.createObjectURL(blob);
+    $('aiResultImg').src = localUrl;
+    $('aiResultImg').style.display = 'block';
+    $('aiStatusText').textContent = '✨ Predicción generada con éxito';
+
+    speakTTS('Predicción de imagen lista');
+    triggerHaptic([80, 50, 80, 50, 80]);
+  } catch (err) {
+    console.error('Error generando imagen:', err);
+    $('aiStatusText').textContent = 'Error al generar imagen (verifica conexión)';
+  }
+}
+
+async function shareToInstagram() {
+  if (!state.generatedImageBlob) {
+    alert('Primero genera la imagen con el botón de arriba.');
+    return;
+  }
+  const file = new File([state.generatedImageBlob], 'prediccion.jpg', { type: 'image/jpeg' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: 'Predicción',
+        text: 'Una extraña premonición...',
+        files: [file]
+      });
+    } catch (e) {}
+  } else {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(state.generatedImageBlob);
+    a.download = `prediccion-${Date.now()}.jpg`;
+    a.click();
+    alert('Imagen guardada en tu galería. Puedes subirla a tus historias o feed de Instagram.');
+  }
+}
+
+function downloadOriginalDrawing() {
+  if (!state.strokes.length) {
+    alert('No hay trazos en la página actual.');
+    return;
+  }
+  const c = document.createElement('canvas');
+  c.width = 800;
+  c.height = 1060;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 800, 1060);
+
+  state.strokes.forEach((s) => {
+    for (let i = 1; i < s.points.length; i++) {
+      drawSeg(ctx, 800, 1060, s.points[i - 1], s.points[i], '#c01525', false);
+    }
+  });
+
+  c.toBlob((blob) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `trazo-original-${Date.now()}.png`;
+    a.click();
+  }, 'image/png');
+}
+
+// ==========================================
+// 12. EVENTOS DE INTERFAZ & SIMULADOR
 // ==========================================
 $('bleConnectBtn').onclick = connectBLE;
 $('bleDisconnectBtn').onclick = () => {
@@ -917,6 +1100,19 @@ $('newPageBtn').onclick = addNewPage;
 $('prevPageBtn').onclick = prevPage;
 $('nextPageBtn').onclick = nextPage;
 $('watchNotifyBtn').onclick = enableSmartwatch;
+$('testHaylouBtn').onclick = testHaylouSolar;
+
+// Eventos de Predicción IA
+$('generateAIBtn').onclick = generateAIImage;
+$('shareInstagramBtn').onclick = shareToInstagram;
+$('downloadOriginalBtn').onclick = downloadOriginalDrawing;
+$('copyPromptBtn').onclick = () => {
+  const p = $('aiPromptText').value;
+  navigator.clipboard.writeText(p).then(() => alert('Prompt copiado al portapapeles ✓'));
+};
+$('aiStylePreset').onchange = () => {
+  updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
+};
 
 $('stealthCamouflage').onchange = (e) => { state.stealthCamouflage = e.target.value; };
 $('detectMode').onchange = (e) => { state.detectMode = e.target.value; };
@@ -935,7 +1131,7 @@ $('ttsRate').oninput = (e) => {
   state.ttsRate = +e.target.value;
   $('ttsRateVal').textContent = state.ttsRate + 'x';
 };
-$('testAudioBtn').onclick = () => speakTTS('MindPad Pro listo. Ha dibujado una estrella');
+$('testAudioBtn').onclick = () => speakTTS('MindPad Pro listo. Ha dibujado un árbol de Navidad');
 
 $('clearMonitorBtn').onclick = () => {
   state.strokes = [];
@@ -984,3 +1180,4 @@ previewCanvas.addEventListener('pointerup', () => {
 initTTS();
 resizeCanvases();
 updatePageUI();
+updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
