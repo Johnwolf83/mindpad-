@@ -157,6 +157,7 @@ const state = {
   autoPublishInstagram: localStorage.getItem('mindpad_ig_autopublish') === 'true',
   igWebhookUrl: localStorage.getItem('mindpad_ig_webhook_url') || 'https://hook.us2.make.com/c1m5cxamuyeinjpsrixx42y16j8okxy1',
   igCaption: localStorage.getItem('mindpad_ig_caption') || 'Una extraña intuición que tuve hace días...',
+  autoSavePocketPrinter: localStorage.getItem('mindpad_auto_save_printer') !== 'false',
 
   // Ajustes de mentalismo
   orientation: 'portrait_cw',
@@ -1346,6 +1347,20 @@ async function publishToInstagramWebhook(blob, webhookUrl, caption, publicUrl = 
   }
 }
 
+function autoSaveForPocketPrinter(blob) {
+  try {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'prediccion_print.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    console.log('Imagen guardada automáticamente como prediccion_print.jpg para MacroDroid / Impresora');
+  } catch (err) {
+    console.warn('Error auto-guardando para impresora:', err);
+  }
+}
+
 function getDrawingCanvasDataURL() {
   const c = document.createElement('canvas');
   c.width = 600;
@@ -1466,6 +1481,11 @@ async function generateAIImage() {
         publishToInstagramWebhook(blob, state.igWebhookUrl, state.igCaption, item?.url || '');
       }
 
+      // Auto-guardar para impresora de bolsillo
+      if (state.autoSavePocketPrinter) {
+        autoSaveForPocketPrinter(blob);
+      }
+
       let costText = '';
       if (data?.usage?.cost != null) {
         const usd = data.usage.cost;
@@ -1504,6 +1524,11 @@ async function generateAIImage() {
       publishToInstagramWebhook(blob, state.igWebhookUrl, state.igCaption, imageUrl);
     }
 
+    // Auto-guardar para impresora de bolsillo
+    if (state.autoSavePocketPrinter) {
+      autoSaveForPocketPrinter(blob);
+    }
+
     state.generatedImageBlob = blob;
 
     const localUrl = URL.createObjectURL(blob);
@@ -1530,16 +1555,21 @@ async function shareToInstagram() {
     try {
       await navigator.share({
         title: 'Predicción',
-        text: 'Una extraña premonición...',
+        text: state.igCaption || 'Una extraña intuición...',
         files: [file]
       });
-    } catch (e) {}
+    } catch (e) {
+      console.log('Share cancelado o cerrado:', e);
+    }
   } else {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(state.generatedImageBlob);
     a.download = `prediccion-${Date.now()}.jpg`;
+    document.body.appendChild(a);
     a.click();
-    alert('Imagen guardada en tu galería. Puedes subirla a tus historias o feed de Instagram.');
+    document.body.removeChild(a);
+    alert('Imagen guardada en tu galería con la fecha retroactiva. Abriendo Instagram Stories...');
+    window.location.href = 'instagram://story-camera';
   }
 }
 
@@ -1663,6 +1693,14 @@ if ($('exifDaysBackSelect')) {
   $('exifDaysBackSelect').onchange = (e) => {
     state.exifDaysBack = parseInt(e.target.value, 10);
     localStorage.setItem('mindpad_exif_days_back', state.exifDaysBack);
+  };
+}
+
+if ($('autoSavePocketPrinterCheck')) {
+  $('autoSavePocketPrinterCheck').checked = state.autoSavePocketPrinter;
+  $('autoSavePocketPrinterCheck').onchange = (e) => {
+    state.autoSavePocketPrinter = e.target.checked;
+    localStorage.setItem('mindpad_auto_save_printer', state.autoSavePocketPrinter);
   };
 }
 

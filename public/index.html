@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="styles.css?v=10" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=10').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=11').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -182,6 +182,13 @@
           </label>
         </div>
 
+        <div class="field-row">
+          <label class="toggle-label" style="font-size:11.5px; color:#10b981; font-weight:600;">
+            <input id="autoSavePocketPrinterCheck" type="checkbox" checked />
+            <span>🖨️ Auto-guardar para Impresora de Bolsillo (prediccion_print.jpg)</span>
+          </label>
+        </div>
+
         <div id="instagramWebhookSettings" style="display:none; background:#0c1322; border:1px solid #1e3a8a; border-radius:8px; padding:10px; margin-bottom:12px;">
           <div class="field-row" style="margin-bottom:8px;">
             <label for="igWebhookUrl" style="font-size:11.5px; color:#38bdf8;">🔗 Webhook Make / Zapier:</label>
@@ -224,7 +231,7 @@
 
           <div class="btn-group" style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
             <div style="display:flex; gap:8px;">
-              <button id="shareInstagramBtn" class="btn primary" style="flex:1;">📸 Publicación Manual (Stories / Feed)</button>
+              <button id="shareInstagramBtn" class="btn primary" style="flex:1;">📸 Enviar a Instagram Stories (Manual)</button>
               <button id="publishWebhookNowBtn" class="btn cta" style="flex:1; background:#0284c7;">🚀 Publicar al Feed (Make)</button>
             </div>
             <button id="downloadOriginalBtn" class="btn secondary full">💾 Guardar Trazo Original</button>
