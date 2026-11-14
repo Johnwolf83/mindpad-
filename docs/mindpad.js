@@ -1217,12 +1217,41 @@ function updateAIPromptFromDetection(drawing, word, number) {
   if ($('aiPromptText')) $('aiPromptText').value = prompt;
 }
 
+function getDrawingCanvasDataURL() {
+  const c = document.createElement('canvas');
+  c.width = 600;
+  c.height = 800;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 600, 800);
+
+  if (state.strokes.length) {
+    state.strokes.forEach((s) => {
+      for (let i = 1; i < s.points.length; i++) {
+        drawSeg(ctx, 600, 800, s.points[i - 1], s.points[i], '#c01525', false);
+      }
+    });
+  }
+
+  return c.toDataURL('image/jpeg', 0.85);
+}
+
 async function generateAIImage() {
   const prompt = $('aiPromptText') && $('aiPromptText').value ? $('aiPromptText').value : buildAIPrompt(state.currentDrawing, state.currentWord, state.currentNumber);
   if (!prompt) return;
 
   $('aiImageContainer').style.display = 'block';
   $('aiResultImg').style.display = 'none';
+
+  const useReference = $('useReferenceImageCheck') ? $('useReferenceImageCheck').checked : true;
+  const refImageDataUrl = state.strokes.length ? getDrawingCanvasDataURL() : null;
+
+  if (refImageDataUrl && $('refDrawingImg')) {
+    $('refDrawingImg').src = refImageDataUrl;
+    if ($('refDrawingCol')) $('refDrawingCol').style.display = 'block';
+  } else if ($('refDrawingCol')) {
+    $('refDrawingCol').style.display = 'none';
+  }
 
   // 1. Generación vía OpenRouter si está configurado y tiene token
   if (state.aiProvider === 'openrouter' && state.openRouterKey) {
@@ -1231,10 +1260,21 @@ async function generateAIImage() {
       : state.openRouterModel;
 
     const shortName = model.split('/').pop();
-    $('aiStatusText').textContent = `🚀 Generando con OpenRouter (${shortName})... (5-15 seg)`;
+    const modeLabel = useReference && refImageDataUrl ? '(Img2Img con trazo original)' : '';
+    $('aiStatusText').textContent = `🚀 Generando con ${shortName} ${modeLabel}... (5-15 seg)`;
 
     try {
-      const res = await fetch('https://openrouter.ai/api/v1/images', {
+      const payload = {
+        model,
+        prompt,
+        aspect_ratio: '3:4'
+      };
+
+      if (useReference && refImageDataUrl) {
+        payload.input_references = [{ url: refImageDataUrl }];
+      }
+
+      let res = await fetch('https://openrouter.ai/api/v1/images', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1242,14 +1282,28 @@ async function generateAIImage() {
           'HTTP-Referer': 'https://johnwolf83.github.io/mindpad-/',
           'X-Title': 'MindPad X10'
         },
-        body: JSON.stringify({
-          model,
-          prompt,
-          aspect_ratio: '3:4'
-        })
+        body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      let data = await res.json();
+
+      // Si el modelo específico no soporta input_references y da error, reintentar automáticamente sin él
+      if (data?.error && payload.input_references && (data.error.message?.includes('input_references') || data.error.message?.includes('not supported'))) {
+        console.warn('El modelo no soporta input_references, reintentando solo con texto...');
+        delete payload.input_references;
+        res = await fetch('https://openrouter.ai/api/v1/images', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${state.openRouterKey.trim()}`,
+            'HTTP-Referer': 'https://johnwolf83.github.io/mindpad-/',
+            'X-Title': 'MindPad X10'
+          },
+          body: JSON.stringify(payload)
+        });
+        data = await res.json();
+      }
+
       if (data?.error) {
         throw new Error(data.error.message || `Error ${res.status}`);
       }
