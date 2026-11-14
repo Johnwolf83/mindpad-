@@ -159,6 +159,7 @@ const state = {
   igCaption: localStorage.getItem('mindpad_ig_caption') || 'Una extraña intuición que tuve hace días...',
   autoSavePocketPrinter: localStorage.getItem('mindpad_auto_save_printer') !== 'false',
   vipEventName: localStorage.getItem('mindpad_vip_event') || '',
+  launchDirectToCalculator: localStorage.getItem('mindpad_launch_direct_calc') !== 'false',
   currentLayer: 1,
 
   // Ajustes de mentalismo
@@ -1197,15 +1198,26 @@ stealthView.addEventListener('mousedown', (e) => {
 stealthView.addEventListener('mouseup', hidePeek);
 
 // Salir con triple tap en esquina superior derecha o tecla Escape
-$('exitStealthTrigger').addEventListener('click', () => {
+function handleExitTap(e) {
+  if (e) {
+    if (e.cancelable && e.type === 'touchstart') e.preventDefault();
+    if (e.stopPropagation) e.stopPropagation();
+  }
   state.tripleTapCount++;
   clearTimeout(state.tripleTapTimer);
-  state.tripleTapTimer = setTimeout(() => { state.tripleTapCount = 0; }, 800);
+  state.tripleTapTimer = setTimeout(() => { state.tripleTapCount = 0; }, 700);
   if (state.tripleTapCount >= 3) {
     state.tripleTapCount = 0;
+    triggerHaptic([30, 40, 50]);
     exitStealthMode();
   }
-});
+}
+
+const exitTrigger = $('exitStealthTrigger');
+if (exitTrigger) {
+  exitTrigger.addEventListener('touchstart', handleExitTap, { passive: false });
+  exitTrigger.addEventListener('click', handleExitTap);
+}
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && $('stealthView').style.display !== 'none') {
@@ -2198,6 +2210,14 @@ if ($('quickShareStoryBtn')) $('quickShareStoryBtn').onclick = shareToInstagram;
 if ($('startTheatricalTimerBtn')) $('startTheatricalTimerBtn').onclick = startTheatricalTimer;
 if ($('resetTheatricalTimerBtn')) $('resetTheatricalTimerBtn').onclick = resetTheatricalTimer;
 
+if ($('launchDirectCalcCheck')) {
+  $('launchDirectCalcCheck').checked = state.launchDirectToCalculator;
+  $('launchDirectCalcCheck').onchange = (e) => {
+    state.launchDirectToCalculator = e.target.checked;
+    localStorage.setItem('mindpad_launch_direct_calc', state.launchDirectToCalculator);
+  };
+}
+
 if ($('stealthCamouflage')) {
   $('stealthCamouflage').value = state.stealthCamouflage;
   $('stealthCamouflage').onchange = (e) => {
@@ -2275,3 +2295,10 @@ switchPresentationLayer(1);
 resizeCanvases();
 updatePageUI();
 updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
+
+// Iniciar directo en Calculadora (Camuflaje total al abrir)
+if (state.launchDirectToCalculator) {
+  setTimeout(() => {
+    enterStealthMode('calculator');
+  }, 80);
+}

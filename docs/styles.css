@@ -440,14 +440,17 @@ button.primary {
   text-shadow: 0 0 10px rgba(185, 28, 28, 0.4);
 }
 
-/* Hotspot invisible para salir de la pantalla negra */
+/* Hotspot invisible para salir de la pantalla negra / calculadora */
 .stealth-exit-hotspot {
   position: absolute;
   top: 0;
   right: 0;
-  width: 90px;
-  height: 90px;
-  z-index: 10002;
+  width: 110px;
+  height: 100px;
+  z-index: 10010;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
 }
 
 /* ===================================================

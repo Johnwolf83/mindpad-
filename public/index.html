@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="styles.css?v=10" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=12').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=13').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -27,7 +27,7 @@
         <h1>MindPad <span>X10 Pro</span></h1>
       </div>
       <div class="header-actions">
-        <button id="calcModeBtn" class="btn secondary" title="Abrir Calculadora Camuflada" style="background:#1e293b; border:1px solid #475569; padding:6px 12px; font-size:12px;">🧮 Calculadora</button>
+        <button id="calcModeBtn" class="btn cta" title="Abrir Calculadora Camuflada" style="background:#f59e0b; color:#000; font-weight:700; border:none; padding:6px 12px; font-size:12px;">🧮 Calculadora</button>
         <button id="stealthBtn" class="primary pulse" title="Entrar en Modo Sigiloso">🤫 Modo Sigilo</button>
       </div>
     </header>
@@ -308,6 +308,12 @@
           <span>🎭 Ajustes de Mentalismo & Camuflaje</span>
         </div>
         <div class="field-row">
+          <label class="toggle-label" style="font-size:11.5px; color:#38bdf8; font-weight:600;">
+            <input id="launchDirectCalcCheck" type="checkbox" checked />
+            <span>🧮 Abrir app directo en Calculadora al iniciar</span>
+          </label>
+        </div>
+        <div class="field-row">
           <label for="stealthCamouflage">Camuflaje de Pantalla:</label>
           <select id="stealthCamouflage">
             <option value="calculator" selected>Calculadora Realista (Peek en Display)</option>
@@ -484,6 +490,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=12" type="module"></script>
+  <script src="mindpad.js?v=13" type="module"></script>
 </body>
 </html>
