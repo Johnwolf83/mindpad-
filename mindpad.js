@@ -1588,6 +1588,21 @@ $('testHaylouBtn').onclick = testHaylouSolar;
 $('generateAIBtn').onclick = generateAIImage;
 $('shareInstagramBtn').onclick = shareToInstagram;
 $('downloadOriginalBtn').onclick = downloadOriginalDrawing;
+
+if ($('publishWebhookNowBtn')) {
+  $('publishWebhookNowBtn').onclick = () => {
+    if (!state.generatedImageBlob) {
+      alert('Primero genera la imagen con el botón de arriba.');
+      return;
+    }
+    if (!state.igWebhookUrl) {
+      alert('Configura primero la URL de tu Webhook de Make.com.');
+      return;
+    }
+    publishToInstagramWebhook(state.generatedImageBlob, state.igWebhookUrl, state.igCaption, $('aiResultImg')?.src || '');
+    alert('Publicación enviada a Make.com. Aparecerá en tu Instagram en segundos.');
+  };
+}
 $('copyPromptBtn').onclick = () => {
   const p = $('aiPromptText').value;
   navigator.clipboard.writeText(p).then(() => alert('Prompt copiado al portapapeles ✓'));

@@ -9,10 +9,10 @@
   <title>MindPad X10 — Mentalism Peek Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=9').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=10').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -222,8 +222,11 @@
             </div>
           </div>
 
-          <div class="btn-group" style="margin-top:8px; display:flex; gap:8px;">
-            <button id="shareInstagramBtn" class="btn primary full">📸 Publicar / Compartir en Instagram</button>
+          <div class="btn-group" style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; gap:8px;">
+              <button id="shareInstagramBtn" class="btn primary" style="flex:1;">📸 Publicación Manual (Stories / Feed)</button>
+              <button id="publishWebhookNowBtn" class="btn cta" style="flex:1; background:#0284c7;">🚀 Publicar al Feed (Make)</button>
+            </div>
             <button id="downloadOriginalBtn" class="btn secondary full">💾 Guardar Trazo Original</button>
           </div>
         </div>
@@ -368,6 +371,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=9" type="module"></script>
+  <script src="mindpad.js?v=10" type="module"></script>
 </body>
 </html>
