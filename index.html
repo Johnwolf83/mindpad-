@@ -9,10 +9,10 @@
   <title>MindPad X10 — Mentalism Peek Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=3').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=4').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -85,6 +85,22 @@
             <option value="polaroid">Foto Polaroid vintage sobre madera</option>
             <option value="custom">Prompt Personalizado</option>
           </select>
+        </div>
+
+        <!-- Conceptos extraídos (editables con 1 toque) -->
+        <div class="concept-chips-row">
+          <div class="concept-field">
+            <label>🎨 Figura:</label>
+            <input id="conceptDrawing" type="text" value="gato" placeholder="ej. gato" />
+          </div>
+          <div class="concept-field">
+            <label>✍️ Palabra:</label>
+            <input id="conceptWord" type="text" value="Holanda" placeholder="ej. Holanda" />
+          </div>
+          <div class="concept-field">
+            <label>🔢 Número:</label>
+            <input id="conceptNumber" type="text" value="32143" placeholder="ej. 32143" />
+          </div>
         </div>
 
         <div class="field-row">
@@ -253,6 +269,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=3" type="module"></script>
+  <script src="mindpad.js?v=4" type="module"></script>
 </body>
 </html>

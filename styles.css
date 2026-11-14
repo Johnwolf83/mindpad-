@@ -509,3 +509,35 @@ button.primary {
   background: transparent;
   border: 1px solid #475569;
 }
+
+.concept-chips-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+.concept-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.concept-field label {
+  font-size: 11px;
+  color: #c084fc;
+  font-weight: 600;
+}
+.concept-field input {
+  background: #090b14;
+  color: #f1f5f9;
+  border: 1px solid #3b2866;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  width: 100%;
+}
+.concept-field input:focus {
+  border-color: #a855f7;
+  outline: none;
+}

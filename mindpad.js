@@ -66,6 +66,42 @@ const QUICKDRAW_ES = {
   "wine glass": "copa de vino", "wristwatch": "reloj de pulsera", "zebra": "cebra", "zigzag": "zigzag"
 };
 
+const QUICKDRAW_EN = {
+  gato: 'cat',
+  perro: 'dog',
+  árbol: 'christmas tree',
+  'árbol de navidad': 'christmas tree',
+  arbol: 'christmas tree',
+  coche: 'vintage car',
+  auto: 'car',
+  automóvil: 'car',
+  cara: 'face',
+  estrella: 'star',
+  casa: 'house',
+  barco: 'boat',
+  pez: 'fish',
+  flor: 'flower',
+  corazón: 'heart',
+  sol: 'sun',
+  luna: 'moon',
+  reloj: 'watch',
+  llave: 'key',
+  avión: 'airplane',
+  bicicleta: 'bicycle',
+  sombrero: 'hat',
+  pájaro: 'bird',
+  teléfono: 'telephone'
+};
+Object.entries(QUICKDRAW_ES).forEach(([en, es]) => {
+  QUICKDRAW_EN[es.toLowerCase()] = en;
+});
+
+function getEnglishDrawing(term) {
+  if (!term) return 'christmas tree';
+  const clean = term.toLowerCase().trim();
+  return QUICKDRAW_EN[clean] || clean;
+}
+
 // ==========================================
 // 2. CONSTANTES BLE DE LA HUION NOTE X10
 // ==========================================
@@ -290,6 +326,44 @@ function rotateCoords(nx, ny, orient) {
   return [nx, ny];
 }
 
+function segmentStrokes(strokes) {
+  if (strokes.length < 2) return [strokes];
+  const items = strokes.map((s) => {
+    let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
+    s.points.forEach((p) => {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    });
+    return { s, minX, maxX, minY, maxY, h: maxY - minY, w: maxX - minX, cy: (minY + maxY) / 2 };
+  });
+
+  items.sort((a, b) => a.cy - b.cy);
+  const bands = [];
+  items.forEach((it) => {
+    let added = false;
+    for (const b of bands) {
+      // Strokes belong to the same band if they vertically overlap OR if distance between centers is small (< 0.045)
+      const overlap = it.minY <= b.maxY && it.maxY >= b.minY;
+      const centerDist = Math.abs(it.cy - b.cy);
+      if (overlap || centerDist < 0.045) {
+        b.items.push(it.s);
+        b.minY = Math.min(b.minY, it.minY);
+        b.maxY = Math.max(b.maxY, it.maxY);
+        b.cy = (b.minY + b.maxY) / 2;
+        added = true;
+        break;
+      }
+    }
+    if (!added) {
+      bands.push({ items: [it.s], minY: it.minY, maxY: it.maxY, cy: it.cy });
+    }
+  });
+
+  return bands.map((b) => b.items);
+}
+
 // ==========================================
 // 6. MOTOR DE MENTALISMO & EXTRACCIÓN DE CONCEPTOS
 // ==========================================
@@ -319,11 +393,47 @@ async function onParticipantFinished() {
   } else {
     try {
       const mode = state.detectMode;
+      const bands = segmentStrokes(state.strokes);
+
+      let drawingStrokes = state.strokes;
+      let textStrokes = state.strokes;
+
+      // Si el espectador escribió varios renglones (número, palabra y dibujo separados)
+      if (bands.length >= 2) {
+        // Consultar OCR para cada banda
+        const bandOcrPromises = bands.map((b) => recognizeText(b));
+        const bandOcrResults = await Promise.all(bandOcrPromises);
+
+        let drawingBandIndex = -1;
+        let lowestOcrLen = Infinity;
+
+        bandOcrResults.forEach((res, idx) => {
+          const txt = (res?.[0] || '').trim();
+          const numMatch = txt.match(/\b\d{2,8}\b/);
+          if (numMatch && !detectedNumber) {
+            detectedNumber = numMatch[0];
+          } else if (txt.length >= 2 && !detectedWord) {
+            const clean = txt.replace(/[\d\W_]+/g, ' ').trim();
+            if (clean) detectedWord = clean;
+          }
+
+          // La banda con menos caracteres reconocibles suele ser el dibujo
+          if (txt.length < lowestOcrLen) {
+            lowestOcrLen = txt.length;
+            drawingBandIndex = idx;
+          }
+        });
+
+        if (drawingBandIndex !== -1) {
+          drawingStrokes = bands[drawingBandIndex];
+        }
+      }
+
       let drawingPromise = null;
       let textPromise = null;
 
-      if (mode === 'both' || mode === 'drawing') drawingPromise = recognizeDrawing(state.strokes);
-      if (mode === 'both' || mode === 'text') textPromise = recognizeText(state.strokes);
+      if (mode === 'both' || mode === 'drawing') drawingPromise = recognizeDrawing(drawingStrokes);
+      if (mode === 'both' || mode === 'text') textPromise = recognizeText(textStrokes);
 
       const [drawingResults, textResults] = await Promise.all([drawingPromise, textPromise]);
 
@@ -333,11 +443,14 @@ async function onParticipantFinished() {
 
       detectedDrawing = topDrawingEs;
 
-      // Extraer números y palabras del texto reconocido
-      const numMatch = topText.match(/\b\d{2,8}\b/);
-      if (numMatch) detectedNumber = numMatch[0];
-      const wordClean = topText.replace(/[\d\W_]+/g, ' ').trim();
-      if (wordClean) detectedWord = wordClean;
+      if (!detectedNumber) {
+        const numMatch = topText.match(/\b\d{2,8}\b/);
+        if (numMatch) detectedNumber = numMatch[0];
+      }
+      if (!detectedWord) {
+        const wordClean = topText.replace(/[\d\W_]+/g, ' ').trim();
+        if (wordClean) detectedWord = wordClean;
+      }
 
       if (mode === 'drawing' && drawingResults?.length) {
         finalSpeech = `${pagePrefix}Dibujo: ${topDrawingEs}`;
@@ -348,7 +461,7 @@ async function onParticipantFinished() {
         displayTitle = `✍️ ${topText}`;
         candidates = textResults;
       } else if (mode === 'both') {
-        const espCheck = classifyOffline(state.strokes, 'esp');
+        const espCheck = classifyOffline(drawingStrokes, 'esp');
         if (espCheck.confidence > 0.85) {
           finalSpeech = `${pagePrefix}${espCheck.speech}`;
           displayTitle = espCheck.title;
@@ -383,7 +496,11 @@ async function onParticipantFinished() {
     $('stealthOverlayText').textContent = displayTitle;
     renderCandidates(candidates);
 
-    // Actualizar prompt dinámico de IA
+    // Actualizar campos editables de la IA
+    if ($('conceptDrawing')) $('conceptDrawing').value = state.currentDrawing;
+    if ($('conceptWord')) $('conceptWord').value = state.currentWord;
+    if ($('conceptNumber')) $('conceptNumber').value = state.currentNumber;
+
     updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
 
     state.pages[state.currentPageIndex] = {
@@ -398,11 +515,9 @@ async function onParticipantFinished() {
     speakTTS(finalSpeech);
     if (state.vibrate) triggerHaptic([120]);
 
-    // Enviar a Smartwatch (formato compatible con Haylou Solar)
     const haylouText = `${state.currentDrawing ? '🎨 ' + state.currentDrawing : ''} ${state.currentWord ? '• ✍️ ' + state.currentWord : ''} ${state.currentNumber ? '• 🔢 ' + state.currentNumber : ''}`.trim() || finalSpeech;
     sendToSmartwatch('MindPad Peek', haylouText);
 
-    // Si tiene activado autogenerar IA
     if ($('autoGenerateAICheck') && $('autoGenerateAICheck').checked) {
       generateAIImage();
     }
@@ -558,11 +673,16 @@ function toQuickDrawInk(strokes, targetW, targetH) {
 function renderCandidates(list) {
   const container = $('confidenceList');
   container.innerHTML = '';
-  list.slice(0, 5).forEach((item) => {
+  list.slice(0, 6).forEach((item) => {
     const badge = document.createElement('span');
     badge.className = 'cand-badge';
     badge.textContent = item;
-    badge.onclick = () => speakTTS(item);
+    badge.onclick = () => {
+      speakTTS(item);
+      state.currentDrawing = item;
+      if ($('conceptDrawing')) $('conceptDrawing').value = item;
+      updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
+    };
     container.appendChild(badge);
   });
 }
@@ -984,18 +1104,19 @@ $('aodClock').addEventListener('click', (e) => {
 // 11. PREDICCIÓN IA (NANO BANANA STYLE) & INSTAGRAM
 // ==========================================
 function buildAIPrompt(drawing = '', word = '', number = '', preset = 'car_rain') {
-  const d = drawing || 'árbol de navidad';
+  const dEs = drawing || 'árbol de navidad';
+  const dEn = getEnglishDrawing(dEs);
   const w = word || 'Navidad';
   const n = number || '532142';
 
   if (preset === 'car_rain') {
-    return `Hyperrealistic photograph taken from inside a vintage car looking through the wet windshield at a rainy city street at dusk. Hanging from the rearview mirror is a red wooden ${d} keychain ornament air freshener. In the blurred background, a glowing neon billboard displays the word '${w}'. In front of the car, a black vehicle clearly displays the license plate numbers '${n}'. Cinematic lighting, photorealistic, 8k resolution, authentic camera bokeh.`;
+    return `Hyperrealistic photograph taken from inside a vintage car looking through the wet windshield at a rainy city street at dusk. Hanging from the rearview mirror is a red wooden ${dEn} keychain ornament air freshener. In the blurred background, a glowing neon billboard displays the word '${w}'. In front of the car, a black vehicle clearly displays the license plate numbers '${n}'. Cinematic lighting, photorealistic, 8k resolution, authentic camera bokeh.`;
   } else if (preset === 'child_paper') {
-    return `An authentic top-down photograph of a child's crayon drawing on wrinkled white paper lying on a rustic wooden table. The drawing looks like it was drawn by a 6-year-old child using a red crayon: showing a ${d}, with the word '${w}' written in red crayon next to it, and the number '${n}' clearly legible. Realistic paper texture, wax crayon smudges, natural soft room lighting.`;
+    return `An authentic top-down photograph of a child's crayon drawing on wrinkled white paper lying on a rustic wooden table. The drawing looks like it was drawn by a 6-year-old child using a red crayon: showing a cute ${dEn}, with the word '${w}' written in red crayon next to it, and the number '${n}' clearly legible. Realistic paper texture, wax crayon smudges, natural soft room lighting.`;
   } else if (preset === 'polaroid') {
-    return `A vintage authentic polaroid photograph lying on an old wooden table. The polaroid shows a real ${d}, with the handwritten word '${w}' at the bottom margin in black marker, and a receipt beside it with the numbers '${n}'. 1980s film grain, flash photography, hyperrealistic.`;
+    return `A vintage authentic polaroid photograph lying on an old wooden table. The polaroid shows a real ${dEn}, with the handwritten word '${w}' at the bottom margin in black marker, and a receipt beside it with the numbers '${n}'. 1980s film grain, flash photography, hyperrealistic.`;
   }
-  return `Photorealistic image containing a ${d}, the word '${w}' naturally integrated, and the number '${n}' on a sign or object. High quality, realistic.`;
+  return `Photorealistic image containing a ${dEn}, the word '${w}' naturally integrated, and the number '${n}' on a sign or object. High quality, realistic.`;
 }
 
 function updateAIPromptFromDetection(drawing, word, number) {
@@ -1113,6 +1234,25 @@ $('copyPromptBtn').onclick = () => {
 $('aiStylePreset').onchange = () => {
   updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
 };
+
+if ($('conceptDrawing')) {
+  $('conceptDrawing').oninput = (e) => {
+    state.currentDrawing = e.target.value.trim();
+    updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
+  };
+}
+if ($('conceptWord')) {
+  $('conceptWord').oninput = (e) => {
+    state.currentWord = e.target.value.trim();
+    updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
+  };
+}
+if ($('conceptNumber')) {
+  $('conceptNumber').oninput = (e) => {
+    state.currentNumber = e.target.value.trim();
+    updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
+  };
+}
 
 $('stealthCamouflage').onchange = (e) => { state.stealthCamouflage = e.target.value; };
 $('detectMode').onchange = (e) => { state.detectMode = e.target.value; };

@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>MindPad X10 — Mentalism Peek Pro</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css?v=4" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js?v=4').then((reg) => {
+        reg.update();
+      }).catch(() => {});
+    }
+  </script>
+</head>
+<body class="mode-setup">
+  <!-- PANTALLA DE CONFIGURACIÓN Y CONTROL -->
+  <div id="setupView" class="view">
+    <header>
+      <div class="logo">
+        <span class="icon">🔮</span>
+        <h1>MindPad <span>X10 Pro</span></h1>
+      </div>
+      <div class="header-actions">
+        <button id="stealthBtn" class="primary pulse" title="Entrar en Modo Sigiloso">🤫 Modo Sigilo</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Tarjeta Conexión Bluetooth -->
+      <section class="card ble-card">
+        <div class="card-title">
+          <span>📡 Conexión Huion Note X10 (BLE)</span>
+          <span id="bleStatusBadge" class="badge disconnected">Desconectada</span>
+        </div>
+        <p class="desc">Conexión inalámbrica directa por Bluetooth Low Energy. Sin app oficial ni drivers.</p>
+        <div class="btn-group">
+          <button id="bleConnectBtn" class="btn cta">⚡ Conectar Tableta BLE</button>
+          <button id="bleDisconnectBtn" class="btn secondary" style="display:none;">Desconectar</button>
+        </div>
+        <div id="bleInfo" class="meta-row">
+          <span>Lápiz: <strong id="penState">Fuera de rango</strong></span>
+          <span>Presión: <strong id="penPressure">0</strong></span>
+          <span>Batería: <strong id="tabletBattery">--%</strong></span>
+        </div>
+      </section>
+
+      <!-- Tarjeta Multi-Espectador & Smartwatch Haylou -->
+      <section class="card">
+        <div class="card-title">
+          <span>👥 Multi-Espectador & Smartwatch ⌚</span>
+          <span id="pageBadge" class="badge page-num">Espectador 1</span>
+        </div>
+        <div class="multi-row">
+          <button id="prevPageBtn" class="btn small">◀ Anterior</button>
+          <button id="newPageBtn" class="btn small primary">+ Nuevo Espectador</button>
+          <button id="nextPageBtn" class="btn small">Siguiente ▶</button>
+        </div>
+        <p class="desc" style="margin-top:8px;">Control ciego: presiona el <strong>botón de tu auricular</strong> o toca la <strong>mitad superior</strong> de la pantalla negra para avanzar.</p>
+        <div class="btn-group-col" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+          <button id="watchNotifyBtn" class="btn secondary full">⌚ Activar Notificaciones Smartwatch</button>
+          <button id="testHaylouBtn" class="btn small outline full">🔔 Probar Notificación en Haylou Solar</button>
+        </div>
+        <p class="hint-small">Para Haylou Solar: abre la app <strong>Haylou Fun</strong> en tu móvil -> Dispositivo -> Avisos de aplicaciones -> activa <strong>Chrome</strong> o <strong>MindPad</strong>.</p>
+      </section>
+
+      <!-- Tarjeta PREDICCIÓN IA (Generador de Imágenes / Instagram) -->
+      <section class="card ai-card">
+        <div class="card-title">
+          <span>🎨 Predicción IA (Estilo Nano Banana)</span>
+          <span class="badge" style="background:#2e1065; color:#c084fc;">Instagram Ready</span>
+        </div>
+        <p class="desc">Convierte automáticamente los trazos, palabras y números del espectador en una imagen fotorrealista para predecir su pensamiento.</p>
+
+        <div class="field-row">
+          <label for="aiStylePreset">Estilo de Predicción:</label>
+          <select id="aiStylePreset">
+            <option value="car_rain" selected>Coche bajo la lluvia (Retrovisor + Placas + Cartel)</option>
+            <option value="child_paper">Dibujo de niña de 6 años sobre papel (Crayón)</option>
+            <option value="polaroid">Foto Polaroid vintage sobre madera</option>
+            <option value="custom">Prompt Personalizado</option>
+          </select>
+        </div>
+
+        <!-- Conceptos extraídos (editables con 1 toque) -->
+        <div class="concept-chips-row">
+          <div class="concept-field">
+            <label>🎨 Figura:</label>
+            <input id="conceptDrawing" type="text" value="gato" placeholder="ej. gato" />
+          </div>
+          <div class="concept-field">
+            <label>✍️ Palabra:</label>
+            <input id="conceptWord" type="text" value="Holanda" placeholder="ej. Holanda" />
+          </div>
+          <div class="concept-field">
+            <label>🔢 Número:</label>
+            <input id="conceptNumber" type="text" value="32143" placeholder="ej. 32143" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label class="toggle-label">
+            <input id="autoGenerateAICheck" type="checkbox" />
+            <span>Generar imagen automáticamente al terminar el espectador</span>
+          </label>
+        </div>
+
+        <div class="prompt-box">
+          <div class="prompt-header">Prompt Dinámico:</div>
+          <textarea id="aiPromptText" rows="3" placeholder="El prompt se construirá automáticamente al escribir..."></textarea>
+        </div>
+
+        <div class="btn-group" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="generateAIBtn" class="btn cta" style="flex:1;">⚡ Generar Imagen IA Ahora</button>
+          <button id="copyPromptBtn" class="btn small" style="min-width:110px;">📋 Copiar Prompt</button>
+        </div>
+
+        <div id="aiImageContainer" class="ai-preview-container" style="display:none; margin-top:12px;">
+          <div class="ai-status" id="aiStatusText">Generando obra de arte...</div>
+          <img id="aiResultImg" class="ai-result-img" alt="Predicción IA" />
+          <div class="btn-group" style="margin-top:8px; display:flex; gap:8px;">
+            <button id="shareInstagramBtn" class="btn primary full">📸 Publicar / Compartir en Instagram</button>
+            <button id="downloadOriginalBtn" class="btn secondary full">💾 Guardar Trazo Original</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tarjeta Mentalismo, Audio & Camuflaje -->
+      <section class="card">
+        <div class="card-title">
+          <span>🎭 Ajustes de Mentalismo & Camuflaje</span>
+        </div>
+        <div class="field-row">
+          <label for="stealthCamouflage">Camuflaje de Pantalla:</label>
+          <select id="stealthCamouflage">
+            <option value="lockscreen" selected>Pantalla de Bloqueo Real (WhatsApp)</option>
+            <option value="aod">AOD Reloj Minimalista Negro</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label for="detectMode">Modo de Detección:</label>
+          <select id="detectMode">
+            <option value="both" selected>Híbrido (Dibujos + Texto + ESP)</option>
+            <option value="esp">Símbolos Zener / ESP (Offline)</option>
+            <option value="digits">Números / Códigos PIN (Offline)</option>
+            <option value="drawing">Solo Dibujos / Formas</option>
+            <option value="text">Solo Palabras / Ciudades</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label for="strokeWidthSlider">Grosor del Trazo (Peek):</label>
+          <input id="strokeWidthSlider" type="range" min="0.6" max="3.5" step="0.2" value="1.2" />
+          <span id="strokeWidthVal">1.2 (Fino)</span>
+        </div>
+        <div class="field-row">
+          <label for="ttsRate">Velocidad del susurro:</label>
+          <input id="ttsRate" type="range" min="0.8" max="1.8" step="0.1" value="1.2" />
+          <span id="ttsRateVal">1.2x</span>
+        </div>
+        <div class="field-row">
+          <label for="delayTimeout">Tiempo tras dejar de escribir:</label>
+          <select id="delayTimeout">
+            <option value="1200">1.2 segundos (Rápido)</option>
+            <option value="1800" selected>1.8 segundos (Recomendado)</option>
+            <option value="2500">2.5 segundos (Tranquilo)</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label class="toggle-label">
+            <input id="vibrateCheck" type="checkbox" checked />
+            <span>Vibración silenciosa en bolsillo al completar</span>
+          </label>
+        </div>
+        <button id="testAudioBtn" class="btn secondary full">🔊 Probar Audio en Auricular</button>
+      </section>
+
+      <!-- Tarjeta Orientación del Bloc -->
+      <section class="card">
+        <div class="card-title">
+          <span>📐 Orientación del Bloc</span>
+        </div>
+        <div class="field-row">
+          <label for="orientationSelect">Posición de la Libreta:</label>
+          <select id="orientationSelect">
+            <option value="portrait_cw" selected>Vertical (Espiral / Logo a la Izquierda)</option>
+            <option value="portrait_ccw">Vertical (Espiral / Logo a la Derecha)</option>
+            <option value="landscape">Horizontal (Apaisada)</option>
+            <option value="inverted">Invertida 180°</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Monitor de Prueba en Pantalla -->
+      <section class="card">
+        <div class="card-title">
+          <span>👁️ Monitor de Prueba</span>
+          <button id="clearMonitorBtn" class="btn small">Limpiar</button>
+        </div>
+        <div class="preview-box">
+          <canvas id="previewCanvas"></canvas>
+        </div>
+        <div class="result-box">
+          <div class="result-label">Último Reconocimiento:</div>
+          <div id="lastResult" class="result-text">— Esperando que alguien escriba —</div>
+          <div id="confidenceList" class="alts"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- PANTALLA SIGILOSA / MENTALISM STEALTH PEEK -->
+  <div id="stealthView" class="view" style="display: none;">
+    <!-- CAMUFLAJE 1: Pantalla de Bloqueo Real (Fake Lockscreen) -->
+    <div id="fakeLockscreen" class="fake-lockscreen">
+      <div class="fake-status-bar">
+        <span id="lockStatusTime">12:00</span>
+        <div class="fake-icons">
+          <span>📶 5G</span>
+          <span>Wi-Fi</span>
+          <span>🔋 84%</span>
+        </div>
+      </div>
+      <div class="fake-clock-box">
+        <div id="lockClockTime" class="fake-time">12:00</div>
+        <div id="lockClockDate" class="fake-date">Viernes, 13 de noviembre</div>
+      </div>
+
+      <!-- Notificación falsa de WhatsApp para disimulo total en la mesa -->
+      <div class="fake-notification">
+        <div class="notif-header">
+          <span class="notif-app">💬 WhatsApp</span>
+          <span class="notif-time">hace 3 min</span>
+        </div>
+        <div class="notif-title">Mamá</div>
+        <div class="notif-body">¿A qué hora llegas a comer hoy? Te guardo comida.</div>
+      </div>
+
+      <div class="fake-lock-footer">
+        <div class="fake-lock-icon">🔒</div>
+        <div class="fake-swipe-hint">Desliza para desbloquear</div>
+      </div>
+    </div>
+
+    <!-- CAMUFLAJE 2: Reloj Always-On Minimalista (AOD) -->
+    <div id="aodClock" class="aod-display" style="display: none;">
+      <div id="clockTime" class="aod-time">12:00</div>
+      <div class="aod-battery">🔋 84%</div>
+      <div class="aod-hint">Mantén presionado para ver trazo</div>
+    </div>
+
+    <!-- Indicador de página y estado microscópico en la esquina -->
+    <div class="stealth-corner-info">
+      <span id="stealthPageIndicator" class="stealth-page-tag">P1</span>
+      <div id="stealthStatusDot" class="stealth-dot"></div>
+    </div>
+
+    <!-- Visualizador de Peek instantáneo (aparece al mantener presionado) -->
+    <div id="peekContainer" class="peek-overlay">
+      <canvas id="stealthCanvas"></canvas>
+      <div id="stealthOverlayText" class="stealth-text"></div>
+    </div>
+
+    <!-- Botón invisible para salir del modo sigilo (triple toque en la esquina superior derecha) -->
+    <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
+  </div>
+
+  <script src="mindpad.js?v=4" type="module"></script>
+</body>
+</html>
