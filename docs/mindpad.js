@@ -146,6 +146,12 @@ const state = {
   currentNumber: '532142',
   generatedImageBlob: null,
 
+  // Motor IA & OpenRouter
+  aiProvider: localStorage.getItem('mindpad_ai_provider') || 'pollinations',
+  openRouterKey: localStorage.getItem('mindpad_openrouter_key') || '',
+  openRouterModel: localStorage.getItem('mindpad_openrouter_model') || 'google/gemini-2.5-flash-image',
+  openRouterVision: localStorage.getItem('mindpad_openrouter_vision') !== 'false',
+
   // Ajustes de mentalismo
   orientation: 'portrait_cw',
   detectMode: 'both',
@@ -367,6 +373,60 @@ function segmentStrokes(strokes) {
 // ==========================================
 // 6. MOTOR DE MENTALISMO & EXTRACCIÓN DE CONCEPTOS
 // ==========================================
+async function recognizeWithOpenRouterVision(strokes, apiKey) {
+  const c = document.createElement('canvas');
+  c.width = 600;
+  c.height = 800;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 600, 800);
+
+  strokes.forEach((s) => {
+    for (let i = 1; i < s.points.length; i++) {
+      drawSeg(ctx, 600, 800, s.points[i - 1], s.points[i], '#c01525', false);
+    }
+  });
+
+  const base64Data = c.toDataURL('image/jpeg', 0.85);
+
+  const payload = {
+    model: 'google/gemini-2.5-flash',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: 'Eres el asistente secreto de un mentalista. Analiza este dibujo/nota manuscrita. El espectador suele escribir: un número (dígitos), una palabra manuscrita y/o un dibujo (ej. gato, auto, árbol, estrella, cara, etc.). Responde ESTRICTAMENTE un JSON con este formato exacto: {"numero": "...", "palabra": "...", "figura": "...", "figura_en": "..."}. Si alguno no está presente, déjalo como string vacío "". Sin explicaciones ni markdown.'
+          },
+          {
+            type: 'image_url',
+            image_url: { url: base64Data }
+          }
+        ]
+      }
+    ]
+  };
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey.trim()}`,
+      'HTTP-Referer': 'https://johnwolf83.github.io/mindpad-/',
+      'X-Title': 'MindPad X10'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+  if (data?.error) throw new Error(data.error.message || 'Error en OpenRouter Vision');
+
+  const content = data?.choices?.[0]?.message?.content || '{}';
+  const clean = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+  return JSON.parse(clean);
+}
+
 async function onParticipantFinished() {
   if (!state.strokes.length) return;
 
@@ -392,88 +452,116 @@ async function onParticipantFinished() {
     detectedDrawing = offlineResult.title;
   } else {
     try {
-      const mode = state.detectMode;
-      const bands = segmentStrokes(state.strokes);
+      let usedVision = false;
 
-      let drawingStrokes = state.strokes;
-      let textStrokes = state.strokes;
+      // 1. Si el usuario activó Gemini Vision con su Token de OpenRouter
+      if (state.openRouterKey && state.openRouterVision) {
+        try {
+          const vData = await recognizeWithOpenRouterVision(state.strokes, state.openRouterKey);
+          if (vData && (vData.numero || vData.palabra || vData.figura)) {
+            detectedNumber = (vData.numero || '').trim();
+            detectedWord = (vData.palabra || '').trim();
+            detectedDrawing = (vData.figura || '').trim();
 
-      // Si el espectador escribió varios renglones (número, palabra y dibujo separados)
-      if (bands.length >= 2) {
-        // Consultar OCR para cada banda
-        const bandOcrPromises = bands.map((b) => recognizeText(b));
-        const bandOcrResults = await Promise.all(bandOcrPromises);
+            const elements = [];
+            if (detectedDrawing) elements.push(`🎨 ${detectedDrawing}`);
+            if (detectedWord) elements.push(`✍️ ${detectedWord}`);
+            if (detectedNumber) elements.push(`🔢 ${detectedNumber}`);
 
-        let drawingBandIndex = -1;
-        let lowestOcrLen = Infinity;
-
-        bandOcrResults.forEach((res, idx) => {
-          const txt = (res?.[0] || '').trim();
-          const numMatch = txt.match(/\b\d{2,8}\b/);
-          if (numMatch && !detectedNumber) {
-            detectedNumber = numMatch[0];
-          } else if (txt.length >= 2 && !detectedWord) {
-            const clean = txt.replace(/[\d\W_]+/g, ' ').trim();
-            if (clean) detectedWord = clean;
+            displayTitle = elements.join(' • ') || '✨ Trazo analizado';
+            finalSpeech = `${pagePrefix}Mente leída: ${detectedDrawing ? 'Figura ' + detectedDrawing + '. ' : ''}${detectedWord ? 'Palabra ' + detectedWord + '. ' : ''}${detectedNumber ? 'Número ' + detectedNumber : ''}`.trim();
+            candidates = [detectedDrawing, detectedWord, detectedNumber].filter(Boolean);
+            usedVision = true;
           }
-
-          // La banda con menos caracteres reconocibles suele ser el dibujo
-          if (txt.length < lowestOcrLen) {
-            lowestOcrLen = txt.length;
-            drawingBandIndex = idx;
-          }
-        });
-
-        if (drawingBandIndex !== -1) {
-          drawingStrokes = bands[drawingBandIndex];
+        } catch (vErr) {
+          console.warn('OpenRouter Vision falló o no respondió JSON, recurriendo a reconocedor local:', vErr);
         }
       }
 
-      let drawingPromise = null;
-      let textPromise = null;
+      if (!usedVision) {
+        const mode = state.detectMode;
+        const bands = segmentStrokes(state.strokes);
 
-      if (mode === 'both' || mode === 'drawing') drawingPromise = recognizeDrawing(drawingStrokes);
-      if (mode === 'both' || mode === 'text') textPromise = recognizeText(textStrokes);
+        let drawingStrokes = state.strokes;
+        let textStrokes = state.strokes;
 
-      const [drawingResults, textResults] = await Promise.all([drawingPromise, textPromise]);
+        // Si el espectador escribió varios renglones (número, palabra y dibujo separados)
+        if (bands.length >= 2) {
+          // Consultar OCR para cada banda
+          const bandOcrPromises = bands.map((b) => recognizeText(b));
+          const bandOcrResults = await Promise.all(bandOcrPromises);
 
-      const topText = textResults?.[0] || '';
-      const topDrawingEn = drawingResults?.[0] || '';
-      const topDrawingEs = QUICKDRAW_ES[topDrawingEn] || topDrawingEn;
+          let drawingBandIndex = -1;
+          let lowestOcrLen = Infinity;
 
-      detectedDrawing = topDrawingEs;
+          bandOcrResults.forEach((res, idx) => {
+            const txt = (res?.[0] || '').trim();
+            const numMatch = txt.match(/\b\d{2,8}\b/);
+            if (numMatch && !detectedNumber) {
+              detectedNumber = numMatch[0];
+            } else if (txt.length >= 2 && !detectedWord) {
+              const clean = txt.replace(/[\d\W_]+/g, ' ').trim();
+              if (clean) detectedWord = clean;
+            }
 
-      if (!detectedNumber) {
-        const numMatch = topText.match(/\b\d{2,8}\b/);
-        if (numMatch) detectedNumber = numMatch[0];
-      }
-      if (!detectedWord) {
-        const wordClean = topText.replace(/[\d\W_]+/g, ' ').trim();
-        if (wordClean) detectedWord = wordClean;
-      }
+            // La banda con menos caracteres reconocibles suele ser el dibujo
+            if (txt.length < lowestOcrLen) {
+              lowestOcrLen = txt.length;
+              drawingBandIndex = idx;
+            }
+          });
 
-      if (mode === 'drawing' && drawingResults?.length) {
-        finalSpeech = `${pagePrefix}Dibujo: ${topDrawingEs}`;
-        displayTitle = `🎨 ${topDrawingEs.toUpperCase()}`;
-        candidates = drawingResults.map((w) => QUICKDRAW_ES[w] || w);
-      } else if (mode === 'text' && textResults?.length) {
-        finalSpeech = `${pagePrefix}${topText}`;
-        displayTitle = `✍️ ${topText}`;
-        candidates = textResults;
-      } else if (mode === 'both') {
-        const espCheck = classifyOffline(drawingStrokes, 'esp');
-        if (espCheck.confidence > 0.85) {
-          finalSpeech = `${pagePrefix}${espCheck.speech}`;
-          displayTitle = espCheck.title;
-          candidates = [espCheck.title, topDrawingEs, topText];
-        } else if (topText && topText.length >= 3 && !/^[._\-\s]+$/.test(topText)) {
-          finalSpeech = `${pagePrefix}${topText}. O dibujo de ${topDrawingEs}`;
-          displayTitle = `✍️ ${topText}  /  🎨 ${topDrawingEs}`;
-          candidates = [topText, topDrawingEs, ...(textResults?.slice(1, 4) || [])];
-        } else {
+          if (drawingBandIndex !== -1) {
+            drawingStrokes = bands[drawingBandIndex];
+          }
+        }
+
+        let drawingPromise = null;
+        let textPromise = null;
+
+        if (mode === 'both' || mode === 'drawing') drawingPromise = recognizeDrawing(drawingStrokes);
+        if (mode === 'both' || mode === 'text') textPromise = recognizeText(textStrokes);
+
+        const [drawingResults, textResults] = await Promise.all([drawingPromise, textPromise]);
+
+        const topText = textResults?.[0] || '';
+        const topDrawingEn = drawingResults?.[0] || '';
+        const topDrawingEs = QUICKDRAW_ES[topDrawingEn] || topDrawingEn;
+
+        detectedDrawing = topDrawingEs;
+
+        if (!detectedNumber) {
+          const numMatch = topText.match(/\b\d{2,8}\b/);
+          if (numMatch) detectedNumber = numMatch[0];
+        }
+        if (!detectedWord) {
+          const wordClean = topText.replace(/[\d\W_]+/g, ' ').trim();
+          if (wordClean) detectedWord = wordClean;
+        }
+
+        if (mode === 'drawing' && drawingResults?.length) {
           finalSpeech = `${pagePrefix}Dibujo: ${topDrawingEs}`;
           displayTitle = `🎨 ${topDrawingEs.toUpperCase()}`;
-          candidates = [topDrawingEs, ...(drawingResults?.slice(1, 5).map((w) => QUICKDRAW_ES[w] || w) || [])];
+          candidates = drawingResults.map((w) => QUICKDRAW_ES[w] || w);
+        } else if (mode === 'text' && textResults?.length) {
+          finalSpeech = `${pagePrefix}${topText}`;
+          displayTitle = `✍️ ${topText}`;
+          candidates = textResults;
+        } else if (mode === 'both') {
+          const espCheck = classifyOffline(drawingStrokes, 'esp');
+          if (espCheck.confidence > 0.85) {
+            finalSpeech = `${pagePrefix}${espCheck.speech}`;
+            displayTitle = espCheck.title;
+            candidates = [espCheck.title, topDrawingEs, topText];
+          } else if (topText && topText.length >= 3 && !/^[._\-\s]+$/.test(topText)) {
+            finalSpeech = `${pagePrefix}${topText}. O dibujo de ${topDrawingEs}`;
+            displayTitle = `✍️ ${topText}  /  🎨 ${topDrawingEs}`;
+            candidates = [topText, topDrawingEs, ...(textResults?.slice(1, 4) || [])];
+          } else {
+            finalSpeech = `${pagePrefix}Dibujo: ${topDrawingEs}`;
+            displayTitle = `🎨 ${topDrawingEs.toUpperCase()}`;
+            candidates = [topDrawingEs, ...(drawingResults?.slice(1, 5).map((w) => QUICKDRAW_ES[w] || w) || [])];
+          }
         }
       }
     } catch (err) {
@@ -1134,9 +1222,73 @@ async function generateAIImage() {
   if (!prompt) return;
 
   $('aiImageContainer').style.display = 'block';
-  $('aiStatusText').textContent = 'Generando predicción con IA... (4-8 seg)';
   $('aiResultImg').style.display = 'none';
 
+  // 1. Generación vía OpenRouter si está configurado y tiene token
+  if (state.aiProvider === 'openrouter' && state.openRouterKey) {
+    const model = state.openRouterModel === 'custom'
+      ? ($('customModelInput')?.value?.trim() || 'google/gemini-2.5-flash-image')
+      : state.openRouterModel;
+
+    const shortName = model.split('/').pop();
+    $('aiStatusText').textContent = `🚀 Generando con OpenRouter (${shortName})... (5-15 seg)`;
+
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.openRouterKey.trim()}`,
+          'HTTP-Referer': 'https://johnwolf83.github.io/mindpad-/',
+          'X-Title': 'MindPad X10'
+        },
+        body: JSON.stringify({
+          model,
+          prompt,
+          aspect_ratio: '3:4'
+        })
+      });
+
+      const data = await res.json();
+      if (data?.error) {
+        throw new Error(data.error.message || `Error ${res.status}`);
+      }
+
+      const item = data?.data?.[0];
+      if (!item) throw new Error('No se recibió imagen de OpenRouter');
+
+      let blob = null;
+      if (item.b64_json) {
+        const mime = item.mime_type || 'image/png';
+        const byteChars = atob(item.b64_json);
+        const byteNumbers = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) {
+          byteNumbers[i] = byteChars.charCodeAt(i);
+        }
+        blob = new Blob([byteNumbers], { type: mime });
+      } else if (item.url) {
+        const imgFetch = await fetch(item.url);
+        blob = await imgFetch.blob();
+      }
+
+      if (!blob) throw new Error('Formato de imagen no reconocido');
+
+      state.generatedImageBlob = blob;
+      $('aiResultImg').src = URL.createObjectURL(blob);
+      $('aiResultImg').style.display = 'block';
+      $('aiStatusText').textContent = `✨ Imagen generada con ${shortName} (OpenRouter)`;
+
+      speakTTS('Predicción lista con OpenRouter');
+      triggerHaptic([80, 50, 80, 50, 80]);
+      return;
+    } catch (err) {
+      console.warn('Fallo OpenRouter, recurriendo a Pollinations:', err);
+      $('aiStatusText').textContent = `⚠️ OpenRouter: ${err.message}. Generando con Flux gratuito...`;
+    }
+  }
+
+  // 2. Generación estándar vía Pollinations AI (Flux.1 - Gratuito)
+  $('aiStatusText').textContent = 'Generando con Pollinations Flux... (4-8 seg)';
   try {
     const seed = Math.floor(Math.random() * 999999);
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=1024&nologo=true&seed=${seed}&model=flux`;
@@ -1148,7 +1300,7 @@ async function generateAIImage() {
     const localUrl = URL.createObjectURL(blob);
     $('aiResultImg').src = localUrl;
     $('aiResultImg').style.display = 'block';
-    $('aiStatusText').textContent = '✨ Predicción generada con éxito';
+    $('aiStatusText').textContent = '✨ Predicción generada con éxito (Flux)';
 
     speakTTS('Predicción de imagen lista');
     triggerHaptic([80, 50, 80, 50, 80]);
@@ -1234,6 +1386,86 @@ $('copyPromptBtn').onclick = () => {
 $('aiStylePreset').onchange = () => {
   updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
 };
+
+// Configuración de Motor IA & OpenRouter
+if ($('aiProviderSelect')) {
+  $('aiProviderSelect').value = state.aiProvider;
+  $('openRouterSettings').style.display = state.aiProvider === 'openrouter' ? 'block' : 'none';
+
+  $('aiProviderSelect').onchange = (e) => {
+    state.aiProvider = e.target.value;
+    localStorage.setItem('mindpad_ai_provider', state.aiProvider);
+    $('openRouterSettings').style.display = state.aiProvider === 'openrouter' ? 'block' : 'none';
+  };
+}
+
+if ($('openRouterKey')) {
+  $('openRouterKey').value = state.openRouterKey;
+  $('openRouterKey').oninput = (e) => {
+    state.openRouterKey = e.target.value.trim();
+    localStorage.setItem('mindpad_openrouter_key', state.openRouterKey);
+  };
+}
+
+if ($('openRouterModel')) {
+  $('openRouterModel').value = state.openRouterModel;
+  $('customModelRow').style.display = state.openRouterModel === 'custom' ? 'flex' : 'none';
+
+  $('openRouterModel').onchange = (e) => {
+    state.openRouterModel = e.target.value;
+    localStorage.setItem('mindpad_openrouter_model', state.openRouterModel);
+    $('customModelRow').style.display = state.openRouterModel === 'custom' ? 'flex' : 'none';
+  };
+}
+
+if ($('customModelInput')) {
+  $('customModelInput').value = localStorage.getItem('mindpad_openrouter_custom_model') || '';
+  $('customModelInput').oninput = (e) => {
+    localStorage.setItem('mindpad_openrouter_custom_model', e.target.value.trim());
+  };
+}
+
+if ($('openRouterVisionCheck')) {
+  $('openRouterVisionCheck').checked = state.openRouterVision;
+  $('openRouterVisionCheck').onchange = (e) => {
+    state.openRouterVision = e.target.checked;
+    localStorage.setItem('mindpad_openrouter_vision', state.openRouterVision);
+  };
+}
+
+if ($('testOpenRouterBtn')) {
+  $('testOpenRouterBtn').onclick = async () => {
+    const key = $('openRouterKey').value.trim();
+    if (!key) {
+      alert('Ingresa primero tu token de OpenRouter (comienza con sk-or-v1-...)');
+      return;
+    }
+    const statusEl = $('openRouterTokenStatus');
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#c084fc';
+    statusEl.textContent = 'Verificando token con OpenRouter...';
+
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
+        headers: { 'Authorization': `Bearer ${key}` }
+      });
+      const data = await res.json();
+      if (data?.data) {
+        const info = data.data;
+        const limit = info.limit != null ? `$${info.limit}` : 'Sin límite';
+        const usage = info.usage != null ? `$${info.usage.toFixed(3)}` : '$0';
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = `✓ Token Válido (${info.label || 'Activo'}). Uso: ${usage} / Límite: ${limit}`;
+      } else {
+        statusEl.style.color = '#f87171';
+        statusEl.textContent = `✗ Error: ${data?.error?.message || 'Token no válido'}`;
+      }
+    } catch (err) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `✗ Error de conexión: ${err.message}`;
+    }
+  };
+}
 
 if ($('conceptDrawing')) {
   $('conceptDrawing').oninput = (e) => {

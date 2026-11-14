@@ -9,10 +9,10 @@
   <title>MindPad X10 — Mentalism Peek Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=4').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=5').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -76,6 +76,52 @@
           <span class="badge" style="background:#2e1065; color:#c084fc;">Instagram Ready</span>
         </div>
         <p class="desc">Convierte automáticamente los trazos, palabras y números del espectador en una imagen fotorrealista para predecir su pensamiento.</p>
+
+        <!-- Motor de IA & OpenRouter -->
+        <div class="field-row">
+          <label for="aiProviderSelect">Motor de Generación:</label>
+          <select id="aiProviderSelect">
+            <option value="pollinations" selected>⚡ Pollinations AI (Gratis - Sin Token - FLUX.1)</option>
+            <option value="openrouter">🚀 OpenRouter (Con Token - Nano Banana, FLUX.2, GPT)</option>
+          </select>
+        </div>
+
+        <!-- Panel de Configuración OpenRouter -->
+        <div id="openRouterSettings" style="display:none; background:#0d111d; border:1px solid #3b2866; border-radius:8px; padding:10px; margin-bottom:12px;">
+          <div class="field-row" style="margin-bottom:8px;">
+            <label for="openRouterKey" style="color:#c084fc; font-weight:600;">🔑 Token OpenRouter:</label>
+            <div style="display:flex; gap:6px; flex:1;">
+              <input id="openRouterKey" type="password" placeholder="sk-or-v1-..." style="flex:1;" />
+              <button id="testOpenRouterBtn" class="btn small" style="white-space:nowrap; padding:4px 8px; font-size:11px;">Validar</button>
+            </div>
+          </div>
+          <div id="openRouterTokenStatus" style="font-size:11px; margin-bottom:8px; display:none;"></div>
+
+          <div class="field-row" style="margin-bottom:8px;">
+            <label for="openRouterModel">Modelo de Imagen:</label>
+            <select id="openRouterModel">
+              <option value="google/gemini-2.5-flash-image" selected>🍌 Google: Nano Banana (Gemini Flash Image)</option>
+              <option value="google/gemini-3.1-flash-image">🍌 Google: Nano Banana 2 (Gemini 3.1 Flash Image)</option>
+              <option value="black-forest-labs/flux.2-pro">🎨 Black Forest: FLUX.2 Pro</option>
+              <option value="black-forest-labs/flux-3-image">🎨 Black Forest: FLUX 3 Image</option>
+              <option value="openai/gpt-image-2.6-sunburst">🤖 OpenAI: GPT Image 2.6</option>
+              <option value="bytedance-seed/seedream-5-0-flash">⚡ ByteDance: Seedream 5.0 Flash</option>
+              <option value="recraft/recraft-v4.1-flash-v2:free">🆓 Recraft V4.1 Flash (Gratuito)</option>
+              <option value="custom">✏️ Modelo Personalizado (Ingresar ID)...</option>
+            </select>
+          </div>
+          <div id="customModelRow" class="field-row" style="display:none; margin-bottom:8px;">
+            <label for="customModelInput">ID del Modelo:</label>
+            <input id="customModelInput" type="text" placeholder="ej. google/gemini-3-pro-image" />
+          </div>
+
+          <div class="field-row" style="margin-bottom:0;">
+            <label class="toggle-label" style="font-size:11.5px; color:#cbd5e1;">
+              <input id="openRouterVisionCheck" type="checkbox" checked />
+              <span>🧠 Usar Gemini Vision para descifrar el trazo manuscrito (100% infalible)</span>
+            </label>
+          </div>
+        </div>
 
         <div class="field-row">
           <label for="aiStylePreset">Estilo de Predicción:</label>
@@ -269,6 +315,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=4" type="module"></script>
+  <script src="mindpad.js?v=5" type="module"></script>
 </body>
 </html>
