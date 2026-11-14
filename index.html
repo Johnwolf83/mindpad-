@@ -9,10 +9,10 @@
   <title>MindPad X10 — Mentalism Peek Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=6').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=7').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -100,13 +100,13 @@
           <div class="field-row" style="margin-bottom:8px;">
             <label for="openRouterModel">Modelo de Imagen:</label>
             <select id="openRouterModel">
-              <option value="google/gemini-2.5-flash-image" selected>🍌 Google: Nano Banana (Gemini Flash Image)</option>
-              <option value="google/gemini-3.1-flash-image">🍌 Google: Nano Banana 2 (Gemini 3.1 Flash Image)</option>
-              <option value="black-forest-labs/flux.2-pro">🎨 Black Forest: FLUX.2 Pro</option>
-              <option value="black-forest-labs/flux-3-image">🎨 Black Forest: FLUX 3 Image</option>
-              <option value="openai/gpt-image-2.6-sunburst">🤖 OpenAI: GPT Image 2.6</option>
-              <option value="bytedance-seed/seedream-5-0-flash">⚡ ByteDance: Seedream 5.0 Flash</option>
-              <option value="recraft/recraft-v4.1-flash-v2:free">🆓 Recraft V4.1 Flash (Gratuito)</option>
+              <option value="google/gemini-2.5-flash-image" selected>🍌 Google: Nano Banana (Flash) — ~$0.45 MXN</option>
+              <option value="google/gemini-3.1-flash-image">🍌 Google: Nano Banana 2 — ~$0.60 MXN</option>
+              <option value="bytedance-seed/seedream-5-0-flash">⚡ ByteDance: Seedream 5.0 Flash — ~$0.35 MXN</option>
+              <option value="black-forest-labs/flux.2-pro">🎨 Black Forest: FLUX.2 Pro — ~$0.65 MXN</option>
+              <option value="black-forest-labs/flux-3-image">🎨 Black Forest: FLUX 3 Image — ~$0.80 MXN</option>
+              <option value="openai/gpt-image-2.6-sunburst">🤖 OpenAI: GPT Image 2.6 — ~$0.55 MXN</option>
+              <option value="recraft/recraft-v4.1-flash-v2:free">🆓 Recraft V4.1 Flash — Gratis ($0.00 MXN)</option>
               <option value="custom">✏️ Modelo Personalizado (Ingresar ID)...</option>
             </select>
           </div>
@@ -334,6 +334,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=6" type="module"></script>
+  <script src="mindpad.js?v=7" type="module"></script>
 </body>
 </html>

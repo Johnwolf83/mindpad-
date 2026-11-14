@@ -1327,10 +1327,17 @@ async function generateAIImage() {
 
       if (!blob) throw new Error('Formato de imagen no reconocido');
 
+      let costText = '';
+      if (data?.usage?.cost != null) {
+        const usd = data.usage.cost;
+        const mxn = (usd * 20.0).toFixed(2);
+        costText = ` • Costo: ~$${mxn} MXN ($${usd < 0.01 ? usd.toFixed(4) : usd.toFixed(3)} USD)`;
+      }
+
       state.generatedImageBlob = blob;
       $('aiResultImg').src = URL.createObjectURL(blob);
       $('aiResultImg').style.display = 'block';
-      $('aiStatusText').textContent = `✨ Imagen generada con ${shortName} (OpenRouter)`;
+      $('aiStatusText').textContent = `✨ Generada con ${shortName}${costText}`;
 
       speakTTS('Predicción lista con OpenRouter');
       triggerHaptic([80, 50, 80, 50, 80]);
