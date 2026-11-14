@@ -152,6 +152,12 @@ const state = {
   openRouterModel: localStorage.getItem('mindpad_openrouter_model') || 'google/gemini-2.5-flash-image',
   openRouterVision: localStorage.getItem('mindpad_openrouter_vision') !== 'false',
 
+  // Metadatos EXIF Retro & Auto-Publicación Instagram
+  exifDaysBack: parseInt(localStorage.getItem('mindpad_exif_days_back') || '3', 10),
+  autoPublishInstagram: localStorage.getItem('mindpad_ig_autopublish') === 'true',
+  igWebhookUrl: localStorage.getItem('mindpad_ig_webhook_url') || '',
+  igCaption: localStorage.getItem('mindpad_ig_caption') || 'Una extraña intuición que tuve hace días...',
+
   // Ajustes de mentalismo
   orientation: 'portrait_cw',
   detectMode: 'both',
@@ -1217,6 +1223,128 @@ function updateAIPromptFromDetection(drawing, word, number) {
   if ($('aiPromptText')) $('aiPromptText').value = prompt;
 }
 
+function buildExifSegment(date) {
+  const Y = date.getFullYear();
+  const M = String(date.getMonth() + 1).padStart(2, '0');
+  const D = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  const dateStr = Y + ':' + M + ':' + D + ' ' + h + ':' + m + ':' + s + '\0';
+
+  const buf = new Uint8Array(120);
+  const view = new DataView(buf.buffer);
+  let pos = 0;
+
+  // 'Exif\0\0'
+  const exifHeader = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
+  for (let i = 0; i < 6; i++) buf[pos++] = exifHeader[i];
+
+  const tiffStart = pos;
+  // 'MM' (Big Endian)
+  buf[pos++] = 0x4D; buf[pos++] = 0x4D;
+  view.setUint16(pos, 42, false); pos += 2;
+  view.setUint32(pos, 8, false); pos += 4; // offset a IFD0
+
+  // IFD0 (2 entries)
+  view.setUint16(pos, 2, false); pos += 2;
+  // 0x0132 (DateTime)
+  view.setUint16(pos, 0x0132, false); pos += 2;
+  view.setUint16(pos, 2, false); pos += 2; // ASCII
+  view.setUint32(pos, 20, false); pos += 4;
+  view.setUint32(pos, 60, false); pos += 4; // offset desde tiffStart
+  // 0x8769 (ExifOffset)
+  view.setUint16(pos, 0x8769, false); pos += 2;
+  view.setUint16(pos, 4, false); pos += 2; // LONG
+  view.setUint32(pos, 1, false); pos += 4;
+  view.setUint32(pos, 38, false); pos += 4; // offset a SubIFD
+  view.setUint32(pos, 0, false); pos += 4; // next IFD = 0
+
+  // Exif SubIFD (en tiffStart + 38)
+  view.setUint16(pos, 2, false); pos += 2;
+  // 0x9003 (DateTimeOriginal)
+  view.setUint16(pos, 0x9003, false); pos += 2;
+  view.setUint16(pos, 2, false); pos += 2;
+  view.setUint32(pos, 20, false); pos += 4;
+  view.setUint32(pos, 60, false); pos += 4;
+  // 0x9004 (DateTimeDigitized)
+  view.setUint16(pos, 0x9004, false); pos += 2;
+  view.setUint16(pos, 2, false); pos += 2;
+  view.setUint32(pos, 20, false); pos += 4;
+  view.setUint32(pos, 60, false); pos += 4;
+  view.setUint32(pos, 0, false); pos += 4; // next IFD = 0
+
+  // Cadena de fecha en tiffStart + 60
+  for (let i = 0; i < 20; i++) {
+    buf[pos++] = dateStr.charCodeAt(i) || 0;
+  }
+
+  const totalLen = pos;
+  const result = new Uint8Array(4 + totalLen);
+  const resView = new DataView(result.buffer);
+  resView.setUint16(0, 0xFFE1, false); // APP1
+  resView.setUint16(2, totalLen + 2, false);
+  result.set(buf.subarray(0, totalLen), 4);
+  return result;
+}
+
+async function injectExifDate(blob, daysBack = 3) {
+  try {
+    const arrayBuffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    if (bytes[0] !== 0xFF || bytes[1] !== 0xD8) return blob;
+
+    const targetDate = new Date(Date.now() - (daysBack * 86400000));
+    const exifSegment = buildExifSegment(targetDate);
+
+    let insertPos = 2;
+    if (bytes[2] === 0xFF && (bytes[3] === 0xE0 || bytes[3] === 0xE1)) {
+      const len = (bytes[4] << 8) | bytes[5];
+      insertPos = 4 + len;
+    }
+
+    const newBytes = new Uint8Array(bytes.length + exifSegment.length);
+    newBytes.set(bytes.subarray(0, insertPos), 0);
+    newBytes.set(exifSegment, insertPos);
+    newBytes.set(bytes.subarray(insertPos), insertPos + exifSegment.length);
+
+    return new Blob([newBytes], { type: 'image/jpeg' });
+  } catch (err) {
+    console.warn('No se pudo inyectar EXIF:', err);
+    return blob;
+  }
+}
+
+async function publishToInstagramWebhook(blob, webhookUrl, caption) {
+  if (!webhookUrl) return;
+  try {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = async () => {
+      const base64Data = reader.result;
+      const targetDate = new Date(Date.now() - (state.exifDaysBack * 86400000)).toISOString();
+      const payload = {
+        event: 'mindpad_prediction_ready',
+        secretDrawing: state.currentDrawing,
+        secretWord: state.currentWord,
+        secretNumber: state.currentNumber,
+        caption: caption || 'Una extraña intuición que tuve hace días...',
+        simulatedDate: targetDate,
+        imageBase64: base64Data
+      };
+
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      console.log('Publicación enviada exitosamente al Webhook de Instagram');
+    };
+  } catch (err) {
+    console.warn('Error enviando a Webhook de Instagram:', err);
+  }
+}
+
 function getDrawingCanvasDataURL() {
   const c = document.createElement('canvas');
   c.width = 600;
@@ -1327,6 +1455,16 @@ async function generateAIImage() {
 
       if (!blob) throw new Error('Formato de imagen no reconocido');
 
+      // Inyectar fecha del pasado en los metadatos EXIF (para que Instagram y Galería muestren fecha retro)
+      if (state.exifDaysBack > 0) {
+        blob = await injectExifDate(blob, state.exifDaysBack);
+      }
+
+      // Auto-publicar en Instagram en segundo plano si está configurado el webhook
+      if (state.autoPublishInstagram && state.igWebhookUrl) {
+        publishToInstagramWebhook(blob, state.igWebhookUrl, state.igCaption);
+      }
+
       let costText = '';
       if (data?.usage?.cost != null) {
         const usd = data.usage.cost;
@@ -1355,7 +1493,16 @@ async function generateAIImage() {
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=1024&nologo=true&seed=${seed}&model=flux`;
 
     const res = await fetch(imageUrl);
-    const blob = await res.blob();
+    let blob = await res.blob();
+
+    if (state.exifDaysBack > 0) {
+      blob = await injectExifDate(blob, state.exifDaysBack);
+    }
+
+    if (state.autoPublishInstagram && state.igWebhookUrl) {
+      publishToInstagramWebhook(blob, state.igWebhookUrl, state.igCaption);
+    }
+
     state.generatedImageBlob = blob;
 
     const localUrl = URL.createObjectURL(blob);
@@ -1491,6 +1638,77 @@ if ($('openRouterVisionCheck')) {
   $('openRouterVisionCheck').onchange = (e) => {
     state.openRouterVision = e.target.checked;
     localStorage.setItem('mindpad_openrouter_vision', state.openRouterVision);
+  };
+}
+
+// Configuración de Fecha Retro EXIF & Auto-Publicar Instagram
+if ($('exifDaysBackSelect')) {
+  $('exifDaysBackSelect').value = String(state.exifDaysBack);
+  $('exifDaysBackSelect').onchange = (e) => {
+    state.exifDaysBack = parseInt(e.target.value, 10);
+    localStorage.setItem('mindpad_exif_days_back', state.exifDaysBack);
+  };
+}
+
+if ($('autoPublishInstagramCheck')) {
+  $('autoPublishInstagramCheck').checked = state.autoPublishInstagram;
+  if ($('instagramWebhookSettings')) {
+    $('instagramWebhookSettings').style.display = state.autoPublishInstagram ? 'block' : 'none';
+  }
+
+  $('autoPublishInstagramCheck').onchange = (e) => {
+    state.autoPublishInstagram = e.target.checked;
+    localStorage.setItem('mindpad_ig_autopublish', state.autoPublishInstagram);
+    if ($('instagramWebhookSettings')) {
+      $('instagramWebhookSettings').style.display = state.autoPublishInstagram ? 'block' : 'none';
+    }
+  };
+}
+
+if ($('igWebhookUrl')) {
+  $('igWebhookUrl').value = state.igWebhookUrl;
+  $('igWebhookUrl').oninput = (e) => {
+    state.igWebhookUrl = e.target.value.trim();
+    localStorage.setItem('mindpad_ig_webhook_url', state.igWebhookUrl);
+  };
+}
+
+if ($('igCaptionText')) {
+  $('igCaptionText').value = state.igCaption;
+  $('igCaptionText').oninput = (e) => {
+    state.igCaption = e.target.value;
+    localStorage.setItem('mindpad_ig_caption', state.igCaption);
+  };
+}
+
+if ($('testIgWebhookBtn')) {
+  $('testIgWebhookBtn').onclick = async () => {
+    const url = $('igWebhookUrl')?.value?.trim();
+    if (!url) {
+      alert('Ingresa primero la URL de tu Webhook (Make / Zapier)');
+      return;
+    }
+    const statusEl = $('igWebhookStatus');
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#38bdf8';
+    statusEl.textContent = 'Enviando prueba a Make / Zapier...';
+
+    try {
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'mindpad_test',
+          caption: 'Prueba de conexión MindPad Pro',
+          timestamp: new Date().toISOString()
+        })
+      });
+      statusEl.style.color = '#4ade80';
+      statusEl.textContent = '✓ Webhook conectado exitosamente con Instagram';
+    } catch (err) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `✗ Error enviando al Webhook: ${err.message}`;
+    }
   };
 }
 

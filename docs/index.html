@@ -9,10 +9,10 @@
   <title>MindPad X10 — Mentalism Peek Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=7').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=8').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -161,6 +161,40 @@
             <input id="useReferenceImageCheck" type="checkbox" checked />
             <span>🖼️ Enviar captura del trazo como Imagen de Referencia (Image-to-Image)</span>
           </label>
+        </div>
+
+        <!-- Ajustes de Fecha Retro EXIF & Auto-Publicación Instagram -->
+        <div class="field-row">
+          <label for="exifDaysBackSelect">📅 Fecha Retro EXIF (Sticker de Instagram):</label>
+          <select id="exifDaysBackSelect">
+            <option value="3" selected>Hace 3 días (Recomendado)</option>
+            <option value="1">Hace 1 día (Ayer)</option>
+            <option value="5">Hace 5 días</option>
+            <option value="7">Hace 1 semana (7 días)</option>
+            <option value="0">Tiempo real (Hoy)</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <label class="toggle-label" style="font-size:11.5px; color:#38bdf8; font-weight:600;">
+            <input id="autoPublishInstagramCheck" type="checkbox" />
+            <span>🚀 Auto-Publicar en Instagram (En segundo plano con tu cuenta Pro)</span>
+          </label>
+        </div>
+
+        <div id="instagramWebhookSettings" style="display:none; background:#0c1322; border:1px solid #1e3a8a; border-radius:8px; padding:10px; margin-bottom:12px;">
+          <div class="field-row" style="margin-bottom:8px;">
+            <label for="igWebhookUrl" style="font-size:11.5px; color:#38bdf8;">🔗 Webhook Make / Zapier:</label>
+            <div style="display:flex; gap:6px; flex:1;">
+              <input id="igWebhookUrl" type="url" placeholder="https://hook.make.com/..." style="flex:1; font-size:11px;" />
+              <button id="testIgWebhookBtn" class="btn small" style="white-space:nowrap; padding:4px 8px; font-size:11px;">Probar</button>
+            </div>
+          </div>
+          <div id="igWebhookStatus" style="font-size:11px; margin-bottom:6px; display:none;"></div>
+          <div class="field-row" style="margin-bottom:0;">
+            <label for="igCaptionText" style="font-size:11.5px;">Pie de foto (Caption):</label>
+            <input id="igCaptionText" type="text" value="Una extraña intuición que tuve hace días..." style="font-size:11px;" />
+          </div>
         </div>
 
         <div class="prompt-box">
@@ -334,6 +368,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=7" type="module"></script>
+  <script src="mindpad.js?v=8" type="module"></script>
 </body>
 </html>
