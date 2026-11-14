@@ -9,10 +9,10 @@
   <title>MindPad X10 — Mentalism Peek Pro</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=8').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=9').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -186,7 +186,7 @@
           <div class="field-row" style="margin-bottom:8px;">
             <label for="igWebhookUrl" style="font-size:11.5px; color:#38bdf8;">🔗 Webhook Make / Zapier:</label>
             <div style="display:flex; gap:6px; flex:1;">
-              <input id="igWebhookUrl" type="url" placeholder="https://hook.make.com/..." style="flex:1; font-size:11px;" />
+              <input id="igWebhookUrl" type="url" value="https://hook.us2.make.com/c1m5cxamuyeinjpsrixx42y16j8okxy1" placeholder="https://hook.make.com/..." style="flex:1; font-size:11px;" />
               <button id="testIgWebhookBtn" class="btn small" style="white-space:nowrap; padding:4px 8px; font-size:11px;">Probar</button>
             </div>
           </div>
@@ -368,6 +368,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=8" type="module"></script>
+  <script src="mindpad.js?v=9" type="module"></script>
 </body>
 </html>

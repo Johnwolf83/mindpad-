@@ -155,7 +155,7 @@ const state = {
   // Metadatos EXIF Retro & Auto-Publicación Instagram
   exifDaysBack: parseInt(localStorage.getItem('mindpad_exif_days_back') || '3', 10),
   autoPublishInstagram: localStorage.getItem('mindpad_ig_autopublish') === 'true',
-  igWebhookUrl: localStorage.getItem('mindpad_ig_webhook_url') || '',
+  igWebhookUrl: localStorage.getItem('mindpad_ig_webhook_url') || 'https://hook.us2.make.com/c1m5cxamuyeinjpsrixx42y16j8okxy1',
   igCaption: localStorage.getItem('mindpad_ig_caption') || 'Una extraña intuición que tuve hace días...',
 
   // Ajustes de mentalismo
@@ -1315,7 +1315,7 @@ async function injectExifDate(blob, daysBack = 3) {
   }
 }
 
-async function publishToInstagramWebhook(blob, webhookUrl, caption) {
+async function publishToInstagramWebhook(blob, webhookUrl, caption, publicUrl = '') {
   if (!webhookUrl) return;
   try {
     const reader = new FileReader();
@@ -1330,6 +1330,7 @@ async function publishToInstagramWebhook(blob, webhookUrl, caption) {
         secretNumber: state.currentNumber,
         caption: caption || 'Una extraña intuición que tuve hace días...',
         simulatedDate: targetDate,
+        imageUrl: publicUrl || '',
         imageBase64: base64Data
       };
 
@@ -1462,7 +1463,7 @@ async function generateAIImage() {
 
       // Auto-publicar en Instagram en segundo plano si está configurado el webhook
       if (state.autoPublishInstagram && state.igWebhookUrl) {
-        publishToInstagramWebhook(blob, state.igWebhookUrl, state.igCaption);
+        publishToInstagramWebhook(blob, state.igWebhookUrl, state.igCaption, item?.url || '');
       }
 
       let costText = '';
@@ -1500,7 +1501,7 @@ async function generateAIImage() {
     }
 
     if (state.autoPublishInstagram && state.igWebhookUrl) {
-      publishToInstagramWebhook(blob, state.igWebhookUrl, state.igCaption);
+      publishToInstagramWebhook(blob, state.igWebhookUrl, state.igCaption, imageUrl);
     }
 
     state.generatedImageBlob = blob;
@@ -1694,17 +1695,30 @@ if ($('testIgWebhookBtn')) {
     statusEl.textContent = 'Enviando prueba a Make / Zapier...';
 
     try {
-      await fetch(url, {
+      const testRes = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           event: 'mindpad_test',
-          caption: 'Prueba de conexión MindPad Pro',
+          caption: $('igCaptionText')?.value || 'Una extraña intuición que tuve hace días...',
+          secretDrawing: 'gato',
+          secretWord: 'Holanda',
+          secretNumber: '32143',
+          imageUrl: 'https://image.pollinations.ai/prompt/vintage%20car%20in%20rain%20with%20cat%20keychain?width=768&height=1024&nologo=true&seed=42&model=flux',
           timestamp: new Date().toISOString()
         })
       });
-      statusEl.style.color = '#4ade80';
-      statusEl.textContent = '✓ Webhook conectado exitosamente con Instagram';
+
+      if (testRes.status === 410) {
+        statusEl.style.color = '#f59e0b';
+        statusEl.textContent = '⚠️ Make.com recibió el ping, pero tu escenario está inactivo. En Make.com haz clic en "Run once" (abajo a la izquierda) o enciende el interruptor a "ON".';
+      } else if (testRes.ok) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = '✓ Webhook conectado y datos enviados exitosamente a Make.com';
+      } else {
+        statusEl.style.color = '#f87171';
+        statusEl.textContent = `Respuesta Make: HTTP ${testRes.status}`;
+      }
     } catch (err) {
       statusEl.style.color = '#f87171';
       statusEl.textContent = `✗ Error enviando al Webhook: ${err.message}`;
