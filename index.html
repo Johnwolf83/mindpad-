@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="styles.css?v=10" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=13').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=14').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -79,10 +79,11 @@
         <p class="desc">Selecciona el modo según el escenario de actuación (casual, redes o teatro).</p>
 
         <!-- Selector de Capas -->
-        <div class="layer-selector" style="display:flex; gap:6px; margin-bottom:12px;">
-          <button id="layer1Btn" class="btn small primary active" style="flex:1;">1️⃣ Post-it (Casual)</button>
-          <button id="layer2Btn" class="btn small secondary" style="flex:1;">2️⃣ Redes / VIP</button>
-          <button id="layer3Btn" class="btn small secondary" style="flex:1;">3️⃣ TV / Sprocket</button>
+        <div class="layer-selector" style="display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;">
+          <button id="layer1Btn" class="btn small primary active" style="flex:1; min-width:110px;">1️⃣ Post-it (Casual)</button>
+          <button id="layer2Btn" class="btn small secondary" style="flex:1; min-width:110px;">2️⃣ Redes / VIP</button>
+          <button id="layer3Btn" class="btn small secondary" style="flex:1; min-width:110px;">3️⃣ TV / Sprocket</button>
+          <button id="viewDossierBtn" class="btn small outline" style="border-color:#ca8a04; color:#fef08a; min-width:120px;">📖 Ver Dossier de Rutinas</button>
         </div>
 
         <!-- Capa 1: Casual / Calle / Escenario (Duplicación Post-it) -->
@@ -389,6 +390,155 @@
           <div id="confidenceList" class="alts"></div>
         </div>
       </section>
+
+      <!-- DOSSIER DE PRESENTACIONES PROFESIONALES (GUÍA COMERCIAL) -->
+      <section id="routinesDossier" class="card dossier-card">
+        <div class="card-title">
+          <span style="color:#fef08a;">📖 Dossier de Rutinas & Casos de Éxito</span>
+          <span class="dossier-header-badge">Guía Profesional</span>
+        </div>
+        <p class="desc" style="color:#cbd5e1;">
+          Estrategias de puesta en escena, psicología teatral y flujos técnicos diseñados para mentalistas profesionales, magos corporativos y creadores de contenido.
+        </p>
+
+        <!-- Rutina 1 -->
+        <div class="routine-box">
+          <div class="routine-title-row">
+            <span class="routine-title">🎪 Rutina 1: Duplicación en Post-It</span>
+            <span class="routine-badge street">Casual / Street / Close-Up</span>
+          </div>
+          <div class="routine-desc">
+            <strong>Efecto:</strong> El espectador dibuja un símbolo o escribe una palabra secreta en tu bloc de notas real con tinta física. Sin que mires en ningún momento su libreta, sacas un taco de Post-its y un marcador de tu bolsillo y dibujas exactamente lo mismo con idéntica proporción e inclinación.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>Aislamiento:</strong> Le entregas la libreta Huion Note X10 al espectador y te giras de espaldas: <em>"Dibuja algo que signifique algo para ti... no me lo digas"</em>.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>Información Invisible:</strong> Mientras el espectador dibuja, el audífono te susurra al oído la palabra/figura o miras la calculadora en la mesa al pedirle un cálculo.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Clímax Orgánico:</strong> Sacas un Post-it común de tu saco, trazas tu dibujo, lo pegas sobre la mesa y ambos voltean sus dibujos al mismo tiempo.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            💡 <strong>Valor Comercial:</strong> Cero sospechas tecnológicas. El espectador solo recuerda papel, tinta y una nota adhesiva real.
+          </div>
+        </div>
+
+        <!-- Rutina 2 -->
+        <div class="routine-box">
+          <div class="routine-title-row">
+            <span class="routine-title">⭐ Rutina 2: La Premonición en Redes & Galería</span>
+            <span class="routine-badge vip">VIP / Famosos / Redes Sociales</span>
+          </div>
+          <div class="routine-desc">
+            <strong>Efecto:</strong> La celebridad dibuja su destino soñado o una visión íntima. Al terminar, le pides que abra tu propia galería o Instagram Stories: allí ya existe una fotografía cinematográfica hiperrealista de esa misma visión... ¡tomada y fechada hace 4 días!
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>Personalización:</strong> Creas la carpeta o evento VIP (ej: <em>"Entrevista con [Celebridad]"</em>).</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>IA con Fecha Retroactiva:</strong> El motor fotográfico (Nano Banana / Flux) integra el dibujo en una escena hiperrealista inyectando metadatos EXIF reales del pasado.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>El Testigo Digital:</strong> Le pasas el teléfono a la celebridad. Al abrir Instagram Stories, la app reconoce los metadatos y añade el <em>Sticker Oficial de Fecha de Instagram</em> (ej: "10 NOV").</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>Viralidad:</strong> Te tomas una selfie con la celebridad y la suben a sus redes. Contenido de alto impacto que se vuelve viral.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            💡 <strong>Valor Comercial:</strong> Ideal para conseguir contratos de influencers, sponsors y presencia televisiva.
+          </div>
+        </div>
+
+        <!-- Rutina 3 -->
+        <div class="routine-box">
+          <div class="routine-title-row">
+            <span class="routine-title">🖨️ Rutina 3: La Materialización en el Bolsillo</span>
+            <span class="routine-badge stage">Teatro / Televisión / Auditorio</span>
+          </div>
+          <div class="routine-desc">
+            <strong>Efecto:</strong> En un show en vivo, un espectador dibuja un paisaje o sueño. Mientras haces lectura en frío sobre su mente durante 50 segundos, metes tu mano vacía al bolsillo interior de tu saco y sacas una fotografía física a todo color, todavía tibia, impresa antes de que él decidiera su dibujo.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>Disparo Silencioso:</strong> La imagen se auto-guarda como <code>prediccion_print.jpg</code> y MacroDroid la envía a tu HP Sprocket 200 en tu bolsillo interior.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>La Danza del Tiempo (60 seg):</strong> Utilizas el Cronómetro Teatral con pautas de lectura en frío:
+                <br>• <em>0-15s:</em> "Cierra los ojos, concéntrate en los colores..."
+                <br>• <em>15-35s:</em> Lectura en frío de texturas y emociones.
+                <br>• <em>35-50s:</em> "Esta mañana tuve una premonición y traje algo físico en mi saco..."
+              </span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Señal Secreta:</strong> Tu audífono o reloj te confirma con una vibración: <em>"Foto impresa lista en el bolsillo"</em>.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>El Souvenir Imposible:</strong> Sacas la foto física tibia y se la firmas como recuerdo que atesorará para siempre.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            💡 <strong>Valor Comercial:</strong> El efecto culminante ("Closer") definitivo para teatro y congresos corporativos.
+          </div>
+        </div>
+
+        <!-- Rutina 4 -->
+        <div class="routine-box">
+          <div class="routine-title-row">
+            <span class="routine-title">🧮 Rutina 4: El Test de la Calculadora Mental</span>
+            <span class="routine-badge impromptu">Impromptu / Cero Sospechas</span>
+          </div>
+          <div class="routine-desc">
+            <strong>Efecto:</strong> Justificación psicológica perfecta para tener el teléfono frente a los espectadores. Le pasas tu móvil al espectador para multiplicar números personales aleatorios (fecha de nacimiento × mes × día). Cuando termina y borra con "AC" a cero, tomas el móvil para mostrar que está limpio y en ese exacto segundo tienes el peek del dibujo.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span>El espectador utiliza la calculadora real en tu teléfono.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span>Borra con <strong>AC</strong> y te regresa el teléfono mostrando "0".</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span>Tocas 3 veces el display o mantienes presionado: ves el dibujo en un flash y vuelves a la calculadora al instante.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            💡 <strong>Valor Comercial:</strong> El espectador mismo tuvo el teléfono en sus manos segundos antes, eliminando cualquier sospecha de app mágica.
+          </div>
+        </div>
+
+        <!-- Rutina 5 -->
+        <div class="routine-box">
+          <div class="routine-title-row">
+            <span class="routine-title">👥 Rutina 5: Triple Transmisión Multi-Espectador</span>
+            <span class="routine-badge stage">Salón / Convención (3 Mentes)</span>
+          </div>
+          <div class="routine-desc">
+            <strong>Efecto:</strong> La libreta viaja de mano en mano entre 3 espectadores en diferentes filas del público. Adivinas los 3 dibujos o números de forma consecutiva con el control ciego en el bolsillo o smartwatch sin mirar tu móvil ni una sola vez.
+          </div>
+          <div class="routine-pro-tip">
+            💡 <strong>Valor Comercial:</strong> Multiplica el impacto por tres, ideal para rutinas de mentalismo colectivo en empresas y conferencias.
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -490,6 +640,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=13" type="module"></script>
+  <script src="mindpad.js?v=14" type="module"></script>
 </body>
 </html>

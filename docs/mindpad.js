@@ -2192,6 +2192,12 @@ if ($('stealthBtn')) {
 if ($('layer1Btn')) $('layer1Btn').onclick = () => switchPresentationLayer(1);
 if ($('layer2Btn')) $('layer2Btn').onclick = () => switchPresentationLayer(2);
 if ($('layer3Btn')) $('layer3Btn').onclick = () => switchPresentationLayer(3);
+if ($('viewDossierBtn')) {
+  $('viewDossierBtn').onclick = () => {
+    const el = $('routinesDossier');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+}
 
 if ($('quickOpenCalcBtn1')) $('quickOpenCalcBtn1').onclick = () => enterStealthMode('calculator');
 if ($('quickOpenStealthBtn1')) $('quickOpenStealthBtn1').onclick = () => enterStealthMode('lockscreen');
