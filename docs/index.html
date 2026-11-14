@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="styles.css?v=10" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=11').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=12').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -27,6 +27,7 @@
         <h1>MindPad <span>X10 Pro</span></h1>
       </div>
       <div class="header-actions">
+        <button id="calcModeBtn" class="btn secondary" title="Abrir Calculadora Camuflada" style="background:#1e293b; border:1px solid #475569; padding:6px 12px; font-size:12px;">🧮 Calculadora</button>
         <button id="stealthBtn" class="primary pulse" title="Entrar en Modo Sigiloso">🤫 Modo Sigilo</button>
       </div>
     </header>
@@ -67,6 +68,68 @@
           <button id="testHaylouBtn" class="btn small outline full">🔔 Probar Notificación en Haylou Solar</button>
         </div>
         <p class="hint-small">Para Haylou Solar: abre la app <strong>Haylou Fun</strong> en tu móvil -> Dispositivo -> Avisos de aplicaciones -> activa <strong>Chrome</strong> o <strong>MindPad</strong>.</p>
+      </section>
+
+      <!-- Tarjeta: Capas de Presentación & Rutinas Profesionales -->
+      <section class="card" style="border: 1px solid #6366f1; background: linear-gradient(180deg, #13172c 0%, #0e1222 100%);">
+        <div class="card-title">
+          <span>🎭 Capas de Presentación & Rutinas</span>
+          <span id="activeLayerBadge" class="badge" style="background:#4f46e5; color:#fff;">Capa 1: Post-it</span>
+        </div>
+        <p class="desc">Selecciona el modo según el escenario de actuación (casual, redes o teatro).</p>
+
+        <!-- Selector de Capas -->
+        <div class="layer-selector" style="display:flex; gap:6px; margin-bottom:12px;">
+          <button id="layer1Btn" class="btn small primary active" style="flex:1;">1️⃣ Post-it (Casual)</button>
+          <button id="layer2Btn" class="btn small secondary" style="flex:1;">2️⃣ Redes / VIP</button>
+          <button id="layer3Btn" class="btn small secondary" style="flex:1;">3️⃣ TV / Sprocket</button>
+        </div>
+
+        <!-- Capa 1: Casual / Calle / Escenario (Duplicación Post-it) -->
+        <div id="layer1Content" class="layer-panel" style="display:block;">
+          <div style="background:#1e1b4b; border-left:3px solid #818cf8; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
+            <strong>🎪 Rutina Post-it:</strong> Duplicación inmediata. El espectador dibuja/escribe en la Huion Note X10. Tú recibes el susurro en el audífono y duplicas el trazo idéntico en un Post-it en tiempo real frente al público.
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button id="quickOpenCalcBtn1" class="btn small cta" style="flex:1;">🧮 Abrir Calculadora Camuflada</button>
+            <button id="quickOpenStealthBtn1" class="btn small secondary" style="flex:1;">🤫 Abrir Pantalla Bloqueo</button>
+          </div>
+        </div>
+
+        <!-- Capa 2: Redes Sociales / Celebridades / VIP (Prueba de Tiempo) -->
+        <div id="layer2Content" class="layer-panel" style="display:none;">
+          <div style="background:#0c2238; border-left:3px solid #38bdf8; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
+            <strong>⭐ Rutina VIP / Redes:</strong> Viaje en el tiempo digital. La IA crea la predicción con fecha retroactiva EXIF. El famoso abre tu galería (álbum de predicciones) o publica en Instagram Stories con el sticker de fecha original.
+          </div>
+          <div class="field-row" style="margin-bottom:8px;">
+            <label for="vipEventName" style="font-size:11.5px; color:#38bdf8; font-weight:600;">Carpeta / Evento VIP:</label>
+            <input id="vipEventName" type="text" placeholder="Ej: Entrevista con [Nombre] / Programa Hoy" style="flex:1; background:#090d16; border:1px solid #1e3a8a; color:#fff; padding:6px 10px; border-radius:6px; font-size:12px;" />
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button id="quickDownloadVipBtn" class="btn small primary" style="flex:1;">💾 Guardar Prueba para Galería</button>
+            <button id="quickShareStoryBtn" class="btn small cta" style="flex:1; background:#9333ea;">📸 Instagram Stories (Manual)</button>
+          </div>
+        </div>
+
+        <!-- Capa 3: Teatro / Televisión (HP Sprocket) -->
+        <div id="layer3Content" class="layer-panel" style="display:none;">
+          <div style="background:#064e3b; border-left:3px solid #10b981; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
+            <strong>🖨️ Rutina HP Sprocket:</strong> Impresión silenciosa en el bolsillo. Genera la imagen y MacroDroid la imprime en segundo plano (~45-60s). Emplea este minuto en teatralidad y lectura de mente hasta sacar la foto física tibia.
+          </div>
+          <div style="background:#022c22; border:1px solid #059669; border-radius:8px; padding:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-size:12px; font-weight:700; color:#34d399;">⏱️ Cronómetro Teatral de Bolsillo:</span>
+              <span id="theatricalTimerDisplay" style="font-family:monospace; font-size:18px; font-weight:bold; color:#a7f3d0;">00:00</span>
+            </div>
+            <div id="theatricalScriptHint" style="font-size:11.5px; color:#6ee7b7; font-style:italic; min-height:30px; margin-bottom:6px;">
+              Presiona "Iniciar Teatralidad" cuando la IA comience a imprimir.
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button id="startTheatricalTimerBtn" class="btn small cta" style="flex:1; background:#059669;">▶ Iniciar Teatralidad (60s)</button>
+              <button id="resetTheatricalTimerBtn" class="btn small secondary">↺ Reiniciar</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Tarjeta PREDICCIÓN IA (Generador de Imágenes / Instagram) -->
@@ -247,7 +310,8 @@
         <div class="field-row">
           <label for="stealthCamouflage">Camuflaje de Pantalla:</label>
           <select id="stealthCamouflage">
-            <option value="lockscreen" selected>Pantalla de Bloqueo Real (WhatsApp)</option>
+            <option value="calculator" selected>Calculadora Realista (Peek en Display)</option>
+            <option value="lockscreen">Pantalla de Bloqueo Real (WhatsApp)</option>
             <option value="aod">AOD Reloj Minimalista Negro</option>
           </select>
         </div>
@@ -362,6 +426,48 @@
       <div class="aod-hint">Mantén presionado para ver trazo</div>
     </div>
 
+    <!-- CAMUFLAJE 3: Calculadora Realista Funcional -->
+    <div id="fakeCalculator" class="fake-calculator" style="display: none;">
+      <div class="calc-status-bar">
+        <span id="calcTime">12:00</span>
+        <div class="fake-icons">
+          <span>📶 5G</span>
+          <span>🔋 84%</span>
+        </div>
+      </div>
+
+      <div id="calcDisplayBox" class="calc-display-box">
+        <div id="calcFormula" class="calc-formula"></div>
+        <div id="calcResult" class="calc-result">0</div>
+      </div>
+
+      <div class="calc-keypad">
+        <button class="calc-btn fn" data-action="clear">AC</button>
+        <button class="calc-btn fn" data-action="plusminus">±</button>
+        <button class="calc-btn fn" data-action="percent">%</button>
+        <button class="calc-btn op" data-action="divide">÷</button>
+
+        <button class="calc-btn num" data-val="7">7</button>
+        <button class="calc-btn num" data-val="8">8</button>
+        <button class="calc-btn num" data-val="9">9</button>
+        <button class="calc-btn op" data-action="multiply">×</button>
+
+        <button class="calc-btn num" data-val="4">4</button>
+        <button class="calc-btn num" data-val="5">5</button>
+        <button class="calc-btn num" data-val="6">6</button>
+        <button class="calc-btn op" data-action="subtract">−</button>
+
+        <button class="calc-btn num" data-val="1">1</button>
+        <button class="calc-btn num" data-val="2">2</button>
+        <button class="calc-btn num" data-val="3">3</button>
+        <button class="calc-btn op" data-action="add">+</button>
+
+        <button class="calc-btn num zero" data-val="0">0</button>
+        <button class="calc-btn num" data-val=".">.</button>
+        <button class="calc-btn op equals" data-action="equals">=</button>
+      </div>
+    </div>
+
     <!-- Indicador de página y estado microscópico en la esquina -->
     <div class="stealth-corner-info">
       <span id="stealthPageIndicator" class="stealth-page-tag">P1</span>
@@ -378,6 +484,6 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=10" type="module"></script>
+  <script src="mindpad.js?v=12" type="module"></script>
 </body>
 </html>

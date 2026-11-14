@@ -158,6 +158,8 @@ const state = {
   igWebhookUrl: localStorage.getItem('mindpad_ig_webhook_url') || 'https://hook.us2.make.com/c1m5cxamuyeinjpsrixx42y16j8okxy1',
   igCaption: localStorage.getItem('mindpad_ig_caption') || 'Una extraña intuición que tuve hace días...',
   autoSavePocketPrinter: localStorage.getItem('mindpad_auto_save_printer') !== 'false',
+  vipEventName: localStorage.getItem('mindpad_vip_event') || '',
+  currentLayer: 1,
 
   // Ajustes de mentalismo
   orientation: 'portrait_cw',
@@ -167,7 +169,7 @@ const state = {
   vibrate: true,
   ttsRate: 1.2,
   selectedVoice: null,
-  stealthCamouflage: 'lockscreen',
+  stealthCamouflage: localStorage.getItem('mindpad_stealth_camouflage') || 'calculator',
   smartwatchEnabled: false,
 
   // Reloj & Gestos
@@ -1064,6 +1066,7 @@ function startClocks() {
     $('clockTime').textContent = timeStr;
     $('lockClockTime').textContent = timeStr;
     $('lockStatusTime').textContent = timeStr;
+    if ($('calcTime')) $('calcTime').textContent = timeStr;
 
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -1075,15 +1078,25 @@ function startClocks() {
 }
 
 // Entrar / Salir de Modo Sigiloso
-function enterStealthMode() {
+function enterStealthMode(forcedMode) {
+  if (forcedMode) {
+    state.stealthCamouflage = forcedMode;
+    if ($('stealthCamouflage')) $('stealthCamouflage').value = forcedMode;
+  }
   $('setupView').style.display = 'none';
   $('stealthView').style.display = 'block';
   document.body.className = 'mode-stealth';
 
-  if (state.stealthCamouflage === 'lockscreen') {
+  if (state.stealthCamouflage === 'calculator') {
+    if ($('fakeCalculator')) $('fakeCalculator').style.display = 'flex';
+    $('fakeLockscreen').style.display = 'none';
+    $('aodClock').style.display = 'none';
+  } else if (state.stealthCamouflage === 'lockscreen') {
+    if ($('fakeCalculator')) $('fakeCalculator').style.display = 'none';
     $('fakeLockscreen').style.display = 'flex';
     $('aodClock').style.display = 'none';
   } else {
+    if ($('fakeCalculator')) $('fakeCalculator').style.display = 'none';
     $('fakeLockscreen').style.display = 'none';
     $('aodClock').style.display = 'block';
   }
@@ -1113,17 +1126,29 @@ const peekContainer = $('peekContainer');
 
 function showPeek() {
   peekContainer.style.opacity = '1';
+  peekContainer.style.pointerEvents = 'auto';
   $('fakeLockscreen').style.opacity = '0';
   $('aodClock').style.opacity = '0.05';
+  if ($('fakeCalculator')) $('fakeCalculator').style.opacity = '0.02';
 }
 function hidePeek() {
   peekContainer.style.opacity = '0';
+  peekContainer.style.pointerEvents = 'none';
   $('fakeLockscreen').style.opacity = '1';
   $('aodClock').style.opacity = '0.85';
+  if ($('fakeCalculator')) $('fakeCalculator').style.opacity = '1';
 }
+
+// Cerrar peek al tocar sobre él
+peekContainer.addEventListener('click', hidePeek);
+peekContainer.addEventListener('touchend', hidePeek);
 
 stealthView.addEventListener('touchstart', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
+  // Si estamos en la calculadora, no activar peek con los botones
+  if (state.stealthCamouflage === 'calculator' && e.target.closest('#fakeCalculator')) {
+    return;
+  }
   state.touchStartX = e.touches[0].clientX;
   state.touchStartY = e.touches[0].clientY;
   state.touchStartTime = performance.now();
@@ -1164,6 +1189,9 @@ stealthView.addEventListener('touchend', (e) => {
 stealthView.addEventListener('touchcancel', hidePeek);
 stealthView.addEventListener('mousedown', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
+  if (state.stealthCamouflage === 'calculator' && e.target.closest('#fakeCalculator')) {
+    return;
+  }
   showPeek();
 });
 stealthView.addEventListener('mouseup', hidePeek);
@@ -1194,6 +1222,314 @@ $('aodClock').addEventListener('click', (e) => {
   e.stopPropagation();
   if (state.lastSpokenText) speakTTS(state.lastSpokenText);
 });
+
+// ==========================================
+// 6. MOTOR DE CALCULADORA DE CAMUFLAJE
+// ==========================================
+let calcState = {
+  displayValue: '0',
+  firstOperand: null,
+  waitingForSecondOperand: false,
+  operator: null,
+};
+
+function updateCalcDisplay() {
+  const resEl = $('calcResult');
+  const formEl = $('calcFormula');
+  if (resEl) {
+    let val = calcState.displayValue;
+    if (val.length > 10 && !isNaN(parseFloat(val))) {
+      val = parseFloat(val).toPrecision(6);
+    }
+    resEl.textContent = val;
+  }
+  if (formEl) {
+    if (calcState.operator && calcState.firstOperand !== null) {
+      const opSymbol = calcState.operator === '*' ? '×' : calcState.operator === '/' ? '÷' : calcState.operator === '-' ? '−' : '+';
+      formEl.textContent = `${calcState.firstOperand} ${opSymbol}`;
+    } else {
+      formEl.textContent = '';
+    }
+  }
+  const acBtn = document.querySelector('.calc-btn[data-action="clear"]');
+  if (acBtn) {
+    acBtn.textContent = calcState.displayValue !== '0' || calcState.firstOperand !== null ? 'C' : 'AC';
+  }
+}
+
+function inputCalcDigit(digit) {
+  if (calcState.waitingForSecondOperand) {
+    calcState.displayValue = digit;
+    calcState.waitingForSecondOperand = false;
+  } else {
+    calcState.displayValue = calcState.displayValue === '0' ? digit : calcState.displayValue + digit;
+  }
+  updateCalcDisplay();
+}
+
+function inputCalcDecimal() {
+  if (calcState.waitingForSecondOperand) {
+    calcState.displayValue = '0.';
+    calcState.waitingForSecondOperand = false;
+    updateCalcDisplay();
+    return;
+  }
+  if (!calcState.displayValue.includes('.')) {
+    calcState.displayValue += '.';
+  }
+  updateCalcDisplay();
+}
+
+function handleCalcOperator(nextOperator) {
+  const inputValue = parseFloat(calcState.displayValue);
+
+  if (calcState.operator && calcState.waitingForSecondOperand) {
+    calcState.operator = nextOperator;
+    updateCalcDisplay();
+    return;
+  }
+
+  if (calcState.firstOperand === null && !isNaN(inputValue)) {
+    calcState.firstOperand = inputValue;
+  } else if (calcState.operator) {
+    const result = executeCalc(calcState.firstOperand, inputValue, calcState.operator);
+    calcState.displayValue = `${parseFloat(Number(result).toFixed(7))}`;
+    calcState.firstOperand = result;
+  }
+
+  calcState.waitingForSecondOperand = true;
+  calcState.operator = nextOperator;
+  updateCalcDisplay();
+}
+
+function executeCalc(first, second, op) {
+  if (op === '+') return first + second;
+  if (op === '-') return first - second;
+  if (op === '*') return first * second;
+  if (op === '/') return second !== 0 ? first / second : 'Error';
+  return second;
+}
+
+function resetCalculator() {
+  calcState.displayValue = '0';
+  calcState.firstOperand = null;
+  calcState.waitingForSecondOperand = false;
+  calcState.operator = null;
+  updateCalcDisplay();
+}
+
+function initCalculator() {
+  const keypad = document.querySelector('.calc-keypad');
+  if (!keypad) return;
+
+  keypad.addEventListener('click', (e) => {
+    const btn = e.target.closest('.calc-btn');
+    if (!btn) return;
+    triggerHaptic([12]);
+
+    if (btn.dataset.val !== undefined) {
+      if (btn.dataset.val === '.') {
+        inputCalcDecimal();
+      } else {
+        inputCalcDigit(btn.dataset.val);
+      }
+      return;
+    }
+
+    const action = btn.dataset.action;
+    if (!action) return;
+
+    if (action === 'clear') {
+      resetCalculator();
+    } else if (action === 'plusminus') {
+      const val = parseFloat(calcState.displayValue);
+      if (!isNaN(val)) {
+        calcState.displayValue = String(val * -1);
+        updateCalcDisplay();
+      }
+    } else if (action === 'percent') {
+      const val = parseFloat(calcState.displayValue);
+      if (!isNaN(val)) {
+        calcState.displayValue = String(val / 100);
+        updateCalcDisplay();
+      }
+    } else if (['add', 'subtract', 'multiply', 'divide'].includes(action)) {
+      const opMap = { add: '+', subtract: '-', multiply: '*', divide: '/' };
+      handleCalcOperator(opMap[action]);
+    } else if (action === 'equals') {
+      // Código secreto de salida PIN: 999= o 12345=
+      if (calcState.displayValue === '999' || calcState.displayValue === '12345') {
+        exitStealthMode();
+        resetCalculator();
+        return;
+      }
+      if (calcState.operator && calcState.firstOperand !== null) {
+        const inputValue = parseFloat(calcState.displayValue);
+        const result = executeCalc(calcState.firstOperand, inputValue, calcState.operator);
+        calcState.displayValue = `${parseFloat(Number(result).toFixed(7))}`;
+        calcState.firstOperand = null;
+        calcState.operator = null;
+        calcState.waitingForSecondOperand = true;
+        updateCalcDisplay();
+      }
+    }
+  });
+
+  // Peek al presionar el display de la calculadora (3 toques o mantener presionado)
+  const displayBox = $('calcDisplayBox');
+  if (displayBox) {
+    let tapCount = 0;
+    let tapTimer = null;
+    let longPressTimer = null;
+
+    displayBox.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tapCount++;
+      clearTimeout(tapTimer);
+      if (tapCount >= 3) {
+        tapCount = 0;
+        triggerHaptic([40, 40]);
+        showPeek();
+        setTimeout(hidePeek, 4000);
+        return;
+      }
+      tapTimer = setTimeout(() => { tapCount = 0; }, 450);
+    });
+
+    displayBox.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+      longPressTimer = setTimeout(() => {
+        triggerHaptic([50]);
+        showPeek();
+      }, 380);
+    });
+
+    displayBox.addEventListener('touchend', (e) => {
+      e.stopPropagation();
+      clearTimeout(longPressTimer);
+    });
+  }
+}
+
+// ==========================================
+// 7. CAPAS DE PRESENTACIÓN & RUTINAS
+// ==========================================
+let theatricalTimerInterval = null;
+let theatricalSeconds = 0;
+
+function switchPresentationLayer(layerNum) {
+  state.currentLayer = layerNum;
+  if ($('layer1Btn')) $('layer1Btn').className = `btn small ${layerNum === 1 ? 'primary active' : 'secondary'}`;
+  if ($('layer2Btn')) $('layer2Btn').className = `btn small ${layerNum === 2 ? 'primary active' : 'secondary'}`;
+  if ($('layer3Btn')) $('layer3Btn').className = `btn small ${layerNum === 3 ? 'primary active' : 'secondary'}`;
+
+  if ($('layer1Content')) $('layer1Content').style.display = layerNum === 1 ? 'block' : 'none';
+  if ($('layer2Content')) $('layer2Content').style.display = layerNum === 2 ? 'block' : 'none';
+  if ($('layer3Content')) $('layer3Content').style.display = layerNum === 3 ? 'block' : 'none';
+
+  const badges = {
+    1: 'Capa 1: Post-it',
+    2: 'Capa 2: Redes / VIP',
+    3: 'Capa 3: TV / Sprocket'
+  };
+  if ($('activeLayerBadge')) $('activeLayerBadge').textContent = badges[layerNum];
+
+  if (layerNum === 1) {
+    state.stealthCamouflage = 'calculator';
+    if ($('stealthCamouflage')) $('stealthCamouflage').value = 'calculator';
+    localStorage.setItem('mindpad_stealth_camouflage', 'calculator');
+  } else if (layerNum === 2) {
+    if (state.exifDaysBack === 0) {
+      state.exifDaysBack = 3;
+      if ($('exifDaysBackSelect')) $('exifDaysBackSelect').value = '3';
+      localStorage.setItem('mindpad_exif_days_back', '3');
+    }
+  } else if (layerNum === 3) {
+    state.autoSavePocketPrinter = true;
+    if ($('autoSavePocketPrinterCheck')) $('autoSavePocketPrinterCheck').checked = true;
+    localStorage.setItem('mindpad_auto_save_printer', 'true');
+  }
+}
+
+function startTheatricalTimer() {
+  clearInterval(theatricalTimerInterval);
+  theatricalSeconds = 0;
+  updateTheatricalTimerUI();
+
+  theatricalTimerInterval = setInterval(() => {
+    theatricalSeconds++;
+    updateTheatricalTimerUI();
+
+    if (theatricalSeconds === 45) {
+      triggerHaptic([80, 50, 80]);
+      speakTTS('Foto impresa lista en tu bolsillo');
+    }
+
+    if (theatricalSeconds >= 60) {
+      clearInterval(theatricalTimerInterval);
+      theatricalTimerInterval = null;
+      triggerHaptic([100, 100, 100]);
+    }
+  }, 1000);
+}
+
+function resetTheatricalTimer() {
+  clearInterval(theatricalTimerInterval);
+  theatricalTimerInterval = null;
+  theatricalSeconds = 0;
+  updateTheatricalTimerUI();
+}
+
+function updateTheatricalTimerUI() {
+  const m = String(Math.floor(theatricalSeconds / 60)).padStart(2, '0');
+  const s = String(theatricalSeconds % 60).padStart(2, '0');
+  if ($('theatricalTimerDisplay')) $('theatricalTimerDisplay').textContent = `${m}:${s}`;
+
+  const hintEl = $('theatricalScriptHint');
+  if (!hintEl) return;
+
+  if (theatricalSeconds === 0) {
+    hintEl.textContent = 'Presiona "Iniciar Teatralidad" cuando la IA comience a imprimir.';
+    hintEl.style.color = '#6ee7b7';
+  } else if (theatricalSeconds < 15) {
+    hintEl.textContent = '👁️ 0-15s: Pide que cierre los ojos y visualice colores y emociones...';
+    hintEl.style.color = '#38bdf8';
+  } else if (theatricalSeconds < 30) {
+    hintEl.textContent = '🔮 15-30s: Lectura fría: describe texturas y sensaciones vagas del dibujo.';
+    hintEl.style.color = '#fbbf24';
+  } else if (theatricalSeconds < 45) {
+    hintEl.textContent = '📜 30-45s: "Hace días tuve un sueño premonitorio... y traje algo físico hoy".';
+    hintEl.style.color = '#f97316';
+  } else if (theatricalSeconds < 60) {
+    hintEl.textContent = '🖨️ 45-60s: ¡Foto impresa en bolsillo! Mete la mano lentamente a tu saco.';
+    hintEl.style.color = '#a855f7';
+  } else {
+    hintEl.textContent = '💥 ¡CLÍMAX! Saca la fotografía aún tibia y entrégala al espectador.';
+    hintEl.style.color = '#22c55e';
+  }
+}
+
+async function downloadVipProof() {
+  if (!state.generatedImageBlob) {
+    alert('Primero genera la imagen con la sección de Predicción IA.');
+    return;
+  }
+  const eventClean = (state.vipEventName || 'Prediccion').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = `${eventClean}_${new Date().toISOString().slice(0, 10)}.jpg`;
+
+  let blob = state.generatedImageBlob;
+  if (state.exifDaysBack > 0) {
+    blob = await injectExifDate(blob, state.exifDaysBack);
+  }
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  alert(`Imagen guardada como "${filename}" con fecha de hace ${state.exifDaysBack} días.`);
+}
 
 // ==========================================
 // 11. PREDICCIÓN IA (NANO BANANA STYLE) & INSTAGRAM
@@ -1832,7 +2168,44 @@ if ($('conceptNumber')) {
   };
 }
 
-$('stealthCamouflage').onchange = (e) => { state.stealthCamouflage = e.target.value; };
+// Botón header de Calculadora directa & Modo Sigilo
+if ($('calcModeBtn')) {
+  $('calcModeBtn').onclick = () => enterStealthMode('calculator');
+}
+if ($('stealthBtn')) {
+  $('stealthBtn').onclick = () => enterStealthMode();
+}
+
+// Capas de Presentación
+if ($('layer1Btn')) $('layer1Btn').onclick = () => switchPresentationLayer(1);
+if ($('layer2Btn')) $('layer2Btn').onclick = () => switchPresentationLayer(2);
+if ($('layer3Btn')) $('layer3Btn').onclick = () => switchPresentationLayer(3);
+
+if ($('quickOpenCalcBtn1')) $('quickOpenCalcBtn1').onclick = () => enterStealthMode('calculator');
+if ($('quickOpenStealthBtn1')) $('quickOpenStealthBtn1').onclick = () => enterStealthMode('lockscreen');
+
+if ($('vipEventName')) {
+  $('vipEventName').value = state.vipEventName;
+  $('vipEventName').oninput = (e) => {
+    state.vipEventName = e.target.value.trim();
+    localStorage.setItem('mindpad_vip_event', state.vipEventName);
+  };
+}
+
+if ($('quickDownloadVipBtn')) $('quickDownloadVipBtn').onclick = downloadVipProof;
+if ($('quickShareStoryBtn')) $('quickShareStoryBtn').onclick = shareToInstagram;
+
+if ($('startTheatricalTimerBtn')) $('startTheatricalTimerBtn').onclick = startTheatricalTimer;
+if ($('resetTheatricalTimerBtn')) $('resetTheatricalTimerBtn').onclick = resetTheatricalTimer;
+
+if ($('stealthCamouflage')) {
+  $('stealthCamouflage').value = state.stealthCamouflage;
+  $('stealthCamouflage').onchange = (e) => {
+    state.stealthCamouflage = e.target.value;
+    localStorage.setItem('mindpad_stealth_camouflage', state.stealthCamouflage);
+  };
+}
+
 $('detectMode').onchange = (e) => { state.detectMode = e.target.value; };
 $('orientationSelect').onchange = (e) => { state.orientation = e.target.value; redrawAllStrokes(); };
 $('delayTimeout').onchange = (e) => { state.delayMs = +e.target.value; };
@@ -1896,6 +2269,9 @@ previewCanvas.addEventListener('pointerup', () => {
 
 // Inicialización
 initTTS();
+initCalculator();
+updateCalcDisplay();
+switchPresentationLayer(1);
 resizeCanvases();
 updatePageUI();
 updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
