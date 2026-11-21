@@ -205,6 +205,14 @@
             <button id="songFoundPlayTestBtn" class="btn small" style="background:#10b981; color:#000; font-weight:700; border:none; padding:4px 8px;">▶ Probar</button>
           </div>
           <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">Estilo Reproductor:</label>
+            <select id="musicPlayerThemeSelect" style="flex:1;">
+              <option value="ytmusic" selected>🔴 YouTube Music (Oficial Google / Rojo & Negro)</option>
+              <option value="spotify">🟢 Spotify (Verde & Negro)</option>
+              <option value="apple">🍎 Apple Music (Gris & Azul)</option>
+            </select>
+          </div>
+          <div class="field-row">
             <label style="font-size:11px; color:#94a3b8; width:130px;">Tiempo de inicio:</label>
             <select id="musicStartPointSelect" style="flex:1;">
               <option value="mid" selected>A mitad de canción (ej. 1:24) - Simula reproducción en curso</option>
@@ -223,6 +231,7 @@
           </div>
           <div style="display:flex; gap:8px;">
             <button id="quickOpenMusicBtn6" class="btn small cta" style="flex:1; background:#059669; color:#fff; font-weight:700;">🎵 Abrir Reproductor Camuflado</button>
+            <button id="openOfficialYTMusicBtn" class="btn small" style="flex:1; background:#dc2626; color:#fff; font-weight:700; border:none; padding:7px 10px;" title="Abrir en tu app instalada de YouTube Music">🔴 Abrir en App YT Music</button>
           </div>
         </div>
       </section>
@@ -950,13 +959,20 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
       </div>
     </div>
 
-    <!-- CAMUFLAJE 5: Reproductor de Música Camuflado (Fake Spotify / Apple Music) -->
-    <div id="fakeMusicPlayer" class="fake-music-player" style="display: none;">
+    <!-- CAMUFLAJE 5: Reproductor de Música Camuflado (YouTube Music / Spotify / Apple) -->
+    <div id="fakeMusicPlayer" class="fake-music-player theme-ytmusic" style="display: none;">
       <div class="music-top-bar">
-        <span>‹ Reproduciendo de Playlist</span>
+        <div class="music-service-tag">
+          <span id="musicServiceIcon">▶</span>
+          <span id="musicServiceName">Music</span>
+        </div>
+        <div id="ytMusicPillToggle" class="ytmusic-pill-toggle">
+          <span class="active">Canción</span>
+          <span>Video</span>
+        </div>
         <div class="music-bt-badge">
           <span>🎧</span>
-          <span>Auricular BT Conectado</span>
+          <span>Auricular BT</span>
         </div>
       </div>
 
@@ -974,7 +990,7 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
           <div id="musicProgressFill" class="music-progress-fill"></div>
         </div>
         <div class="music-time-row">
-          <span id="musicTimeCurrent">0:42</span>
+          <span id="musicTimeCurrent">1:24</span>
           <span id="musicTimeDuration">5:55</span>
         </div>
       </div>
@@ -985,6 +1001,13 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
         <button id="musicPlayBtn" class="music-play-circle" title="Play / Pausa">▶</button>
         <button class="music-btn-sub">⏭</button>
         <button class="music-btn-sub">🔁</button>
+      </div>
+
+      <!-- Acceso Rápido para saltar a la App Oficial de YouTube Music de tu teléfono -->
+      <div style="display:flex; justify-content:center; margin-top:8px;">
+        <button id="playerJumpToYTMusicBtn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; color:#f87171; font-size:11px; padding:4px 12px; cursor:pointer; display:flex; align-items:center; gap:5px;">
+          <span>🔴</span> <span>Abrir en YouTube Music Oficial</span>
+        </button>
       </div>
 
       <audio id="musicAudioEl" preload="auto"></audio>
@@ -1025,6 +1048,16 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     </div>
   </div>
 
-  <script src="mindpad.js?v=20" type="module"></script>
+  <!-- Pre-carga de fuentes caligráficas rústicas y tiza para Canvas de Pizarra -->
+  <div style="position:fixed; left:-9999px; top:-9999px; visibility:hidden; pointer-events:none; opacity:0;" aria-hidden="true">
+    <span style="font-family:'Rock Salt';">Preload</span>
+    <span style="font-family:'Walter Turncoat';">Preload</span>
+    <span style="font-family:'Gochi Hand';">Preload</span>
+    <span style="font-family:'Gloria Hallelujah';">Preload</span>
+    <span style="font-family:'Permanent Marker';">Preload</span>
+    <span style="font-family:'Caveat';">Preload</span>
+  </div>
+
+  <script src="mindpad.js?v=21" type="module"></script>
 </body>
 </html>

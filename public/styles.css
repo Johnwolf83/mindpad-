@@ -1067,12 +1067,12 @@ button.primary {
 }
 
 /* ===================================================
-   CAMUFLAJE 5: REPRODUCTOR DE MÚSICA (FAKE SPOTIFY)
+   CAMUFLAJE 5: REPRODUCTOR DE MÚSICA (YOUTUBE MUSIC / SPOTIFY)
    =================================================== */
 .fake-music-player {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #1e1b4b 0%, #09090b 100%);
+  background: #030303;
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -1083,6 +1083,71 @@ button.primary {
   box-sizing: border-box;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Temas dinámicos (YouTube Music, Spotify, Apple Music) */
+.fake-music-player.theme-ytmusic {
+  background: #030303;
+}
+.fake-music-player.theme-ytmusic .music-service-tag {
+  color: #ff0000;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.fake-music-player.theme-ytmusic .music-progress-fill {
+  background: #ff0000;
+}
+.fake-music-player.theme-ytmusic .music-bt-badge {
+  color: #ef4444;
+}
+
+.ytmusic-pill-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 2px 4px;
+  gap: 2px;
+  font-size: 11px;
+}
+.ytmusic-pill-toggle span {
+  padding: 2px 8px;
+  border-radius: 12px;
+  color: #a1a1aa;
+}
+.ytmusic-pill-toggle span.active {
+  background: #ffffff;
+  color: #000000;
+  font-weight: 600;
+}
+
+.fake-music-player.theme-spotify {
+  background: linear-gradient(180deg, #1e1b4b 0%, #09090b 100%);
+}
+.fake-music-player.theme-spotify .music-service-tag {
+  color: #10b981;
+  font-weight: 700;
+}
+.fake-music-player.theme-spotify .music-progress-fill {
+  background: #10b981;
+}
+.fake-music-player.theme-spotify .music-bt-badge {
+  color: #10b981;
+}
+
+.fake-music-player.theme-apple {
+  background: linear-gradient(180deg, #27272a 0%, #09090b 100%);
+}
+.fake-music-player.theme-apple .music-service-tag {
+  color: #fa243c;
+  font-weight: 700;
+}
+.fake-music-player.theme-apple .music-progress-fill {
+  background: #fa243c;
+}
+.fake-music-player.theme-apple .music-bt-badge {
+  color: #38bdf8;
 }
 
 .music-top-bar {

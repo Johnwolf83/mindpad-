@@ -204,6 +204,7 @@ const state = {
   customMp3Url: localStorage.getItem('mindpad_custom_mp3') || '',
   musicPlaybackStartWallTime: 0,
   musicSimulatedBaseSec: 84,
+  musicPlayerTheme: localStorage.getItem('mindpad_music_theme') || 'ytmusic',
 
   // Doodle en Notas
   doodleColor: '#f8fafc',
@@ -1025,15 +1026,20 @@ function resizeCanvases() {
   const pRect = previewCanvas.parentElement.getBoundingClientRect();
   previewCanvas.width = pRect.width * dpr;
   previewCanvas.height = 260 * dpr;
+  pCtx.setTransform(1, 0, 0, 1, 0, 0);
   pCtx.scale(dpr, dpr);
 
   stealthCanvas.width = window.innerWidth * dpr;
   stealthCanvas.height = window.innerHeight * dpr;
+  sCtx.setTransform(1, 0, 0, 1, 0, 0);
   sCtx.scale(dpr, dpr);
 
   if (chalkCanvas && cCtx) {
-    chalkCanvas.width = window.innerWidth * dpr;
-    chalkCanvas.height = window.innerHeight * dpr;
+    const cw = chalkCanvas.clientWidth || window.innerWidth;
+    const ch = chalkCanvas.clientHeight || window.innerHeight;
+    chalkCanvas.width = cw * dpr;
+    chalkCanvas.height = ch * dpr;
+    cCtx.setTransform(1, 0, 0, 1, 0, 0);
     cCtx.scale(dpr, dpr);
     redrawChalkSlate();
   }
@@ -2905,9 +2911,96 @@ function redrawNotesDoodleCanvas() {
 }
 
 // ==========================================
-// 13. MELODÍA TELEPÁTICA & REPRODUCTOR ITUNES
+// 13. MELODÍA TELEPÁTICA & REPRODUCTOR ITUNES / YOUTUBE MUSIC / SPOTIFY
 // ==========================================
 let musicSimulatedInterval = null;
+
+function applyMusicPlayerTheme(theme) {
+  state.musicPlayerTheme = theme || 'ytmusic';
+  localStorage.setItem('mindpad_music_theme', state.musicPlayerTheme);
+
+  const playerEl = $('fakeMusicPlayer');
+  if (playerEl) {
+    playerEl.classList.remove('theme-ytmusic', 'theme-spotify', 'theme-apple');
+    playerEl.classList.add(`theme-${state.musicPlayerTheme}`);
+  }
+
+  const iconEl = $('musicServiceIcon');
+  const nameEl = $('musicServiceName');
+  const pillEl = $('ytMusicPillToggle');
+  const jumpBtn = $('playerJumpToYTMusicBtn');
+
+  if (state.musicPlayerTheme === 'ytmusic') {
+    if (iconEl) iconEl.textContent = '▶';
+    if (nameEl) nameEl.textContent = 'Music';
+    if (pillEl) pillEl.style.display = 'flex';
+    if (jumpBtn) {
+      jumpBtn.style.display = 'flex';
+      jumpBtn.innerHTML = '<span>🔴</span> <span>Abrir en YouTube Music Oficial</span>';
+    }
+  } else if (state.musicPlayerTheme === 'spotify') {
+    if (iconEl) iconEl.textContent = '🟢';
+    if (nameEl) nameEl.textContent = 'Spotify';
+    if (pillEl) pillEl.style.display = 'none';
+    if (jumpBtn) {
+      jumpBtn.style.display = 'flex';
+      jumpBtn.innerHTML = '<span>🟢</span> <span>Abrir en Spotify Oficial</span>';
+    }
+  } else {
+    if (iconEl) iconEl.textContent = '🍎';
+    if (nameEl) nameEl.textContent = 'Música';
+    if (pillEl) pillEl.style.display = 'none';
+    if (jumpBtn) {
+      jumpBtn.style.display = 'flex';
+      jumpBtn.innerHTML = '<span>🍎</span> <span>Abrir en Apple Music</span>';
+    }
+  }
+
+  if ($('musicPlayerThemeSelect')) {
+    $('musicPlayerThemeSelect').value = state.musicPlayerTheme;
+  }
+}
+
+function openInOfficialMusicApp(songName) {
+  const query = encodeURIComponent(songName || state.dreamSong || 'Imagine John Lennon');
+  const isAndroid = /android/i.test(navigator.userAgent);
+
+  if (state.musicPlayerTheme === 'spotify') {
+    const spotifyUri = `spotify:search:${query}`;
+    const spotifyWeb = `https://open.spotify.com/search/${query}`;
+    if (isAndroid) {
+      window.location.href = spotifyUri;
+      setTimeout(() => window.open(spotifyWeb, '_blank'), 1200);
+    } else {
+      window.open(spotifyWeb, '_blank');
+    }
+    return;
+  }
+
+  if (state.musicPlayerTheme === 'apple') {
+    const appleWeb = `https://music.apple.com/search?term=${query}`;
+    window.open(appleWeb, '_blank');
+    return;
+  }
+
+  // YouTube Music por defecto:
+  // En Android se lanza el Intent nativo de la app instalada com.google.android.apps.youtube.music
+  // que ya tiene la cuenta personal del usuario iniciada
+  const androidIntent = `intent://music.youtube.com/search?q=${query}#Intent;scheme=https;package=com.google.android.apps.youtube.music;end`;
+  const ytMusicWeb = `https://music.youtube.com/search?q=${query}`;
+
+  if (isAndroid) {
+    const start = Date.now();
+    window.location.href = androidIntent;
+    setTimeout(() => {
+      if (Date.now() - start < 1500) {
+        window.open(ytMusicWeb, '_blank');
+      }
+    }, 1000);
+  } else {
+    window.open(ytMusicWeb, '_blank');
+  }
+}
 
 async function fetchSongPreview(query, autoPlay = false) {
   const q = (query || state.dreamSong || 'Bohemian Rhapsody').trim();
@@ -3047,6 +3140,32 @@ function initMusicPlayerEvents() {
       }
     };
   }
+
+  // Botón para saltar a la aplicación oficial instalada (YouTube Music / Spotify / Apple)
+  if ($('playerJumpToYTMusicBtn')) {
+    $('playerJumpToYTMusicBtn').onclick = (e) => {
+      e.stopPropagation();
+      openInOfficialMusicApp(state.dreamSong);
+    };
+  }
+
+  // Toque en la carátula para saltar discretamente a la app oficial
+  if ($('musicCoverImg')) {
+    $('musicCoverImg').onclick = (e) => {
+      e.stopPropagation();
+      openInOfficialMusicApp(state.dreamSong);
+    };
+  }
+
+  // Selector pill interactivo "Canción / Video" de YouTube Music
+  const pillSpans = document.querySelectorAll('#ytMusicPillToggle span');
+  pillSpans.forEach((span) => {
+    span.onclick = (e) => {
+      e.stopPropagation();
+      pillSpans.forEach((s) => s.classList.remove('active'));
+      span.classList.add('active');
+    };
+  });
 }
 
 // ==========================================
@@ -3430,6 +3549,18 @@ if ($('customMp3UrlInput')) {
     }
   };
 }
+if ($('musicPlayerThemeSelect')) {
+  $('musicPlayerThemeSelect').value = state.musicPlayerTheme;
+  $('musicPlayerThemeSelect').onchange = (e) => {
+    applyMusicPlayerTheme(e.target.value);
+  };
+}
+if ($('openOfficialYTMusicBtn')) {
+  $('openOfficialYTMusicBtn').onclick = () => {
+    const q = $('dreamSongInput')?.value || state.dreamSong;
+    openInOfficialMusicApp(q);
+  };
+}
 if ($('quickOpenMusicBtn6')) $('quickOpenMusicBtn6').onclick = () => enterStealthMode('player');
 
 // Navegación dentro del Bloc de Notas Falso (Pestañas Texto / Boceto)
@@ -3542,6 +3673,7 @@ initCalculator();
 updateCalcDisplay();
 updateDreamNoteDOM();
 initMusicPlayerEvents();
+applyMusicPlayerTheme(state.musicPlayerTheme);
 fetchSongPreview(state.dreamSong);
 switchPresentationLayer(1);
 initSlateControls();
