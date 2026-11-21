@@ -162,6 +162,15 @@ const state = {
   launchDirectToCalculator: localStorage.getItem('mindpad_launch_direct_calc') !== 'false',
   currentLayer: 1,
 
+  // Pizarra E-Ink (Slate of Mind)
+  slateStyle: localStorage.getItem('mindpad_slate_style') || 'blackboard',
+  slateContentType: localStorage.getItem('mindpad_slate_content_type') || 'strokes',
+  selectedPlayingCard: localStorage.getItem('mindpad_selected_card') || 'AS',
+  slateLiveSync: localStorage.getItem('mindpad_slate_live_sync') !== 'false',
+  slateRoomId: localStorage.getItem('mindpad_slate_room') || 'SLATE_MIND',
+  isSlateRevealed: true,
+  isSlateViewActive: false,
+
   // Ajustes de mentalismo
   orientation: 'portrait_cw',
   detectMode: 'both',
@@ -188,6 +197,8 @@ const previewCanvas = $('previewCanvas');
 const pCtx = previewCanvas.getContext('2d');
 const stealthCanvas = $('stealthCanvas');
 const sCtx = stealthCanvas.getContext('2d');
+const chalkCanvas = $('chalkCanvas');
+const cCtx = chalkCanvas ? chalkCanvas.getContext('2d') : null;
 
 let silentAudioEl = null;
 
@@ -992,6 +1003,13 @@ function resizeCanvases() {
   stealthCanvas.height = window.innerHeight * dpr;
   sCtx.scale(dpr, dpr);
 
+  if (chalkCanvas && cCtx) {
+    chalkCanvas.width = window.innerWidth * dpr;
+    chalkCanvas.height = window.innerHeight * dpr;
+    cCtx.scale(dpr, dpr);
+    redrawChalkSlate();
+  }
+
   redrawAllStrokes();
 }
 window.addEventListener('resize', resizeCanvases);
@@ -1054,6 +1072,11 @@ function redrawAllStrokes() {
       drawSeg(sCtx, window.innerWidth, window.innerHeight, s.points[i - 1], s.points[i], '#e63946', true);
     }
   });
+
+  if (state.slateLiveSync && typeof redrawChalkSlate === 'function') {
+    redrawChalkSlate();
+    broadcastSlateUpdate();
+  }
 }
 
 // Reloj Always-On y Pantalla de Bloqueo
@@ -1434,15 +1457,18 @@ function switchPresentationLayer(layerNum) {
   if ($('layer1Btn')) $('layer1Btn').className = `btn small ${layerNum === 1 ? 'primary active' : 'secondary'}`;
   if ($('layer2Btn')) $('layer2Btn').className = `btn small ${layerNum === 2 ? 'primary active' : 'secondary'}`;
   if ($('layer3Btn')) $('layer3Btn').className = `btn small ${layerNum === 3 ? 'primary active' : 'secondary'}`;
+  if ($('layer4Btn')) $('layer4Btn').className = `btn small ${layerNum === 4 ? 'primary active' : 'secondary'}`;
 
   if ($('layer1Content')) $('layer1Content').style.display = layerNum === 1 ? 'block' : 'none';
   if ($('layer2Content')) $('layer2Content').style.display = layerNum === 2 ? 'block' : 'none';
   if ($('layer3Content')) $('layer3Content').style.display = layerNum === 3 ? 'block' : 'none';
+  if ($('layer4Content')) $('layer4Content').style.display = layerNum === 4 ? 'block' : 'none';
 
   const badges = {
     1: 'Capa 1: Post-it',
     2: 'Capa 2: Redes / VIP',
-    3: 'Capa 3: TV / Sprocket'
+    3: 'Capa 3: TV / Sprocket',
+    4: 'Capa 4: Pizarra E-Ink'
   };
   if ($('activeLayerBadge')) $('activeLayerBadge').textContent = badges[layerNum];
 
@@ -1460,6 +1486,10 @@ function switchPresentationLayer(layerNum) {
     state.autoSavePocketPrinter = true;
     if ($('autoSavePocketPrinterCheck')) $('autoSavePocketPrinterCheck').checked = true;
     localStorage.setItem('mindpad_auto_save_printer', 'true');
+  } else if (layerNum === 4) {
+    state.slateLiveSync = true;
+    if ($('slateLiveSyncCheck')) $('slateLiveSyncCheck').checked = true;
+    localStorage.setItem('mindpad_slate_live_sync', 'true');
   }
 }
 
@@ -1541,6 +1571,558 @@ async function downloadVipProof() {
   a.click();
   document.body.removeChild(a);
   alert(`Imagen guardada como "${filename}" con fecha de hace ${state.exifDaysBack} días.`);
+}
+
+// ==========================================
+// 8. MOTOR DE PIZARRA E-INK (CHALK & SLATE ENGINE)
+// ==========================================
+let slateSyncChannel = null;
+try {
+  slateSyncChannel = new BroadcastChannel('mindpad_slate_sync');
+  slateSyncChannel.onmessage = (e) => {
+    if (e.data) applyRemoteSlateData(e.data);
+  };
+} catch (e) {
+  console.log('BroadcastChannel no soportado, usando Storage fallback');
+}
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'mindpad_slate_remote_payload' && e.newValue) {
+    try {
+      const data = JSON.parse(e.newValue);
+      applyRemoteSlateData(data);
+    } catch (err) {}
+  }
+});
+
+function broadcastSlateUpdate() {
+  const payload = {
+    room: state.slateRoomId,
+    strokes: state.strokes,
+    word: state.currentWord,
+    drawing: state.currentDrawing,
+    number: state.currentNumber,
+    card: state.selectedPlayingCard,
+    style: state.slateStyle,
+    contentType: state.slateContentType,
+    isRevealed: state.isSlateRevealed,
+    timestamp: Date.now()
+  };
+  try {
+    if (slateSyncChannel) slateSyncChannel.postMessage(payload);
+    localStorage.setItem('mindpad_slate_remote_payload', JSON.stringify(payload));
+  } catch (err) {}
+}
+
+function applyRemoteSlateData(data) {
+  if (!data) return;
+  if (data.style) {
+    state.slateStyle = data.style;
+    applySlateStyleToDOM();
+  }
+  if (data.contentType) state.slateContentType = data.contentType;
+  if (data.card) state.selectedPlayingCard = data.card;
+  if (data.word) state.currentWord = data.word;
+  if (data.drawing) state.currentDrawing = data.drawing;
+  if (data.number) state.currentNumber = data.number;
+  if (data.strokes) state.strokes = data.strokes;
+  if (data.isRevealed !== undefined) state.isSlateRevealed = data.isRevealed;
+
+  const dot = $('slateStatusDot');
+  if (dot) {
+    dot.className = 'slate-status-dot active';
+    setTimeout(() => { if (dot) dot.className = 'slate-status-dot'; }, 800);
+  }
+
+  redrawChalkSlate();
+}
+
+function applySlateStyleToDOM() {
+  const slateViewEl = $('slateView');
+  if (!slateViewEl) return;
+  slateViewEl.className = 'view';
+  if (state.slateStyle === 'inverted') {
+    slateViewEl.classList.add('inverted');
+  } else if (state.slateStyle === 'wooden') {
+    slateViewEl.classList.add('wooden-frame');
+  }
+}
+
+// Renderizado de Tiza con textura de polvo y micro-gránulos
+function drawChalkLine(ctx, x1, y1, x2, y2, color = '#f8fafc', width = 3) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const dist = Math.hypot(dx, dy);
+  if (dist === 0) return;
+
+  const steps = Math.max(1, Math.floor(dist / 2.5));
+  ctx.save();
+  ctx.fillStyle = color;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const cx = x1 + dx * t;
+    const cy = y1 + dy * t;
+
+    // Núcleo principal de tiza
+    const jitterX = (Math.random() - 0.5) * (width * 0.4);
+    const jitterY = (Math.random() - 0.5) * (width * 0.4);
+    const radius = Math.max(0.6, (width * 0.5) * (0.6 + Math.random() * 0.5));
+    
+    ctx.globalAlpha = 0.25 + Math.random() * 0.45;
+    ctx.beginPath();
+    ctx.arc(cx + jitterX, cy + jitterY, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Polvo de gis disperso (partículas)
+    if (Math.random() < 0.35) {
+      const dustX = (Math.random() - 0.5) * (width * 1.8);
+      const dustY = (Math.random() - 0.5) * (width * 1.8);
+      ctx.globalAlpha = 0.15 + Math.random() * 0.3;
+      ctx.beginPath();
+      ctx.arc(cx + dustX, cy + dustY, 0.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Trazo central continuo suave
+  ctx.globalAlpha = 0.4;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width * 0.7;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawChalkStrokes(ctx, w, h) {
+  if (!state.strokes || !state.strokes.length) return;
+  const vp = getViewport(w, h);
+  const isDark = state.slateStyle !== 'inverted';
+  const chalkColor = isDark ? '#f8fafc' : '#1e293b';
+
+  state.strokes.forEach((s) => {
+    for (let i = 1; i < s.points.length; i++) {
+      const p1 = s.points[i - 1];
+      const p2 = s.points[i];
+      const x1 = vp.offsetX + p1.x * vp.renderW;
+      const y1 = vp.offsetY + p1.y * vp.renderH;
+      const x2 = vp.offsetX + p2.x * vp.renderW;
+      const y2 = vp.offsetY + p2.y * vp.renderH;
+      const strokeW = Math.max(2, (p1.p || 0.7) * 4 * state.strokeWidth);
+      drawChalkLine(ctx, x1, y1, x2, y2, chalkColor, strokeW);
+    }
+  });
+}
+
+function drawChalkRoundedRect(ctx, x, y, width, height, radius, color, strokeW) {
+  const x1 = x + radius, x2 = x + width - radius;
+  const y1 = y + radius, y2 = y + height - radius;
+
+  drawChalkLine(ctx, x1, y, x2, y, color, strokeW);
+  drawChalkLine(ctx, x + width, y1, x + width, y2, color, strokeW);
+  drawChalkLine(ctx, x2, y + height, x1, y + height, color, strokeW);
+  drawChalkLine(ctx, x, y2, x, y1, color, strokeW);
+
+  drawChalkLine(ctx, x1, y, x, y1, color, strokeW);
+  drawChalkLine(ctx, x2, y, x + width, y1, color, strokeW);
+  drawChalkLine(ctx, x + width, y2, x2, y + height, color, strokeW);
+  drawChalkLine(ctx, x, y2, x1, y + height, color, strokeW);
+}
+
+function drawChalkPlayingCard(ctx, w, h, cardCode = 'AS') {
+  const isDark = state.slateStyle !== 'inverted';
+  const chalkColor = isDark ? '#f8fafc' : '#1e293b';
+
+  const cardW = Math.min(w * 0.65, 340);
+  const cardH = cardW * 1.45;
+  const startX = (w - cardW) / 2;
+  const startY = (h - cardH) / 2;
+
+  ctx.save();
+
+  // Borde de la carta en tiza
+  const r = 16;
+  drawChalkRoundedRect(ctx, startX, startY, cardW, cardH, r, chalkColor, 3.5);
+
+  // Parsear valor y palo
+  let val = 'A';
+  let suit = '♠';
+  let suitName = 'Picas';
+
+  const code = (cardCode || 'AS').toUpperCase();
+  if (code.startsWith('10')) {
+    val = '10';
+  } else {
+    val = code.charAt(0);
+  }
+  const suitChar = code.slice(val.length);
+
+  if (suitChar.includes('H') || suitChar.includes('C') && !suitChar.includes('L')) {
+    suit = '♥';
+    suitName = 'Corazones';
+  } else if (suitChar.includes('D')) {
+    suit = '♦';
+    suitName = 'Diamantes';
+  } else if (suitChar.includes('C') || suitChar.includes('T')) {
+    suit = '♣';
+    suitName = 'Tréboles';
+  } else {
+    suit = '♠';
+    suitName = 'Picas';
+  }
+
+  // Indices en esquinas
+  ctx.fillStyle = chalkColor;
+  ctx.font = `bold ${Math.floor(cardW * 0.14)}px system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(val, startX + cardW * 0.13, startY + cardH * 0.06);
+
+  ctx.font = `${Math.floor(cardW * 0.13)}px serif`;
+  ctx.fillText(suit, startX + cardW * 0.13, startY + cardH * 0.18);
+
+  // Invertido abajo derecha
+  ctx.save();
+  ctx.translate(startX + cardW - cardW * 0.13, startY + cardH - cardH * 0.06);
+  ctx.rotate(Math.PI);
+  ctx.font = `bold ${Math.floor(cardW * 0.14)}px system-ui, -apple-system, sans-serif`;
+  ctx.fillText(val, 0, 0);
+  ctx.font = `${Math.floor(cardW * 0.13)}px serif`;
+  ctx.fillText(suit, 0, cardH * 0.12);
+  ctx.restore();
+
+  // Símbolo gigante central en tiza estilo doodle
+  ctx.font = `${Math.floor(cardW * 0.45)}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(suit, w / 2, h / 2);
+
+  // Nombre de la carta en caligrafía de tiza abajo
+  ctx.font = `italic 600 ${Math.floor(cardW * 0.09)}px "Caveat", "Patrick Hand", cursive, sans-serif`;
+  ctx.fillText(`${val === 'A' ? 'As' : val === 'K' ? 'Rey' : val === 'Q' ? 'Reina' : val === 'J' ? 'Jota' : val} de ${suitName}`, w / 2, startY + cardH + 34);
+
+  ctx.restore();
+}
+
+function drawChalkText(ctx, w, h, text, subtitle = '') {
+  if (!text) return;
+  const isDark = state.slateStyle !== 'inverted';
+  const chalkColor = isDark ? '#f8fafc' : '#1e293b';
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const fontSize = Math.min(68, Math.floor(w / Math.max(6, text.length * 0.65)));
+  ctx.font = `700 ${fontSize}px "Caveat", "Patrick Hand", system-ui, sans-serif`;
+
+  ctx.fillStyle = chalkColor;
+  ctx.globalAlpha = 0.85;
+  ctx.fillText(text, w / 2, h / 2 - 20);
+  ctx.globalAlpha = 0.5;
+  ctx.fillText(text, w / 2 + 1, h / 2 - 19);
+
+  // Subrayado rústico en tiza
+  const textMetrics = ctx.measureText(text);
+  const lineW = textMetrics.width * 1.15;
+  drawChalkLine(ctx, w / 2 - lineW / 2, h / 2 + fontSize * 0.45, w / 2 + lineW / 2, h / 2 + fontSize * 0.45, chalkColor, 3.5);
+
+  if (subtitle) {
+    ctx.font = `italic ${Math.floor(fontSize * 0.38)}px system-ui, sans-serif`;
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(subtitle, w / 2, h / 2 + fontSize * 0.85);
+  }
+
+  ctx.restore();
+}
+
+function drawChalkDoodle(ctx, w, h, doodleName) {
+  const isDark = state.slateStyle !== 'inverted';
+  const chalkColor = isDark ? '#f8fafc' : '#1e293b';
+  const cx = w / 2;
+  const cy = h / 2 - 20;
+  const size = Math.min(w * 0.45, 180);
+
+  ctx.save();
+  const d = (doodleName || state.currentDrawing || 'estrella').toLowerCase();
+  if (d.includes('coraz') || d.includes('heart')) {
+    drawChalkLine(ctx, cx, cy + size * 0.5, cx - size * 0.5, cy - size * 0.1, chalkColor, 3.5);
+    drawChalkLine(ctx, cx - size * 0.5, cy - size * 0.1, cx, cy - size * 0.45, chalkColor, 3.5);
+    drawChalkLine(ctx, cx, cy - size * 0.45, cx + size * 0.5, cy - size * 0.1, chalkColor, 3.5);
+    drawChalkLine(ctx, cx + size * 0.5, cy - size * 0.1, cx, cy + size * 0.5, chalkColor, 3.5);
+  } else if (d.includes('arbol') || d.includes('tree')) {
+    drawChalkLine(ctx, cx, cy - size * 0.55, cx - size * 0.45, cy + size * 0.2, chalkColor, 3.5);
+    drawChalkLine(ctx, cx - size * 0.45, cy + size * 0.2, cx + size * 0.45, cy + size * 0.2, chalkColor, 3.5);
+    drawChalkLine(ctx, cx + size * 0.45, cy + size * 0.2, cx, cy - size * 0.55, chalkColor, 3.5);
+    drawChalkLine(ctx, cx - size * 0.1, cy + size * 0.2, cx - size * 0.1, cy + size * 0.55, chalkColor, 4);
+    drawChalkLine(ctx, cx + size * 0.1, cy + size * 0.2, cx + size * 0.1, cy + size * 0.55, chalkColor, 4);
+  } else {
+    // Estrella de 5 puntas en tiza
+    for (let i = 0; i < 5; i++) {
+      const a1 = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+      const a2 = ((i + 1) * 4 * Math.PI) / 5 - Math.PI / 2;
+      drawChalkLine(
+        ctx,
+        cx + (size * 0.55) * Math.cos(a1),
+        cy + (size * 0.55) * Math.sin(a1),
+        cx + (size * 0.55) * Math.cos(a2),
+        cy + (size * 0.55) * Math.sin(a2),
+        chalkColor,
+        3.5
+      );
+    }
+  }
+
+  // Título del doodle
+  ctx.fillStyle = chalkColor;
+  ctx.textAlign = 'center';
+  ctx.font = '600 22px "Caveat", "Patrick Hand", cursive, sans-serif';
+  ctx.fillText(state.currentDrawing || d, cx, cy + size * 0.85);
+  ctx.restore();
+}
+
+function redrawChalkSlate() {
+  const canvas = $('chalkCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  if (!state.isSlateRevealed) {
+    return;
+  }
+
+  applySlateStyleToDOM();
+
+  const type = state.slateContentType;
+  if (type === 'card') {
+    drawChalkPlayingCard(ctx, w, h, state.selectedPlayingCard);
+  } else if (type === 'word') {
+    const textToShow = state.currentWord || state.currentNumber || 'Premonición';
+    const sub = state.currentNumber && state.currentWord ? `Código: ${state.currentNumber}` : '';
+    drawChalkText(ctx, w, h, textToShow, sub);
+  } else if (type === 'doodle') {
+    drawChalkDoodle(ctx, w, h, state.currentDrawing);
+  } else {
+    // 'strokes' (por defecto)
+    drawChalkStrokes(ctx, w, h);
+    if (state.currentWord || state.currentDrawing) {
+      const note = state.currentWord || state.currentDrawing;
+      ctx.save();
+      ctx.fillStyle = state.slateStyle === 'inverted' ? '#475569' : '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.font = 'italic 16px sans-serif';
+      ctx.fillText(note, w / 2, h - 30);
+      ctx.restore();
+    }
+  }
+}
+
+function enterSlateMode() {
+  state.isSlateViewActive = true;
+  $('setupView').style.display = 'none';
+  $('stealthView').style.display = 'none';
+  $('slateView').style.display = 'flex';
+  document.body.className = 'mode-slate';
+
+  applySlateStyleToDOM();
+  resizeCanvases();
+  redrawChalkSlate();
+
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+function exitSlateMode() {
+  state.isSlateViewActive = false;
+  $('slateView').style.display = 'none';
+  $('setupView').style.display = 'block';
+  document.body.className = 'mode-setup';
+  resizeCanvases();
+}
+
+function initSlateControls() {
+  const slateViewEl = $('slateView');
+  const controlsBar = $('slateControlsBar');
+  let hideControlsTimer = null;
+
+  function showControlsTemporarily() {
+    if (!controlsBar) return;
+    controlsBar.classList.add('show');
+    clearTimeout(hideControlsTimer);
+    hideControlsTimer = setTimeout(() => {
+      controlsBar.classList.remove('show');
+    }, 3200);
+  }
+
+  if (slateViewEl) {
+    slateViewEl.addEventListener('pointerdown', showControlsTemporarily);
+    slateViewEl.addEventListener('mousemove', showControlsTemporarily);
+  }
+
+  if ($('slateToggleInvertBtn')) {
+    $('slateToggleInvertBtn').onclick = (e) => {
+      e.stopPropagation();
+      state.slateStyle = state.slateStyle === 'inverted' ? 'blackboard' : 'inverted';
+      localStorage.setItem('mindpad_slate_style', state.slateStyle);
+      applySlateStyleToDOM();
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+    };
+  }
+
+  if ($('slateToggleFrameBtn')) {
+    $('slateToggleFrameBtn').onclick = (e) => {
+      e.stopPropagation();
+      state.slateStyle = state.slateStyle === 'wooden' ? 'blackboard' : 'wooden';
+      localStorage.setItem('mindpad_slate_style', state.slateStyle);
+      applySlateStyleToDOM();
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+    };
+  }
+
+  if ($('slateClearCanvasBtn')) {
+    $('slateClearCanvasBtn').onclick = (e) => {
+      e.stopPropagation();
+      state.strokes = [];
+      state.currentWord = '';
+      state.currentDrawing = '';
+      state.currentNumber = '';
+      redrawAllStrokes();
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+    };
+  }
+
+  if ($('slateFullscreenBtn')) {
+    $('slateFullscreenBtn').onclick = (e) => {
+      e.stopPropagation();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }
+
+  if ($('slateExitBtn')) {
+    $('slateExitBtn').onclick = (e) => {
+      e.stopPropagation();
+      exitSlateMode();
+    };
+  }
+}
+
+function initSlateSettingsUI() {
+  const baseUrl = window.location.origin + window.location.pathname;
+  const remoteUrl = `${baseUrl}?view=slate&room=${state.slateRoomId}`;
+  if ($('slateRemoteUrlInput')) $('slateRemoteUrlInput').value = remoteUrl;
+
+  if ($('copySlateUrlBtn')) {
+    $('copySlateUrlBtn').onclick = () => {
+      navigator.clipboard.writeText(remoteUrl).then(() => {
+        alert('URL de la Pizarra copiada al portapapeles. Ábrela en el navegador de tu Kindle o segunda pantalla.');
+      });
+    };
+  }
+
+  if ($('openSlateWindowBtn')) {
+    $('openSlateWindowBtn').onclick = () => {
+      window.open(remoteUrl, '_blank');
+    };
+  }
+
+  if ($('quickOpenSlateBtn')) $('quickOpenSlateBtn').onclick = enterSlateMode;
+
+  if ($('slateStyleSelect')) {
+    $('slateStyleSelect').value = state.slateStyle;
+    $('slateStyleSelect').onchange = (e) => {
+      state.slateStyle = e.target.value;
+      localStorage.setItem('mindpad_slate_style', state.slateStyle);
+      applySlateStyleToDOM();
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+    };
+  }
+
+  if ($('slateContentTypeSelect')) {
+    $('slateContentTypeSelect').value = state.slateContentType;
+    if ($('slateCardRow')) {
+      $('slateCardRow').style.display = state.slateContentType === 'card' ? 'flex' : 'none';
+    }
+    $('slateContentTypeSelect').onchange = (e) => {
+      state.slateContentType = e.target.value;
+      localStorage.setItem('mindpad_slate_content_type', state.slateContentType);
+      if ($('slateCardRow')) {
+        $('slateCardRow').style.display = state.slateContentType === 'card' ? 'flex' : 'none';
+      }
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+    };
+  }
+
+  if ($('slatePlayingCardSelect')) {
+    $('slatePlayingCardSelect').value = state.selectedPlayingCard;
+    $('slatePlayingCardSelect').onchange = (e) => {
+      if (e.target.value === 'custom') {
+        const customCard = prompt('Escribe el código o nombre de la carta (ej. 7H, AS, KD, 10S):', '7H');
+        if (customCard) {
+          state.selectedPlayingCard = customCard.toUpperCase();
+        }
+      } else {
+        state.selectedPlayingCard = e.target.value;
+      }
+      localStorage.setItem('mindpad_selected_card', state.selectedPlayingCard);
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+    };
+  }
+
+  if ($('slateLiveSyncCheck')) {
+    $('slateLiveSyncCheck').checked = state.slateLiveSync;
+    $('slateLiveSyncCheck').onchange = (e) => {
+      state.slateLiveSync = e.target.checked;
+      localStorage.setItem('mindpad_slate_live_sync', state.slateLiveSync);
+    };
+  }
+
+  if ($('slateRevealBtn')) {
+    $('slateRevealBtn').onclick = () => {
+      state.isSlateRevealed = true;
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+      triggerHaptic([60, 40, 60]);
+      alert('¡Predicción revelada en la Pizarra E-Ink!');
+    };
+  }
+
+  if ($('quickRevealSlateBtn')) {
+    $('quickRevealSlateBtn').onclick = () => {
+      state.isSlateRevealed = true;
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+      triggerHaptic([60, 40, 60]);
+    };
+  }
+
+  if ($('slateClearBtn')) {
+    $('slateClearBtn').onclick = () => {
+      state.strokes = [];
+      state.currentWord = '';
+      state.currentDrawing = '';
+      state.currentNumber = '';
+      redrawAllStrokes();
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+    };
+  }
 }
 
 // ==========================================
@@ -2192,6 +2774,7 @@ if ($('stealthBtn')) {
 if ($('layer1Btn')) $('layer1Btn').onclick = () => switchPresentationLayer(1);
 if ($('layer2Btn')) $('layer2Btn').onclick = () => switchPresentationLayer(2);
 if ($('layer3Btn')) $('layer3Btn').onclick = () => switchPresentationLayer(3);
+if ($('layer4Btn')) $('layer4Btn').onclick = () => switchPresentationLayer(4);
 if ($('viewDossierBtn')) {
   $('viewDossierBtn').onclick = () => {
     const el = $('routinesDossier');
@@ -2298,12 +2881,19 @@ initTTS();
 initCalculator();
 updateCalcDisplay();
 switchPresentationLayer(1);
+initSlateControls();
+initSlateSettingsUI();
 resizeCanvases();
 updatePageUI();
 updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
 
-// Iniciar directo en Calculadora (Camuflaje total al abrir)
-if (state.launchDirectToCalculator) {
+// Comprobar parámetros de URL: ?view=slate o ?slate=1 para monitores Kindle / E-Ink
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('view') === 'slate' || urlParams.get('slate') === '1' || urlParams.get('mode') === 'slate') {
+  setTimeout(() => {
+    enterSlateMode();
+  }, 50);
+} else if (state.launchDirectToCalculator) {
   setTimeout(() => {
     enterStealthMode('calculator');
   }, 80);

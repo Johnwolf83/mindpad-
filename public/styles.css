@@ -764,3 +764,119 @@ button.primary {
   padding-left: 8px;
   font-style: italic;
 }
+
+/* ===================================================
+   VISTA PIZARRA DE TINTA ELECTRÓNICA (E-INK BLACKBOARD)
+   =================================================== */
+#slateView {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #111215;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Textura de pizarra negra */
+.slate-board {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #121316;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 80%),
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* Modo papel E-Ink blanco invertido */
+#slateView.inverted .slate-board {
+  background-color: #f7f7f5;
+  background-image: none;
+}
+
+/* Marco de madera vintage para escenario */
+#slateView.wooden-frame {
+  padding: clamp(14px, 3vw, 28px);
+  box-sizing: border-box;
+  background: #2b1d0c;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 0, 0, 0.9);
+}
+#slateView.wooden-frame .slate-board {
+  position: relative;
+  border-radius: 4px;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.95);
+  border: 2px solid #1a1107;
+}
+
+#chalkCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* Barra de control flotante discreta en la pizarra */
+.slate-controls-bar {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 6px 14px;
+  z-index: 10005;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+#slateView:hover .slate-controls-bar,
+#slateView:active .slate-controls-bar,
+.slate-controls-bar.show {
+  opacity: 1;
+}
+
+.slate-btn {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.slate-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* Punto de estado microscópico en la esquina para el mago */
+.slate-status-dot {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #334155;
+  z-index: 10006;
+}
+.slate-status-dot.active { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+.slate-status-dot.revealing { background: #eab308; box-shadow: 0 0 8px #eab308; }

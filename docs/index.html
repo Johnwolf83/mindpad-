@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="styles.css?v=10" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=14').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=15').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -83,6 +83,7 @@
           <button id="layer1Btn" class="btn small primary active" style="flex:1; min-width:110px;">1️⃣ Post-it (Casual)</button>
           <button id="layer2Btn" class="btn small secondary" style="flex:1; min-width:110px;">2️⃣ Redes / VIP</button>
           <button id="layer3Btn" class="btn small secondary" style="flex:1; min-width:110px;">3️⃣ TV / Sprocket</button>
+          <button id="layer4Btn" class="btn small secondary" style="flex:1; min-width:110px;">4️⃣ Pizarra E-Ink</button>
           <button id="viewDossierBtn" class="btn small outline" style="border-color:#ca8a04; color:#fef08a; min-width:120px;">📖 Ver Dossier de Rutinas</button>
         </div>
 
@@ -129,6 +130,17 @@
               <button id="startTheatricalTimerBtn" class="btn small cta" style="flex:1; background:#059669;">▶ Iniciar Teatralidad (60s)</button>
               <button id="resetTheatricalTimerBtn" class="btn small secondary">↺ Reiniciar</button>
             </div>
+          </div>
+        </div>
+
+        <!-- Capa 4: Pizarra E-Ink / Monitor Kindle (Gis Blanco sobre Pizarra) -->
+        <div id="layer4Content" class="layer-panel" style="display:none;">
+          <div style="background:#18181b; border-left:3px solid #facc15; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
+            <strong>📟 Rutina Pizarra E-Ink:</strong> Proyección silenciosa en un monitor de tinta electrónica o e-reader tipo Kindle en el escenario. Como si una mano invisible dibujara con tiza blanca sobre pizarra negra.
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button id="quickOpenSlateBtn" class="btn small cta" style="flex:1; background:#ca8a04; color:#000; font-weight:700;">📟 Abrir Pizarra en Pantalla</button>
+            <button id="quickRevealSlateBtn" class="btn small primary" style="flex:1;">💥 Revelar en Pizarra Ahora</button>
           </div>
         </div>
       </section>
@@ -300,6 +312,78 @@
             </div>
             <button id="downloadOriginalBtn" class="btn secondary full">💾 Guardar Trazo Original</button>
           </div>
+        </div>
+      </section>
+
+      <!-- Tarjeta PIZARRA E-INK & MONITOR KINDLE (SEGUNDA PANTALLA) -->
+      <section class="card" style="border: 1px solid #eab308; background: linear-gradient(180deg, #18150c 0%, #0d0f18 100%);">
+        <div class="card-title">
+          <span style="color:#fef08a;">📟 Pizarra E-Ink & Monitor Kindle (Segunda Pantalla)</span>
+          <span id="slateStatusBadge" class="badge" style="background:#eab308; color:#000; font-weight:700;">Gis en Pizarra</span>
+        </div>
+        <p class="desc" style="color:#e2e8f0;">
+          Convierte cualquier e-reader Kindle, tablet de tinta electrónica o pantalla secundaria en una pizarra mágica que proyecta trazos, cartas, doodles o palabras en tiza blanca.
+        </p>
+
+        <!-- Enlace & QR para Kindle / Segunda Pantalla -->
+        <div style="background:#111216; border:1px solid #334155; border-radius:8px; padding:10px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label style="font-size:11.5px; color:#facc15; font-weight:700;">🔗 URL para el navegador del Kindle / Segunda Pantalla:</label>
+            <span id="slateRoomCode" style="font-family:monospace; font-size:11px; background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px;">Sala: SLATE</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <input id="slateRemoteUrlInput" type="text" readonly style="flex:1; background:#000; border:1px solid #475569; color:#f8fafc; font-size:11.5px; padding:6px 8px; border-radius:4px;" />
+            <button id="copySlateUrlBtn" class="btn small secondary">📋 Copiar</button>
+            <button id="openSlateWindowBtn" class="btn small cta" style="background:#ca8a04; color:#000; font-weight:700;">📟 Abrir</button>
+          </div>
+        </div>
+
+        <!-- Ajustes de Estilo de Pizarra -->
+        <div class="field-row">
+          <label for="slateStyleSelect">Estilo de Pizarra:</label>
+          <select id="slateStyleSelect">
+            <option value="blackboard" selected>Gis Blanco sobre Pizarra Negra (Blackboard)</option>
+            <option value="inverted">Papel E-Ink (Tinta Negra sobre Blanco)</option>
+            <option value="wooden">Pizarra con Marco de Madera Vintage</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <label for="slateContentTypeSelect">Contenido en Pizarra:</label>
+          <select id="slateContentTypeSelect">
+            <option value="strokes" selected>Trazos de la Huion en Vivo (Duplicación en Gis)</option>
+            <option value="card">Carta de Baraja en Gis (A♠, 7♥, etc.)</option>
+            <option value="word">Palabra / Código Secreto en Gis</option>
+            <option value="doodle">Doodle / Icono Minimalista en Gis</option>
+          </select>
+        </div>
+
+        <!-- Selector Rápido de Cartas de Baraja para Magos -->
+        <div id="slateCardRow" class="field-row" style="display:none; background:#1e1b4b; padding:8px; border-radius:6px; border:1px solid #4338ca;">
+          <label for="slatePlayingCardSelect" style="color:#c7d2fe; font-weight:600;">Carta a Proyectar:</label>
+          <select id="slatePlayingCardSelect" style="flex:1;">
+            <option value="AS" selected>As de Picas (A♠)</option>
+            <option value="7H">7 de Corazones (7♥)</option>
+            <option value="KD">Rey de Diamantes (K♦)</option>
+            <option value="QC">Reina de Tréboles (Q♣)</option>
+            <option value="10S">10 de Picas (10♠)</option>
+            <option value="3D">3 de Diamantes (3♦)</option>
+            <option value="JH">Jota de Corazones (J♥)</option>
+            <option value="custom">Carta personalizada...</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <label class="toggle-label" style="font-size:11.5px; color:#38bdf8; font-weight:600;">
+            <input id="slateLiveSyncCheck" type="checkbox" checked />
+            <span>⚡ Transmitir en Vivo Trazo a Trazo (o desmarcar para Revelación Clímax)</span>
+          </label>
+        </div>
+
+        <!-- Botones de Acción de Pizarra -->
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button id="slateRevealBtn" class="btn primary full" style="flex:2; background:#eab308; color:#000; font-weight:700;">💥 Revelar en Pizarra Ahora</button>
+          <button id="slateClearBtn" class="btn secondary" style="flex:1;">🧹 Borrar Pizarra</button>
         </div>
       </section>
 
@@ -538,6 +622,38 @@
             💡 <strong>Valor Comercial:</strong> Multiplica el impacto por tres, ideal para rutinas de mentalismo colectivo en empresas y conferencias.
           </div>
         </div>
+
+        <!-- Rutina 6 -->
+        <div class="routine-box">
+          <div class="routine-title-row">
+            <span class="routine-title">📟 Rutina 6: La Pizarra Espiritual E-Ink (Slate of Mind)</span>
+            <span class="routine-badge stage">Teatro / Caballete / E-Ink</span>
+          </div>
+          <div class="routine-desc">
+            <strong>Efecto:</strong> Sobre un atril o caballete a la vista del público descansa una pequeña pizarra negra (un monitor de tinta electrónica tipo Kindle o tablet e-ink). Nadie se acerca a ella. El espectador piensa o dibuja algo (o piensa en una carta de baraja). Cuando el mago lo ordena, la pantalla parpadea suavemente y aparece dibujado en <strong>tiza blanca con textura real</strong> exactamente lo que el espectador tenía en mente.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>Preparación Invisible:</strong> Colocas tu Kindle o tablet e-ink en el atril con la URL de la pizarra abierta en pantalla completa. La pantalla permanece negra o con un sutil marco de pizarra vacía.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>La Decisión del Espectador:</strong> El espectador dibuja en la Huion Note X10 (o nombra una carta de póker).</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Transmisión Silenciosa:</strong> MindPad sincroniza el trazo, carta o doodle en tiempo real hacia la pizarra E-Ink. Si estás en modo manual, presionas <em>"Revelar en Pizarra"</em> cuando llegue el clímax dramático.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>El Clímax de la Tiza:</strong> El público ve con asombro la predicción escrita en gis blanco como si una mano invisible lo hubiera trazado en ese mismo instante.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            💡 <strong>Valor Comercial:</strong> Parece un objeto victoriano o de escuela antigua pero opera con la tecnología más puntera. Cero reflejos, estética teatral insuperable.
+          </div>
+        </div>
       </section>
     </div>
   </div>
@@ -640,6 +756,25 @@
     <div id="exitStealthTrigger" class="stealth-exit-hotspot" title="Triple tap para salir"></div>
   </div>
 
-  <script src="mindpad.js?v=14" type="module"></script>
+  <!-- VISTA PIZARRA DE TINTA ELECTRÓNICA (E-INK BLACKBOARD SLATE) -->
+  <div id="slateView" class="view" style="display: none;">
+    <div id="slateBoard" class="slate-board">
+      <canvas id="chalkCanvas"></canvas>
+    </div>
+
+    <!-- Indicador de conexión microscópico en la esquina para el mago -->
+    <div id="slateStatusDot" class="slate-status-dot" title="Pizarra sincronizada"></div>
+
+    <!-- Barra de Controles Flotante Discreta (se oculta sola en 3s) -->
+    <div id="slateControlsBar" class="slate-controls-bar">
+      <button id="slateToggleInvertBtn" class="slate-btn" title="Alternar Blanco / Negro">🌓 Invertir</button>
+      <button id="slateToggleFrameBtn" class="slate-btn" title="Alternar Marco de Madera">🖼️ Marco</button>
+      <button id="slateClearCanvasBtn" class="slate-btn" title="Limpiar Pizarra">🧹 Limpiar</button>
+      <button id="slateFullscreenBtn" class="slate-btn" title="Pantalla Completa">⛶ Pantalla Completa</button>
+      <button id="slateExitBtn" class="slate-btn" title="Salir al Panel">⚙️ Salir</button>
+    </div>
+  </div>
+
+  <script src="mindpad.js?v=15" type="module"></script>
 </body>
 </html>
