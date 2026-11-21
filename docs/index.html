@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=12" />
+  <link rel="stylesheet" href="styles.css?v=13" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=17').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=18').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -30,7 +30,9 @@
         <h1>MindPad <span>X10 Pro</span></h1>
       </div>
       <div class="header-actions">
-        <button id="calcModeBtn" class="btn cta" title="Abrir Calculadora Camuflada" style="background:#f59e0b; color:#000; font-weight:700; border:none; padding:6px 12px; font-size:12px;">🧮 Calculadora</button>
+        <button id="calcModeBtn" class="btn cta" title="Abrir Calculadora Camuflada" style="background:#f59e0b; color:#000; font-weight:700; border:none; padding:6px 10px; font-size:11.5px;">🧮 Calculadora</button>
+        <button id="notesModeBtn" class="btn secondary" title="Abrir Bloc de Notas Camuflado" style="background:#1e293b; color:#38bdf8; border:1px solid #0284c7; padding:6px 10px; font-size:11.5px;">📝 Notas</button>
+        <button id="musicModeBtn" class="btn secondary" title="Reproductor de Música Camuflado" style="background:#1e293b; color:#10b981; border:1px solid #059669; padding:6px 10px; font-size:11.5px;">🎵 Música</button>
         <button id="stealthBtn" class="primary pulse" title="Entrar en Modo Sigiloso">🤫 Modo Sigilo</button>
       </div>
     </header>
@@ -87,6 +89,8 @@
           <button id="layer2Btn" class="btn small secondary" style="flex:1; min-width:110px;">2️⃣ Redes / VIP</button>
           <button id="layer3Btn" class="btn small secondary" style="flex:1; min-width:110px;">3️⃣ TV / Sprocket</button>
           <button id="layer4Btn" class="btn small secondary" style="flex:1; min-width:110px;">4️⃣ Pizarra E-Ink</button>
+          <button id="layer5Btn" class="btn small secondary" style="flex:1; min-width:110px;">5️⃣ El Sueño (Notas)</button>
+          <button id="layer6Btn" class="btn small secondary" style="flex:1; min-width:110px;">6️⃣ Canción Pensada</button>
           <button id="viewDossierBtn" class="btn small outline" style="border-color:#ca8a04; color:#fef08a; min-width:120px;">📖 Ver Dossier de Rutinas</button>
         </div>
 
@@ -144,6 +148,57 @@
           <div style="display:flex; gap:8px;">
             <button id="quickOpenSlateBtn" class="btn small cta" style="flex:1; background:#ca8a04; color:#000; font-weight:700;">📟 Abrir Pizarra en Pantalla</button>
             <button id="quickRevealSlateBtn" class="btn small primary" style="flex:1;">💥 Revelar en Pizarra Ahora</button>
+          </div>
+        </div>
+
+        <!-- Capa 5: La Rutina del Sueño & Bloc de Notas Camuflado -->
+        <div id="layer5Content" class="layer-panel" style="display:none;">
+          <div style="background:#0c1e33; border-left:3px solid #38bdf8; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
+            <strong>🌙 Rutina del Sueño:</strong> Pides al espectador que escriba: Hora, Nombre, Lugar y Comida favorita en una hoja y la doble. Tu app de Notas camuflada completa una premonición fechada hace días o dibuja el doodle silenciosamente mientras el móvil está boca abajo en la mesa.
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">1. Hora exacta:</label>
+            <input id="dreamHourInput" type="text" value="03:45" style="flex:1;" />
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">2. Nombre persona:</label>
+            <input id="dreamNameInput" type="text" value="Carlos" style="flex:1;" />
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">3. Lugar para viajar:</label>
+            <input id="dreamPlaceInput" type="text" value="París" style="flex:1;" />
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">4. Comida favorita:</label>
+            <input id="dreamFoodInput" type="text" value="Tacos" style="flex:1;" />
+          </div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button id="quickOpenNotesBtn5" class="btn small cta" style="flex:1; background:#0284c7; color:#fff; font-weight:700;">📝 Abrir Notas Camufladas</button>
+            <button id="quickSyncDreamBtn5" class="btn small secondary" style="flex:1;">🔄 Actualizar Nota & Pizarra</button>
+            <button id="quickSpeakDreamBtn5" class="btn small secondary" title="Dictar por audífono BT">📢 Audio BT</button>
+          </div>
+        </div>
+
+        <!-- Capa 6: La Canción Pensada & Justificación de Audífono -->
+        <div id="layer6Content" class="layer-panel" style="display:none;">
+          <div style="background:#064e3b; border-left:3px solid #10b981; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
+            <strong>🎵 Rutina Melodía Pensada:</strong> El espectador piensa y anota su canción favorita. La app la busca en tiempo real en la base mundial de iTunes. Te quitas el auricular: <em>"¿Por qué nombraste esa canción?... Mira, me quito el audífono, es exactamente lo que estaba escuchando"</em>. Le das play al reproductor y suena de verdad.
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">Canción o Artista:</label>
+            <input id="dreamSongInput" type="text" value="Bohemian Rhapsody" style="flex:1;" placeholder="ej. Hotel California, Imagine..." />
+            <button id="searchSongBtn" class="btn small primary" style="padding:6px 12px;">🔍 Buscar</button>
+          </div>
+          <div id="songFoundPreview" style="display:flex; align-items:center; gap:10px; background:#0f172a; padding:8px 10px; border-radius:6px; margin:8px 0; border:1px solid #1e293b;">
+            <img id="songFoundCover" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=80&q=80" style="width:40px; height:40px; border-radius:4px; object-fit:cover;" />
+            <div style="flex:1; overflow:hidden;">
+              <div id="songFoundTitle" style="font-weight:600; font-size:12px; color:#fff; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">Bohemian Rhapsody</div>
+              <div id="songFoundArtist" style="font-size:11px; color:#94a3b8;">Queen</div>
+            </div>
+            <button id="songFoundPlayTestBtn" class="btn small" style="background:#10b981; color:#000; font-weight:700; border:none; padding:4px 8px;">▶ Probar</button>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button id="quickOpenMusicBtn6" class="btn small cta" style="flex:1; background:#059669; color:#fff; font-weight:700;">🎵 Abrir Reproductor Camuflado</button>
           </div>
         </div>
       </section>
@@ -355,6 +410,7 @@
           <label for="slateContentTypeSelect">Contenido en Pizarra:</label>
           <select id="slateContentTypeSelect">
             <option value="strokes" selected>Trazos de la Huion en Vivo (Duplicación en Gis)</option>
+            <option value="dream_list">Lista de Palabras / Rutina del Sueño en Gis</option>
             <option value="card">Carta de Baraja en Gis (A♠, 7♥, etc.)</option>
             <option value="word">Palabra / Código Secreto en Gis</option>
             <option value="doodle">Doodle / Icono Minimalista en Gis</option>
@@ -405,6 +461,8 @@
           <label for="stealthCamouflage">Camuflaje de Pantalla:</label>
           <select id="stealthCamouflage">
             <option value="calculator" selected>Calculadora Realista (Peek en Display)</option>
+            <option value="notes">Bloc de Notas Realista (Doodle & Rutina del Sueño)</option>
+            <option value="player">Reproductor de Música (Spotify / Canción Pensada)</option>
             <option value="lockscreen">Pantalla de Bloqueo Real (WhatsApp)</option>
             <option value="aod">AOD Reloj Minimalista Negro</option>
           </select>
@@ -657,6 +715,70 @@
             💡 <strong>Valor Comercial:</strong> Parece un objeto victoriano o de escuela antigua pero opera con la tecnología más puntera. Cero reflejos, estética teatral insuperable.
           </div>
         </div>
+
+        <!-- Rutina 7 -->
+        <div class="routine-box">
+          <div class="routine-title-row">
+            <span class="routine-title">🌙 Rutina 7: La Premonición del Sueño (El Bloc de Notas Fechado & Modo Doodle)</span>
+            <span class="routine-badge stage">Mesa / Close-up / Mentalismo Psicológico</span>
+          </div>
+          <div class="routine-desc">
+            <strong>Efecto:</strong> El mago relata que hace 4 días tuvo un sueño premonitorio tan vívido que decidió anotarlo en el bloc de notas de su teléfono nada más despertar. Pide a un espectador que piense y anote en una hoja sobre la libreta: <strong>1. Una hora exacta</strong>, <strong>2. El nombre de alguien</strong>, <strong>3. Un país o ciudad</strong>, y <strong>4. Una comida</strong>. El espectador dobla la hoja. El mago nunca tocó la hoja ni el espectador mostró nada. El mago saca su móvil, abre la app de Notas y se la entrega en la mano al espectador: la nota está fechada hace días y relata exactamente el sueño conteniendo con precisión quirúrgica la hora, el nombre, la ciudad y la comida. Si prefiere modo dibujo, el mago muestra la pantalla vacía con pinceles y colores, hace un garabato con su dedo, lo borra y deja el móvil boca abajo sobre la mesa: al voltearlo, el dibujo del espectador ya apareció dentro de la nota.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>El Relato Inicial:</strong> Introduces la idea de los sueños premonitorios. Muestras tu bloc de notas fechado hace 4 días para que vean la fecha auténtica y lo dejas boca abajo en la mesa.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>Las 4 Decisiones Libres:</strong> El espectador anota: Hora, Nombre, Destino y Comida favorita en la libreta Huion.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Sincronización Silenciosa:</strong> MindPad rellena las 4 variables dentro del texto de la nota y envía la lista a la pizarra de tiza.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>El Clímax:</strong> El espectador toma el teléfono que estuvo en la mesa todo el tiempo y lee la nota en voz alta. Coincidencia al 100%.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            💡 <strong>Valor Comercial:</strong> Impacto emocional profundo. La fecha retroactiva destruye cualquier teoría de que el mago lo escribió en ese instante.
+          </div>
+        </div>
+
+        <!-- Rutina 8 -->
+        <div class="routine-box">
+          <div class="routine-title-row">
+            <span class="routine-title">🎵 Rutina 8: La Melodía Telepática (Justificación del Audífono & iTunes)</span>
+            <span class="routine-badge close-up">Casual / Social / TV / Conexión Emocional</span>
+          </div>
+          <div class="routine-desc">
+            <strong>Efecto:</strong> Durante toda la conversación el mago lleva puesto un discreto audífono inalámbrico. Le pide al espectador que piense en una canción que signifique mucho para él y que la escriba en una hoja para congelar el pensamiento. En cuanto el espectador termina, el mago se detiene pasmado, se quita el audífono lentamente y dice: <em>"¿Por qué pensaste en esa canción?... No tiene sentido. Mira, me quito el audífono... escucha lo que estaba sonando"</em>. El mago acerca el auricular o pone el altavoz del móvil mostrando un reproductor de música con la carátula oficial y sonando la canción real.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>El Audífono Visible:</strong> Comienzas tu actuación con un audífono puesto (o dices que estabas relajándote con música antes de empezar).</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>Canción Pensada:</strong> El espectador escribe el título o artista en la Huion Note.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Búsqueda Instantánea:</strong> MindPad consulta en ~200ms la base mundial de iTunes, carga la carátula oficial y el audio original.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>El Despegue & Revelación:</strong> Te quitas el audífono teatralmente, muestras la pantalla del reproductor y le das play frente a todos.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            💡 <strong>Valor Comercial:</strong> Convierte el audífono (que normalmente es el talón de Aquiles de un mago) en la prueba irrefutable del milagro.
+          </div>
+        </div>
       </section>
     </div>
   </div>
@@ -743,6 +865,95 @@
       </div>
     </div>
 
+    <!-- CAMUFLAJE 4: Bloc de Notas Realista con Modo Doodle -->
+    <div id="fakeNotes" class="fake-notes" style="display: none;">
+      <div class="calc-status-bar" style="background:#12141d;">
+        <span id="notesStatusTime">12:00</span>
+        <div class="fake-icons">
+          <span>📶 5G</span>
+          <span>🔋 84%</span>
+        </div>
+      </div>
+
+      <div class="notes-nav-bar">
+        <div id="notesBackBtn" class="notes-back-btn">
+          <span>‹</span> <span>Carpetas</span>
+        </div>
+        <div class="notes-actions">
+          <span id="notesToggleDoodleBtn" title="Alternar Doodle">🖍️</span>
+          <span title="Compartir">📤</span>
+          <span id="notesNewBtn" title="Nueva Nota">✏️</span>
+        </div>
+      </div>
+
+      <div class="notes-scroll-body">
+        <div id="notesMetaDate" class="notes-meta-date">14 de noviembre de 2026, 21:15</div>
+        <div class="notes-title">Un sueño extraño (Premonición)</div>
+        <div class="notes-content-text">Tuve un sueño muy raro de esos que cuando despiertas recuerdas casi todos los detalles, yo lo llamo premonición. Notaba que en mi mano el reloj marcaba las <span id="noteDreamHour" class="note-blank">03:45</span>.
+
+Conocí a una persona llamada <span id="noteDreamName" class="note-blank">Carlos</span> que tras una breve conversación me dijo que le gustaría viajar a <span id="noteDreamPlace" class="note-blank">París</span>...
+
+Y saben qué fue lo más curioso... que estábamos comiendo <span id="noteDreamFood" class="note-blank">Tacos</span>.
+
+Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta claridad.</div>
+
+        <!-- Área de Doodle / Boceto Rápido con Dedos o Trazo Huion -->
+        <div class="notes-doodle-container">
+          <div class="notes-doodle-header">
+            <span>✏️ Boceto & Garabatos</span>
+            <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11px; cursor:pointer;">🗑️ Limpiar</button>
+          </div>
+          <canvas id="notesDoodleCanvas"></canvas>
+          <div class="notes-doodle-toolbar">
+            <div class="doodle-color-dot active" data-color="#f8fafc" style="background:#f8fafc;" title="Blanco / Tiza"></div>
+            <div class="doodle-color-dot" data-color="#38bdf8" style="background:#38bdf8;" title="Azul"></div>
+            <div class="doodle-color-dot" data-color="#ef4444" style="background:#ef4444;" title="Rojo"></div>
+            <div class="doodle-color-dot" data-color="#eab308" style="background:#eab308;" title="Amarillo"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAMUFLAJE 5: Reproductor de Música Camuflado (Fake Spotify / Apple Music) -->
+    <div id="fakeMusicPlayer" class="fake-music-player" style="display: none;">
+      <div class="music-top-bar">
+        <span>‹ Reproduciendo de Playlist</span>
+        <div class="music-bt-badge">
+          <span>🎧</span>
+          <span>Auricular BT Conectado</span>
+        </div>
+      </div>
+
+      <div class="music-artwork-box">
+        <img id="musicCoverImg" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80" alt="Carátula" />
+      </div>
+
+      <div class="music-meta-box">
+        <div id="musicTrackTitle" class="music-track-title">Bohemian Rhapsody</div>
+        <div id="musicArtistName" class="music-artist-name">Queen • A Night at the Opera</div>
+      </div>
+
+      <div class="music-progress-box">
+        <div class="music-progress-bar-bg">
+          <div id="musicProgressFill" class="music-progress-fill"></div>
+        </div>
+        <div class="music-time-row">
+          <span id="musicTimeCurrent">0:42</span>
+          <span id="musicTimeDuration">5:55</span>
+        </div>
+      </div>
+
+      <div class="music-controls-row">
+        <button class="music-btn-sub">🔀</button>
+        <button class="music-btn-sub">⏮</button>
+        <button id="musicPlayBtn" class="music-play-circle" title="Play / Pausa">▶</button>
+        <button class="music-btn-sub">⏭</button>
+        <button class="music-btn-sub">🔁</button>
+      </div>
+
+      <audio id="musicAudioEl" preload="auto"></audio>
+    </div>
+
     <!-- Indicador de página y estado microscópico en la esquina -->
     <div class="stealth-corner-info">
       <span id="stealthPageIndicator" class="stealth-page-tag">P1</span>
@@ -778,6 +989,6 @@
     </div>
   </div>
 
-  <script src="mindpad.js?v=17" type="module"></script>
+  <script src="mindpad.js?v=18" type="module"></script>
 </body>
 </html>

@@ -182,6 +182,25 @@ const state = {
   stealthCamouflage: localStorage.getItem('mindpad_stealth_camouflage') || 'calculator',
   smartwatchEnabled: false,
 
+  // La Rutina del Sueño & Notas Camufladas
+  dreamHour: localStorage.getItem('mindpad_dream_hour') || '03:45',
+  dreamName: localStorage.getItem('mindpad_dream_name') || 'Carlos',
+  dreamPlace: localStorage.getItem('mindpad_dream_place') || 'París',
+  dreamFood: localStorage.getItem('mindpad_dream_food') || 'Tacos',
+
+  // Melodía Telepática & Reproductor de Música Camuflado (iTunes)
+  dreamSong: localStorage.getItem('mindpad_dream_song') || 'Bohemian Rhapsody',
+  musicTrackTitle: 'Bohemian Rhapsody',
+  musicArtistName: 'Queen • A Night at the Opera',
+  musicCoverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
+  musicAudioUrl: '',
+  musicIsPlaying: false,
+
+  // Doodle en Notas
+  doodleColor: '#f8fafc',
+  doodleBrushSize: 2.5,
+  notesDoodleStrokes: [],
+
   // Reloj & Gestos
   clockInterval: null,
   tripleTapCount: 0,
@@ -1077,6 +1096,10 @@ function redrawAllStrokes() {
     redrawChalkSlate();
     broadcastSlateUpdate();
   }
+
+  if (typeof redrawNotesDoodleCanvas === 'function') {
+    redrawNotesDoodleCanvas();
+  }
 }
 
 // Reloj Always-On y Pantalla de Bloqueo
@@ -1091,6 +1114,7 @@ function startClocks() {
     $('lockClockTime').textContent = timeStr;
     $('lockStatusTime').textContent = timeStr;
     if ($('calcTime')) $('calcTime').textContent = timeStr;
+    if ($('notesStatusTime')) $('notesStatusTime').textContent = timeStr;
 
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -1111,18 +1135,23 @@ function enterStealthMode(forcedMode) {
   $('stealthView').style.display = 'block';
   document.body.className = 'mode-stealth';
 
-  if (state.stealthCamouflage === 'calculator') {
-    if ($('fakeCalculator')) $('fakeCalculator').style.display = 'flex';
-    $('fakeLockscreen').style.display = 'none';
-    $('aodClock').style.display = 'none';
-  } else if (state.stealthCamouflage === 'lockscreen') {
-    if ($('fakeCalculator')) $('fakeCalculator').style.display = 'none';
-    $('fakeLockscreen').style.display = 'flex';
-    $('aodClock').style.display = 'none';
-  } else {
-    if ($('fakeCalculator')) $('fakeCalculator').style.display = 'none';
-    $('fakeLockscreen').style.display = 'none';
-    $('aodClock').style.display = 'block';
+  const isCalc = state.stealthCamouflage === 'calculator';
+  const isNotes = state.stealthCamouflage === 'notes';
+  const isPlayer = state.stealthCamouflage === 'player';
+  const isLock = state.stealthCamouflage === 'lockscreen';
+  const isAOD = !isCalc && !isNotes && !isPlayer && !isLock;
+
+  if ($('fakeCalculator')) $('fakeCalculator').style.display = isCalc ? 'flex' : 'none';
+  if ($('fakeNotes')) $('fakeNotes').style.display = isNotes ? 'flex' : 'none';
+  if ($('fakeMusicPlayer')) $('fakeMusicPlayer').style.display = isPlayer ? 'flex' : 'none';
+  if ($('fakeLockscreen')) $('fakeLockscreen').style.display = isLock ? 'flex' : 'none';
+  if ($('aodClock')) $('aodClock').style.display = isAOD ? 'block' : 'none';
+
+  if (isNotes) {
+    updateDreamNoteDOM();
+    setTimeout(() => {
+      initNotesDoodle();
+    }, 40);
   }
 
   startClocks();
@@ -1169,8 +1198,12 @@ peekContainer.addEventListener('touchend', hidePeek);
 
 stealthView.addEventListener('touchstart', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
-  // Si estamos en la calculadora, no activar peek con los botones
-  if (state.stealthCamouflage === 'calculator' && e.target.closest('#fakeCalculator')) {
+  // Si estamos en la calculadora, notas o reproductor, no activar peek con toques en su UI
+  if (
+    (state.stealthCamouflage === 'calculator' && e.target.closest('#fakeCalculator')) ||
+    (state.stealthCamouflage === 'notes' && e.target.closest('#fakeNotes')) ||
+    (state.stealthCamouflage === 'player' && e.target.closest('#fakeMusicPlayer'))
+  ) {
     return;
   }
   state.touchStartX = e.touches[0].clientX;
@@ -1213,7 +1246,11 @@ stealthView.addEventListener('touchend', (e) => {
 stealthView.addEventListener('touchcancel', hidePeek);
 stealthView.addEventListener('mousedown', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
-  if (state.stealthCamouflage === 'calculator' && e.target.closest('#fakeCalculator')) {
+  if (
+    (state.stealthCamouflage === 'calculator' && e.target.closest('#fakeCalculator')) ||
+    (state.stealthCamouflage === 'notes' && e.target.closest('#fakeNotes')) ||
+    (state.stealthCamouflage === 'player' && e.target.closest('#fakeMusicPlayer'))
+  ) {
     return;
   }
   showPeek();
@@ -1454,23 +1491,22 @@ let theatricalSeconds = 0;
 
 function switchPresentationLayer(layerNum) {
   state.currentLayer = layerNum;
-  if ($('layer1Btn')) $('layer1Btn').className = `btn small ${layerNum === 1 ? 'primary active' : 'secondary'}`;
-  if ($('layer2Btn')) $('layer2Btn').className = `btn small ${layerNum === 2 ? 'primary active' : 'secondary'}`;
-  if ($('layer3Btn')) $('layer3Btn').className = `btn small ${layerNum === 3 ? 'primary active' : 'secondary'}`;
-  if ($('layer4Btn')) $('layer4Btn').className = `btn small ${layerNum === 4 ? 'primary active' : 'secondary'}`;
-
-  if ($('layer1Content')) $('layer1Content').style.display = layerNum === 1 ? 'block' : 'none';
-  if ($('layer2Content')) $('layer2Content').style.display = layerNum === 2 ? 'block' : 'none';
-  if ($('layer3Content')) $('layer3Content').style.display = layerNum === 3 ? 'block' : 'none';
-  if ($('layer4Content')) $('layer4Content').style.display = layerNum === 4 ? 'block' : 'none';
+  for (let i = 1; i <= 6; i++) {
+    const btn = $(`layer${i}Btn`);
+    if (btn) btn.className = `btn small ${layerNum === i ? 'primary active' : 'secondary'}`;
+    const content = $(`layer${i}Content`);
+    if (content) content.style.display = layerNum === i ? 'block' : 'none';
+  }
 
   const badges = {
     1: 'Capa 1: Post-it',
     2: 'Capa 2: Redes / VIP',
     3: 'Capa 3: TV / Sprocket',
-    4: 'Capa 4: Pizarra E-Ink'
+    4: 'Capa 4: Pizarra E-Ink',
+    5: 'Capa 5: El Sueño (Notas)',
+    6: 'Capa 6: Canción Pensada'
   };
-  if ($('activeLayerBadge')) $('activeLayerBadge').textContent = badges[layerNum];
+  if ($('activeLayerBadge')) $('activeLayerBadge').textContent = badges[layerNum] || `Capa ${layerNum}`;
 
   if (layerNum === 1) {
     state.stealthCamouflage = 'calculator';
@@ -1490,6 +1526,15 @@ function switchPresentationLayer(layerNum) {
     state.slateLiveSync = true;
     if ($('slateLiveSyncCheck')) $('slateLiveSyncCheck').checked = true;
     localStorage.setItem('mindpad_slate_live_sync', 'true');
+  } else if (layerNum === 5) {
+    state.stealthCamouflage = 'notes';
+    if ($('stealthCamouflage')) $('stealthCamouflage').value = 'notes';
+    localStorage.setItem('mindpad_stealth_camouflage', 'notes');
+    updateDreamNoteDOM();
+  } else if (layerNum === 6) {
+    state.stealthCamouflage = 'player';
+    if ($('stealthCamouflage')) $('stealthCamouflage').value = 'player';
+    localStorage.setItem('mindpad_stealth_camouflage', 'player');
   }
 }
 
@@ -1967,6 +2012,49 @@ function drawChalkDoodle(ctx, w, h, doodleName) {
   ctx.restore();
 }
 
+function drawChalkList(ctx, w, h, items) {
+  if (!items || items.length === 0) return;
+  const isDark = state.slateStyle !== 'inverted';
+  const chalkColor = isDark ? '#f8fafc' : '#1e293b';
+  ctx.save();
+
+  const title = 'Premonición:';
+  const totalItems = items.length;
+  const itemHeight = Math.min(68, Math.max(34, Math.floor((h * 0.72) / totalItems)));
+  const startY = (h - (totalItems * itemHeight)) / 2 + 15;
+
+  // Título rústico arriba
+  ctx.font = `600 ${Math.floor(itemHeight * 0.75)}px "Walter Turncoat", "Rock Salt", cursive`;
+  ctx.fillStyle = isDark ? '#fde047' : '#854d0e';
+  ctx.textAlign = 'center';
+  ctx.fillText(title, w / 2, Math.max(40, startY - 26));
+
+  // Cada elemento en la lista con rotación y tiza irregular
+  items.forEach((item, idx) => {
+    const y = startY + idx * itemHeight;
+    const seed = (item.charCodeAt(0) * 17 + idx * 43) % 100;
+    const rot = ((seed % 8) - 4) * (Math.PI / 180);
+    const size = Math.floor(itemHeight * (0.8 + ((seed % 16) / 100)));
+
+    ctx.save();
+    ctx.translate(w / 2, y);
+    ctx.rotate(rot);
+
+    ctx.font = `400 ${size}px "Rock Salt", "Walter Turncoat", "Gochi Hand", cursive`;
+    ctx.fillStyle = chalkColor;
+    ctx.textAlign = 'center';
+    ctx.fillText(item, 0, 0);
+
+    // Micro salpicadura de tiza
+    if (seed % 2 === 0) {
+      drawChalkLine(ctx, -140, 8, 140, 10, chalkColor, 1.2);
+    }
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
 function redrawChalkSlate() {
   const canvas = $('chalkCanvas');
   if (!canvas) return;
@@ -1988,6 +2076,14 @@ function redrawChalkSlate() {
     const textToShow = state.currentWord || state.currentNumber || 'Premonición';
     const sub = state.currentNumber && state.currentWord ? `Código: ${state.currentNumber}` : '';
     drawChalkText(ctx, w, h, textToShow, sub);
+  } else if (type === 'dream_list') {
+    const items = [
+      `1. Hora: ${state.dreamHour || '03:45'}`,
+      `2. Nombre: ${state.dreamName || 'Carlos'}`,
+      `3. Destino: ${state.dreamPlace || 'París'}`,
+      `4. Comida: ${state.dreamFood || 'Tacos'}`
+    ];
+    drawChalkList(ctx, w, h, items);
   } else if (type === 'doodle') {
     drawChalkDoodle(ctx, w, h, state.currentDrawing);
   } else {
@@ -2613,7 +2709,269 @@ function downloadOriginalDrawing() {
 }
 
 // ==========================================
-// 12. EVENTOS DE INTERFAZ & SIMULADOR
+// 12. RUTINA DEL SUEÑO (NOTAS CAMUFLADAS & DOODLE)
+// ==========================================
+let notesDoodleCtx = null;
+let isDoodling = false;
+let lastDoodleX = 0;
+let lastDoodleY = 0;
+
+function updateDreamNoteDOM() {
+  // Fecha retroactiva: exactamente 4 días atrás a una hora fija como 21:15
+  const pastDate = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+  const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const diaNum = pastDate.getDate();
+  const mesNom = meses[pastDate.getMonth()];
+  const anio = pastDate.getFullYear();
+
+  if ($('notesMetaDate')) {
+    $('notesMetaDate').textContent = `${diaNum} de ${mesNom} de ${anio}, 21:15`;
+  }
+  if ($('noteDreamHour')) $('noteDreamHour').textContent = state.dreamHour || '03:45';
+  if ($('noteDreamName')) $('noteDreamName').textContent = state.dreamName || 'Carlos';
+  if ($('noteDreamPlace')) $('noteDreamPlace').textContent = state.dreamPlace || 'París';
+  if ($('noteDreamFood')) $('noteDreamFood').textContent = state.dreamFood || 'Tacos';
+
+  if ($('dreamHourInput')) $('dreamHourInput').value = state.dreamHour;
+  if ($('dreamNameInput')) $('dreamNameInput').value = state.dreamName;
+  if ($('dreamPlaceInput')) $('dreamPlaceInput').value = state.dreamPlace;
+  if ($('dreamFoodInput')) $('dreamFoodInput').value = state.dreamFood;
+}
+
+function initNotesDoodle() {
+  const canvas = $('notesDoodleCanvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  if (canvas.width !== rect.width || canvas.height !== rect.height) {
+    canvas.width = rect.width || 320;
+    canvas.height = rect.height || 220;
+  }
+  notesDoodleCtx = canvas.getContext('2d');
+  redrawNotesDoodleCanvas();
+
+  // Selector de colores
+  const dots = document.querySelectorAll('.doodle-color-dot');
+  dots.forEach((dot) => {
+    dot.onclick = (e) => {
+      e.stopPropagation();
+      dots.forEach((d) => d.classList.remove('active'));
+      dot.classList.add('active');
+      state.doodleColor = dot.getAttribute('data-color') || '#f8fafc';
+    };
+  });
+
+  if ($('notesClearDoodleBtn')) {
+    $('notesClearDoodleBtn').onclick = (e) => {
+      e.stopPropagation();
+      state.notesDoodleStrokes = [];
+      if (notesDoodleCtx) {
+        notesDoodleCtx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+  }
+
+  function getDoodlePos(e) {
+    const r = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - r.left,
+      y: clientY - r.top
+    };
+  }
+
+  canvas.onpointerdown = (e) => {
+    e.stopPropagation();
+    isDoodling = true;
+    const pos = getDoodlePos(e);
+    lastDoodleX = pos.x;
+    lastDoodleY = pos.y;
+    state.notesDoodleStrokes.push({
+      color: state.doodleColor,
+      points: [{ x: pos.x, y: pos.y }]
+    });
+  };
+
+  canvas.onpointermove = (e) => {
+    if (!isDoodling || !notesDoodleCtx) return;
+    e.stopPropagation();
+    const pos = getDoodlePos(e);
+    notesDoodleCtx.strokeStyle = state.doodleColor;
+    notesDoodleCtx.lineWidth = 2.5;
+    notesDoodleCtx.lineCap = 'round';
+    notesDoodleCtx.lineJoin = 'round';
+    notesDoodleCtx.beginPath();
+    notesDoodleCtx.moveTo(lastDoodleX, lastDoodleY);
+    notesDoodleCtx.lineTo(pos.x, pos.y);
+    notesDoodleCtx.stroke();
+
+    lastDoodleX = pos.x;
+    lastDoodleY = pos.y;
+    const current = state.notesDoodleStrokes[state.notesDoodleStrokes.length - 1];
+    if (current) current.points.push({ x: pos.x, y: pos.y });
+  };
+
+  const stopDoodling = (e) => {
+    if (e) e.stopPropagation();
+    isDoodling = false;
+  };
+  canvas.onpointerup = stopDoodling;
+  canvas.onpointercancel = stopDoodling;
+}
+
+function redrawNotesDoodleCanvas() {
+  const canvas = $('notesDoodleCanvas');
+  if (!canvas || !notesDoodleCtx) return;
+  notesDoodleCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 1. Trazos libres hechos con el dedo
+  state.notesDoodleStrokes.forEach((stroke) => {
+    if (!stroke.points || stroke.points.length < 2) return;
+    notesDoodleCtx.strokeStyle = stroke.color || '#f8fafc';
+    notesDoodleCtx.lineWidth = 2.5;
+    notesDoodleCtx.lineCap = 'round';
+    notesDoodleCtx.lineJoin = 'round';
+    notesDoodleCtx.beginPath();
+    notesDoodleCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
+    for (let i = 1; i < stroke.points.length; i++) {
+      notesDoodleCtx.lineTo(stroke.points[i].x, stroke.points[i].y);
+    }
+    notesDoodleCtx.stroke();
+  });
+
+  // 2. Si la tableta Huion envió trazos, dibujarlos a escala dentro del canvas de notas
+  if (state.strokes && state.strokes.length > 0) {
+    const isPortrait = state.orientation.startsWith('portrait');
+    const maxX = isPortrait ? 28200 : 37400;
+    const maxY = isPortrait ? 37400 : 28200;
+    const pad = 12;
+    const scaleX = (canvas.width - pad * 2) / maxX;
+    const scaleY = (canvas.height - pad * 2) / maxY;
+    const scale = Math.min(scaleX, scaleY);
+
+    notesDoodleCtx.strokeStyle = '#f8fafc';
+    notesDoodleCtx.lineWidth = 2.0;
+    notesDoodleCtx.lineCap = 'round';
+    notesDoodleCtx.lineJoin = 'round';
+
+    state.strokes.forEach((stroke) => {
+      if (!stroke.points || stroke.points.length < 2) return;
+      notesDoodleCtx.beginPath();
+      notesDoodleCtx.moveTo(pad + stroke.points[0].x * scale, pad + stroke.points[0].y * scale);
+      for (let i = 1; i < stroke.points.length; i++) {
+        notesDoodleCtx.lineTo(pad + stroke.points[i].x * scale, pad + stroke.points[i].y * scale);
+      }
+      notesDoodleCtx.stroke();
+    });
+  }
+}
+
+// ==========================================
+// 13. MELODÍA TELEPÁTICA & REPRODUCTOR ITUNES
+// ==========================================
+async function fetchSongPreview(query, autoPlay = false) {
+  const q = (query || state.dreamSong || 'Bohemian Rhapsody').trim();
+  if (!q) return;
+
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=1`);
+    if (!res.ok) throw new Error('Error al conectar con iTunes');
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      const item = data.results[0];
+      state.musicTrackTitle = item.trackName;
+      state.musicArtistName = `${item.artistName} • ${item.collectionName || 'Single'}`;
+      state.musicCoverUrl = item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg') : '';
+      state.musicAudioUrl = item.previewUrl || '';
+
+      if ($('musicTrackTitle')) $('musicTrackTitle').textContent = state.musicTrackTitle;
+      if ($('musicArtistName')) $('musicArtistName').textContent = state.musicArtistName;
+      if ($('musicCoverImg') && state.musicCoverUrl) $('musicCoverImg').src = state.musicCoverUrl;
+
+      if ($('songFoundTitle')) $('songFoundTitle').textContent = state.musicTrackTitle;
+      if ($('songFoundArtist')) $('songFoundArtist').textContent = state.musicArtistName;
+      if ($('songFoundCover') && state.musicCoverUrl) $('songFoundCover').src = state.musicCoverUrl;
+
+      const audioEl = $('musicAudioEl');
+      if (audioEl && state.musicAudioUrl) {
+        audioEl.src = state.musicAudioUrl;
+        audioEl.load();
+        if (autoPlay) {
+          audioEl.play().catch(() => {});
+          state.musicIsPlaying = true;
+          if ($('musicPlayBtn')) $('musicPlayBtn').textContent = '⏸';
+          if ($('songFoundPlayTestBtn')) $('songFoundPlayTestBtn').textContent = '⏸ Pausa';
+        }
+      }
+      return item;
+    } else {
+      console.warn('Canción no encontrada en iTunes:', q);
+    }
+  } catch (err) {
+    console.warn('Error iTunes Search:', err);
+  }
+}
+
+function initMusicPlayerEvents() {
+  const audioEl = $('musicAudioEl');
+  const playBtn = $('musicPlayBtn');
+  const testBtn = $('songFoundPlayTestBtn');
+  const progressFill = $('musicProgressFill');
+  const currentTimeEl = $('musicTimeCurrent');
+  const durationTimeEl = $('musicTimeDuration');
+
+  function togglePlay(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!audioEl) return;
+    if (audioEl.paused) {
+      if (!audioEl.src && state.dreamSong) {
+        fetchSongPreview(state.dreamSong, true);
+        return;
+      }
+      audioEl.play().then(() => {
+        state.musicIsPlaying = true;
+        if (playBtn) playBtn.textContent = '⏸';
+        if (testBtn) testBtn.textContent = '⏸ Pausa';
+      }).catch((e) => console.warn('Audio play error:', e));
+    } else {
+      audioEl.pause();
+      state.musicIsPlaying = false;
+      if (playBtn) playBtn.textContent = '▶';
+      if (testBtn) testBtn.textContent = '▶ Probar';
+    }
+  }
+
+  if (playBtn) playBtn.onclick = togglePlay;
+  if (testBtn) testBtn.onclick = togglePlay;
+
+  if (audioEl) {
+    audioEl.ontimeupdate = () => {
+      const cur = audioEl.currentTime || 0;
+      const dur = audioEl.duration || 30;
+      const pct = Math.min(100, (cur / dur) * 100);
+      if (progressFill) progressFill.style.width = `${pct}%`;
+
+      const curM = Math.floor(cur / 60);
+      const curS = String(Math.floor(cur % 60)).padStart(2, '0');
+      if (currentTimeEl) currentTimeEl.textContent = `${curM}:${curS}`;
+
+      const durM = Math.floor(dur / 60);
+      const durS = String(Math.floor(dur % 60)).padStart(2, '0');
+      if (durationTimeEl) durationTimeEl.textContent = `${durM}:${durS}`;
+    };
+
+    audioEl.onended = () => {
+      state.musicIsPlaying = false;
+      if (playBtn) playBtn.textContent = '▶';
+      if (testBtn) testBtn.textContent = '▶ Probar';
+      if (progressFill) progressFill.style.width = '0%';
+    };
+  }
+}
+
+// ==========================================
+// 14. EVENTOS DE INTERFAZ & SIMULADOR
 // ==========================================
 $('bleConnectBtn').onclick = connectBLE;
 $('bleDisconnectBtn').onclick = () => {
@@ -2845,9 +3203,15 @@ if ($('conceptNumber')) {
   };
 }
 
-// Botón header de Calculadora directa & Modo Sigilo
+// Botones header de Modos Camuflados directos & Modo Sigilo
 if ($('calcModeBtn')) {
   $('calcModeBtn').onclick = () => enterStealthMode('calculator');
+}
+if ($('notesModeBtn')) {
+  $('notesModeBtn').onclick = () => enterStealthMode('notes');
+}
+if ($('musicModeBtn')) {
+  $('musicModeBtn').onclick = () => enterStealthMode('player');
 }
 if ($('stealthBtn')) {
   $('stealthBtn').onclick = () => enterStealthMode();
@@ -2858,10 +3222,95 @@ if ($('layer1Btn')) $('layer1Btn').onclick = () => switchPresentationLayer(1);
 if ($('layer2Btn')) $('layer2Btn').onclick = () => switchPresentationLayer(2);
 if ($('layer3Btn')) $('layer3Btn').onclick = () => switchPresentationLayer(3);
 if ($('layer4Btn')) $('layer4Btn').onclick = () => switchPresentationLayer(4);
+if ($('layer5Btn')) $('layer5Btn').onclick = () => switchPresentationLayer(5);
+if ($('layer6Btn')) $('layer6Btn').onclick = () => switchPresentationLayer(6);
 if ($('viewDossierBtn')) {
   $('viewDossierBtn').onclick = () => {
     const el = $('routinesDossier');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+}
+
+// Capa 5: Eventos Rutina del Sueño & Notas
+if ($('dreamHourInput')) {
+  $('dreamHourInput').value = state.dreamHour;
+  $('dreamHourInput').oninput = (e) => {
+    state.dreamHour = e.target.value.trim();
+    localStorage.setItem('mindpad_dream_hour', state.dreamHour);
+    updateDreamNoteDOM();
+    if (state.slateContentType === 'dream_list') redrawChalkSlate();
+  };
+}
+if ($('dreamNameInput')) {
+  $('dreamNameInput').value = state.dreamName;
+  $('dreamNameInput').oninput = (e) => {
+    state.dreamName = e.target.value.trim();
+    localStorage.setItem('mindpad_dream_name', state.dreamName);
+    updateDreamNoteDOM();
+    if (state.slateContentType === 'dream_list') redrawChalkSlate();
+  };
+}
+if ($('dreamPlaceInput')) {
+  $('dreamPlaceInput').value = state.dreamPlace;
+  $('dreamPlaceInput').oninput = (e) => {
+    state.dreamPlace = e.target.value.trim();
+    localStorage.setItem('mindpad_dream_place', state.dreamPlace);
+    updateDreamNoteDOM();
+    if (state.slateContentType === 'dream_list') redrawChalkSlate();
+  };
+}
+if ($('dreamFoodInput')) {
+  $('dreamFoodInput').value = state.dreamFood;
+  $('dreamFoodInput').oninput = (e) => {
+    state.dreamFood = e.target.value.trim();
+    localStorage.setItem('mindpad_dream_food', state.dreamFood);
+    updateDreamNoteDOM();
+    if (state.slateContentType === 'dream_list') redrawChalkSlate();
+  };
+}
+
+if ($('quickOpenNotesBtn5')) $('quickOpenNotesBtn5').onclick = () => enterStealthMode('notes');
+if ($('quickSyncDreamBtn5')) {
+  $('quickSyncDreamBtn5').onclick = () => {
+    updateDreamNoteDOM();
+    state.slateContentType = 'dream_list';
+    if ($('slateContentTypeSelect')) $('slateContentTypeSelect').value = 'dream_list';
+    localStorage.setItem('mindpad_slate_content_type', 'dream_list');
+    redrawChalkSlate();
+    broadcastSlateUpdate();
+    triggerHaptic([60, 40, 60]);
+    alert('✓ Nota del sueño y Pizarra de tiza sincronizadas');
+  };
+}
+if ($('quickSpeakDreamBtn5')) {
+  $('quickSpeakDreamBtn5').onclick = () => {
+    const text = `Premonición: Hora ${state.dreamHour}, Nombre ${state.dreamName}, Destino ${state.dreamPlace}, Comida ${state.dreamFood}`;
+    speakTTS(text);
+  };
+}
+
+// Capa 6: Eventos Melodía Telepática & Reproductor iTunes
+if ($('dreamSongInput')) {
+  $('dreamSongInput').value = state.dreamSong;
+  $('dreamSongInput').oninput = (e) => {
+    state.dreamSong = e.target.value.trim();
+    localStorage.setItem('mindpad_dream_song', state.dreamSong);
+  };
+}
+if ($('searchSongBtn')) {
+  $('searchSongBtn').onclick = () => {
+    const query = $('dreamSongInput')?.value || state.dreamSong;
+    fetchSongPreview(query, false);
+  };
+}
+if ($('quickOpenMusicBtn6')) $('quickOpenMusicBtn6').onclick = () => enterStealthMode('player');
+
+// Navegación dentro del Bloc de Notas Falso
+if ($('notesBackBtn')) $('notesBackBtn').onclick = exitStealthMode;
+if ($('notesToggleDoodleBtn')) {
+  $('notesToggleDoodleBtn').onclick = () => {
+    const canvas = $('notesDoodleCanvas');
+    if (canvas) canvas.scrollIntoView({ behavior: 'smooth' });
   };
 }
 
@@ -2963,6 +3412,9 @@ previewCanvas.addEventListener('pointerup', () => {
 initTTS();
 initCalculator();
 updateCalcDisplay();
+updateDreamNoteDOM();
+initMusicPlayerEvents();
+fetchSongPreview(state.dreamSong);
 switchPresentationLayer(1);
 initSlateControls();
 initSlateSettingsUI();
