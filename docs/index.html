@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=13" />
+  <link rel="stylesheet" href="styles.css?v=14" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=18').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=19').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -172,6 +172,13 @@
             <label style="font-size:11px; color:#94a3b8; width:130px;">4. Comida favorita:</label>
             <input id="dreamFoodInput" type="text" value="Tacos" style="flex:1;" />
           </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">Pestaña al abrir:</label>
+            <select id="notesInitialTabSelect" style="flex:1;">
+              <option value="text" selected>📝 Nota de Texto (Premonición Fechada)</option>
+              <option value="draw">🎨 Pestaña Boceto (Lienzo Dibujo Libre)</option>
+            </select>
+          </div>
           <div style="display:flex; gap:8px; margin-top:8px;">
             <button id="quickOpenNotesBtn5" class="btn small cta" style="flex:1; background:#0284c7; color:#fff; font-weight:700;">📝 Abrir Notas Camufladas</button>
             <button id="quickSyncDreamBtn5" class="btn small secondary" style="flex:1;">🔄 Actualizar Nota & Pizarra</button>
@@ -193,9 +200,26 @@
             <img id="songFoundCover" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=80&q=80" style="width:40px; height:40px; border-radius:4px; object-fit:cover;" />
             <div style="flex:1; overflow:hidden;">
               <div id="songFoundTitle" style="font-weight:600; font-size:12px; color:#fff; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">Bohemian Rhapsody</div>
-              <div id="songFoundArtist" style="font-size:11px; color:#94a3b8;">Queen</div>
+              <div id="songFoundArtist" style="font-size:11px; color:#94a3b8;">Queen • 5:54</div>
             </div>
             <button id="songFoundPlayTestBtn" class="btn small" style="background:#10b981; color:#000; font-weight:700; border:none; padding:4px 8px;">▶ Probar</button>
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">Tiempo de inicio:</label>
+            <select id="musicStartPointSelect" style="flex:1;">
+              <option value="mid" selected>A mitad de canción (ej. 1:24) - Simula reproducción en curso</option>
+              <option value="start">Desde el inicio (0:00)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label class="toggle-label" style="font-size:11.5px; color:#a7f3d0;">
+              <input id="musicLoopCheck" type="checkbox" checked />
+              <span>🔁 Audio continuo sin cortes (Bucle automático del coro)</span>
+            </label>
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">MP3 personal (opc):</label>
+            <input id="customMp3UrlInput" type="text" placeholder="https://.../cancion_completa.mp3" style="flex:1;" />
           </div>
           <div style="display:flex; gap:8px;">
             <button id="quickOpenMusicBtn6" class="btn small cta" style="flex:1; background:#059669; color:#fff; font-weight:700;">🎵 Abrir Reproductor Camuflado</button>
@@ -865,7 +889,7 @@
       </div>
     </div>
 
-    <!-- CAMUFLAJE 4: Bloc de Notas Realista con Modo Doodle -->
+    <!-- CAMUFLAJE 4: Bloc de Notas Realista con Pestañas Separadas (Texto & Boceto) -->
     <div id="fakeNotes" class="fake-notes" style="display: none;">
       <div class="calc-status-bar" style="background:#12141d;">
         <span id="notesStatusTime">12:00</span>
@@ -879,14 +903,18 @@
         <div id="notesBackBtn" class="notes-back-btn">
           <span>‹</span> <span>Carpetas</span>
         </div>
+        <div class="notes-segmented-nav">
+          <button id="notesTabBtnText" class="notes-segment-btn active">📝 Nota</button>
+          <button id="notesTabBtnDraw" class="notes-segment-btn">🎨 Boceto</button>
+        </div>
         <div class="notes-actions">
-          <span id="notesToggleDoodleBtn" title="Alternar Doodle">🖍️</span>
+          <span id="notesToggleDoodleBtn" title="Cambiar a Boceto">🖍️</span>
           <span title="Compartir">📤</span>
-          <span id="notesNewBtn" title="Nueva Nota">✏️</span>
         </div>
       </div>
 
-      <div class="notes-scroll-body">
+      <!-- PESTAÑA 1: NOTA DE TEXTO LIMPIA (RUTINA DEL SUEÑO) -->
+      <div id="notesTextTabContent" class="notes-scroll-body">
         <div id="notesMetaDate" class="notes-meta-date">14 de noviembre de 2026, 21:15</div>
         <div class="notes-title">Un sueño extraño (Premonición)</div>
         <div class="notes-content-text">Tuve un sueño muy raro de esos que cuando despiertas recuerdas casi todos los detalles, yo lo llamo premonición. Notaba que en mi mano el reloj marcaba las <span id="noteDreamHour" class="note-blank">03:45</span>.
@@ -896,19 +924,27 @@ Conocí a una persona llamada <span id="noteDreamName" class="note-blank">Carlos
 Y saben qué fue lo más curioso... que estábamos comiendo <span id="noteDreamFood" class="note-blank">Tacos</span>.
 
 Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta claridad.</div>
+      </div>
 
-        <!-- Área de Doodle / Boceto Rápido con Dedos o Trazo Huion -->
-        <div class="notes-doodle-container">
-          <div class="notes-doodle-header">
-            <span>✏️ Boceto & Garabatos</span>
-            <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11px; cursor:pointer;">🗑️ Limpiar</button>
-          </div>
+      <!-- PESTAÑA 2: LIENZO DE BOCETO LIBRE DEDICADO A PANTALLA COMPLETA -->
+      <div id="notesDrawTabContent" class="notes-draw-view" style="display: none;">
+        <div class="notes-draw-header">
+          <span>✏️ Boceto & Garabatos a mano alzada</span>
+          <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11.5px; cursor:pointer; font-weight:600;">🗑️ Limpiar Lienzo</button>
+        </div>
+        <div class="notes-draw-canvas-container">
           <canvas id="notesDoodleCanvas"></canvas>
-          <div class="notes-doodle-toolbar">
+        </div>
+        <div class="notes-draw-tray">
+          <div class="notes-draw-colors">
             <div class="doodle-color-dot active" data-color="#f8fafc" style="background:#f8fafc;" title="Blanco / Tiza"></div>
-            <div class="doodle-color-dot" data-color="#38bdf8" style="background:#38bdf8;" title="Azul"></div>
-            <div class="doodle-color-dot" data-color="#ef4444" style="background:#ef4444;" title="Rojo"></div>
-            <div class="doodle-color-dot" data-color="#eab308" style="background:#eab308;" title="Amarillo"></div>
+            <div class="doodle-color-dot" data-color="#38bdf8" style="background:#38bdf8;" title="Azul Tinta"></div>
+            <div class="doodle-color-dot" data-color="#ef4444" style="background:#ef4444;" title="Rojo Marcador"></div>
+            <div class="doodle-color-dot" data-color="#eab308" style="background:#eab308;" title="Amarillo Resaltador"></div>
+          </div>
+          <div class="notes-draw-tools">
+            <button id="notesBrushFineBtn" class="draw-tool-btn active">✏️ Fino</button>
+            <button id="notesBrushThickBtn" class="draw-tool-btn">🖌️ Grueso</button>
           </div>
         </div>
       </div>
@@ -989,6 +1025,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     </div>
   </div>
 
-  <script src="mindpad.js?v=18" type="module"></script>
+  <script src="mindpad.js?v=19" type="module"></script>
 </body>
 </html>

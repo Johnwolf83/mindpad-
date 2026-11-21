@@ -187,6 +187,8 @@ const state = {
   dreamName: localStorage.getItem('mindpad_dream_name') || 'Carlos',
   dreamPlace: localStorage.getItem('mindpad_dream_place') || 'París',
   dreamFood: localStorage.getItem('mindpad_dream_food') || 'Tacos',
+  notesActiveTab: localStorage.getItem('mindpad_notes_tab') || 'text',
+  notesInitialTab: localStorage.getItem('mindpad_notes_initial_tab') || 'text',
 
   // Melodía Telepática & Reproductor de Música Camuflado (iTunes)
   dreamSong: localStorage.getItem('mindpad_dream_song') || 'Bohemian Rhapsody',
@@ -195,10 +197,16 @@ const state = {
   musicCoverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
   musicAudioUrl: '',
   musicIsPlaying: false,
+  musicTotalSeconds: 354,
+  musicStartPoint: localStorage.getItem('mindpad_music_start') || 'mid',
+  musicLoop: localStorage.getItem('mindpad_music_loop') !== 'false',
+  customMp3Url: localStorage.getItem('mindpad_custom_mp3') || '',
+  musicPlaybackStartWallTime: 0,
+  musicSimulatedBaseSec: 84,
 
   // Doodle en Notas
   doodleColor: '#f8fafc',
-  doodleBrushSize: 2.5,
+  doodleBrushSize: 2.2,
   notesDoodleStrokes: [],
 
   // Reloj & Gestos
@@ -1149,6 +1157,7 @@ function enterStealthMode(forcedMode) {
 
   if (isNotes) {
     updateDreamNoteDOM();
+    switchNotesTab(state.notesInitialTab || 'text');
     setTimeout(() => {
       initNotesDoodle();
     }, 40);
@@ -2709,12 +2718,28 @@ function downloadOriginalDrawing() {
 }
 
 // ==========================================
-// 12. RUTINA DEL SUEÑO (NOTAS CAMUFLADAS & DOODLE)
+// 12. RUTINA DEL SUEÑO (NOTAS CAMUFLADAS & BOCETO)
 // ==========================================
 let notesDoodleCtx = null;
 let isDoodling = false;
 let lastDoodleX = 0;
 let lastDoodleY = 0;
+
+function switchNotesTab(tab) {
+  state.notesActiveTab = tab;
+  localStorage.setItem('mindpad_notes_tab', tab);
+
+  const isText = tab === 'text';
+  if ($('notesTextTabContent')) $('notesTextTabContent').style.display = isText ? 'flex' : 'none';
+  if ($('notesDrawTabContent')) $('notesDrawTabContent').style.display = isText ? 'none' : 'flex';
+
+  if ($('notesTabBtnText')) $('notesTabBtnText').className = `notes-segment-btn ${isText ? 'active' : ''}`;
+  if ($('notesTabBtnDraw')) $('notesTabBtnDraw').className = `notes-segment-btn ${!isText ? 'active' : ''}`;
+
+  if (!isText) {
+    setTimeout(initNotesDoodle, 40);
+  }
+}
 
 function updateDreamNoteDOM() {
   // Fecha retroactiva: exactamente 4 días atrás a una hora fija como 21:15
@@ -2742,10 +2767,14 @@ function updateDreamNoteDOM() {
 function initNotesDoodle() {
   const canvas = $('notesDoodleCanvas');
   if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  if (canvas.width !== rect.width || canvas.height !== rect.height) {
-    canvas.width = rect.width || 320;
-    canvas.height = rect.height || 220;
+  const container = canvas.parentElement;
+  const rect = container ? container.getBoundingClientRect() : canvas.getBoundingClientRect();
+  const w = Math.floor(rect.width || window.innerWidth);
+  const h = Math.floor(rect.height || (window.innerHeight - 120));
+
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
   }
   notesDoodleCtx = canvas.getContext('2d');
   redrawNotesDoodleCanvas();
@@ -2771,6 +2800,23 @@ function initNotesDoodle() {
     };
   }
 
+  if ($('notesBrushFineBtn')) {
+    $('notesBrushFineBtn').onclick = (e) => {
+      e.stopPropagation();
+      state.doodleBrushSize = 2.0;
+      $('notesBrushFineBtn').classList.add('active');
+      $('notesBrushThickBtn')?.classList.remove('active');
+    };
+  }
+  if ($('notesBrushThickBtn')) {
+    $('notesBrushThickBtn').onclick = (e) => {
+      e.stopPropagation();
+      state.doodleBrushSize = 4.8;
+      $('notesBrushThickBtn').classList.add('active');
+      $('notesBrushFineBtn')?.classList.remove('active');
+    };
+  }
+
   function getDoodlePos(e) {
     const r = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -2789,6 +2835,7 @@ function initNotesDoodle() {
     lastDoodleY = pos.y;
     state.notesDoodleStrokes.push({
       color: state.doodleColor,
+      size: state.doodleBrushSize || 2.2,
       points: [{ x: pos.x, y: pos.y }]
     });
   };
@@ -2798,7 +2845,7 @@ function initNotesDoodle() {
     e.stopPropagation();
     const pos = getDoodlePos(e);
     notesDoodleCtx.strokeStyle = state.doodleColor;
-    notesDoodleCtx.lineWidth = 2.5;
+    notesDoodleCtx.lineWidth = state.doodleBrushSize || 2.2;
     notesDoodleCtx.lineCap = 'round';
     notesDoodleCtx.lineJoin = 'round';
     notesDoodleCtx.beginPath();
@@ -2829,7 +2876,7 @@ function redrawNotesDoodleCanvas() {
   state.notesDoodleStrokes.forEach((stroke) => {
     if (!stroke.points || stroke.points.length < 2) return;
     notesDoodleCtx.strokeStyle = stroke.color || '#f8fafc';
-    notesDoodleCtx.lineWidth = 2.5;
+    notesDoodleCtx.lineWidth = stroke.size || 2.2;
     notesDoodleCtx.lineCap = 'round';
     notesDoodleCtx.lineJoin = 'round';
     notesDoodleCtx.beginPath();
@@ -2845,13 +2892,13 @@ function redrawNotesDoodleCanvas() {
     const isPortrait = state.orientation.startsWith('portrait');
     const maxX = isPortrait ? 28200 : 37400;
     const maxY = isPortrait ? 37400 : 28200;
-    const pad = 12;
+    const pad = 20;
     const scaleX = (canvas.width - pad * 2) / maxX;
     const scaleY = (canvas.height - pad * 2) / maxY;
     const scale = Math.min(scaleX, scaleY);
 
     notesDoodleCtx.strokeStyle = '#f8fafc';
-    notesDoodleCtx.lineWidth = 2.0;
+    notesDoodleCtx.lineWidth = 2.2;
     notesDoodleCtx.lineCap = 'round';
     notesDoodleCtx.lineJoin = 'round';
 
@@ -2870,6 +2917,8 @@ function redrawNotesDoodleCanvas() {
 // ==========================================
 // 13. MELODÍA TELEPÁTICA & REPRODUCTOR ITUNES
 // ==========================================
+let musicSimulatedInterval = null;
+
 async function fetchSongPreview(query, autoPlay = false) {
   const q = (query || state.dreamSong || 'Bohemian Rhapsody').trim();
   if (!q) return;
@@ -2883,25 +2932,41 @@ async function fetchSongPreview(query, autoPlay = false) {
       state.musicTrackTitle = item.trackName;
       state.musicArtistName = `${item.artistName} • ${item.collectionName || 'Single'}`;
       state.musicCoverUrl = item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg') : '';
-      state.musicAudioUrl = item.previewUrl || '';
+      state.musicAudioUrl = state.customMp3Url || item.previewUrl || '';
 
+      // Duración real de la canción en segundos (ej. 354320 ms = 5:54)
+      const totalSec = Math.floor((item.trackTimeMillis || 240000) / 1000);
+      state.musicTotalSeconds = totalSec;
+      const durM = Math.floor(totalSec / 60);
+      const durS = String(totalSec % 60).padStart(2, '0');
+      const formattedDuration = `${durM}:${durS}`;
+
+      // Actualizar UI del Reproductor Camuflado
       if ($('musicTrackTitle')) $('musicTrackTitle').textContent = state.musicTrackTitle;
       if ($('musicArtistName')) $('musicArtistName').textContent = state.musicArtistName;
       if ($('musicCoverImg') && state.musicCoverUrl) $('musicCoverImg').src = state.musicCoverUrl;
+      if ($('musicTimeDuration')) $('musicTimeDuration').textContent = formattedDuration;
 
+      // Calcular punto de inicio realista para que parezca que ya estaba sonando
+      const baseStart = state.musicStartPoint === 'mid' ? Math.floor(totalSec * 0.32) : 0;
+      state.musicSimulatedBaseSec = baseStart;
+      const startM = Math.floor(baseStart / 60);
+      const startS = String(baseStart % 60).padStart(2, '0');
+      if ($('musicTimeCurrent')) $('musicTimeCurrent').textContent = `${startM}:${startS}`;
+      if ($('musicProgressFill')) $('musicProgressFill').style.width = `${Math.min(100, (baseStart / totalSec) * 100)}%`;
+
+      // Actualizar preview en Panel de Configuración
       if ($('songFoundTitle')) $('songFoundTitle').textContent = state.musicTrackTitle;
-      if ($('songFoundArtist')) $('songFoundArtist').textContent = state.musicArtistName;
+      if ($('songFoundArtist')) $('songFoundArtist').textContent = `${state.musicArtistName} • ${formattedDuration}`;
       if ($('songFoundCover') && state.musicCoverUrl) $('songFoundCover').src = state.musicCoverUrl;
 
       const audioEl = $('musicAudioEl');
       if (audioEl && state.musicAudioUrl) {
         audioEl.src = state.musicAudioUrl;
+        audioEl.loop = state.musicLoop;
         audioEl.load();
         if (autoPlay) {
-          audioEl.play().catch(() => {});
-          state.musicIsPlaying = true;
-          if ($('musicPlayBtn')) $('musicPlayBtn').textContent = '⏸';
-          if ($('songFoundPlayTestBtn')) $('songFoundPlayTestBtn').textContent = '⏸ Pausa';
+          startMusicPlayback();
         }
       }
       return item;
@@ -2913,32 +2978,69 @@ async function fetchSongPreview(query, autoPlay = false) {
   }
 }
 
+function startMusicPlayback() {
+  const audioEl = $('musicAudioEl');
+  const playBtn = $('musicPlayBtn');
+  const testBtn = $('songFoundPlayTestBtn');
+  if (!audioEl) return;
+
+  audioEl.loop = state.musicLoop;
+  audioEl.play().then(() => {
+    state.musicIsPlaying = true;
+    state.musicPlaybackStartWallTime = performance.now();
+    if (playBtn) playBtn.textContent = '⏸';
+    if (testBtn) testBtn.textContent = '⏸ Pausa';
+
+    clearInterval(musicSimulatedInterval);
+    musicSimulatedInterval = setInterval(updateMusicTimerDisplay, 500);
+  }).catch((e) => console.warn('Audio play error:', e));
+}
+
+function pauseMusicPlayback() {
+  const audioEl = $('musicAudioEl');
+  const playBtn = $('musicPlayBtn');
+  const testBtn = $('songFoundPlayTestBtn');
+  if (audioEl) audioEl.pause();
+  state.musicIsPlaying = false;
+  if (playBtn) playBtn.textContent = '▶';
+  if (testBtn) testBtn.textContent = '▶ Probar';
+  clearInterval(musicSimulatedInterval);
+}
+
+function updateMusicTimerDisplay() {
+  const currentTimeEl = $('musicTimeCurrent');
+  const progressFill = $('musicProgressFill');
+  const total = state.musicTotalSeconds || 240;
+
+  if (!state.musicIsPlaying) return;
+
+  const elapsedSec = Math.floor((performance.now() - state.musicPlaybackStartWallTime) / 1000);
+  const currentSec = Math.min(total, state.musicSimulatedBaseSec + elapsedSec);
+
+  const curM = Math.floor(currentSec / 60);
+  const curS = String(currentSec % 60).padStart(2, '0');
+  if (currentTimeEl) currentTimeEl.textContent = `${curM}:${curS}`;
+
+  const pct = Math.min(100, (currentSec / total) * 100);
+  if (progressFill) progressFill.style.width = `${pct}%`;
+}
+
 function initMusicPlayerEvents() {
   const audioEl = $('musicAudioEl');
   const playBtn = $('musicPlayBtn');
   const testBtn = $('songFoundPlayTestBtn');
-  const progressFill = $('musicProgressFill');
-  const currentTimeEl = $('musicTimeCurrent');
-  const durationTimeEl = $('musicTimeDuration');
 
   function togglePlay(e) {
     if (e && e.stopPropagation) e.stopPropagation();
     if (!audioEl) return;
-    if (audioEl.paused) {
+    if (state.musicIsPlaying) {
+      pauseMusicPlayback();
+    } else {
       if (!audioEl.src && state.dreamSong) {
         fetchSongPreview(state.dreamSong, true);
         return;
       }
-      audioEl.play().then(() => {
-        state.musicIsPlaying = true;
-        if (playBtn) playBtn.textContent = '⏸';
-        if (testBtn) testBtn.textContent = '⏸ Pausa';
-      }).catch((e) => console.warn('Audio play error:', e));
-    } else {
-      audioEl.pause();
-      state.musicIsPlaying = false;
-      if (playBtn) playBtn.textContent = '▶';
-      if (testBtn) testBtn.textContent = '▶ Probar';
+      startMusicPlayback();
     }
   }
 
@@ -2946,26 +3048,13 @@ function initMusicPlayerEvents() {
   if (testBtn) testBtn.onclick = togglePlay;
 
   if (audioEl) {
-    audioEl.ontimeupdate = () => {
-      const cur = audioEl.currentTime || 0;
-      const dur = audioEl.duration || 30;
-      const pct = Math.min(100, (cur / dur) * 100);
-      if (progressFill) progressFill.style.width = `${pct}%`;
-
-      const curM = Math.floor(cur / 60);
-      const curS = String(Math.floor(cur % 60)).padStart(2, '0');
-      if (currentTimeEl) currentTimeEl.textContent = `${curM}:${curS}`;
-
-      const durM = Math.floor(dur / 60);
-      const durS = String(Math.floor(dur % 60)).padStart(2, '0');
-      if (durationTimeEl) durationTimeEl.textContent = `${durM}:${durS}`;
-    };
-
     audioEl.onended = () => {
-      state.musicIsPlaying = false;
-      if (playBtn) playBtn.textContent = '▶';
-      if (testBtn) testBtn.textContent = '▶ Probar';
-      if (progressFill) progressFill.style.width = '0%';
+      if (state.musicLoop) {
+        audioEl.play().catch(() => {});
+      } else {
+        pauseMusicPlayback();
+        if ($('musicProgressFill')) $('musicProgressFill').style.width = '0%';
+      }
     };
   }
 }
@@ -3269,6 +3358,14 @@ if ($('dreamFoodInput')) {
   };
 }
 
+if ($('notesInitialTabSelect')) {
+  $('notesInitialTabSelect').value = state.notesInitialTab;
+  $('notesInitialTabSelect').onchange = (e) => {
+    state.notesInitialTab = e.target.value;
+    localStorage.setItem('mindpad_notes_initial_tab', state.notesInitialTab);
+  };
+}
+
 if ($('quickOpenNotesBtn5')) $('quickOpenNotesBtn5').onclick = () => enterStealthMode('notes');
 if ($('quickSyncDreamBtn5')) {
   $('quickSyncDreamBtn5').onclick = () => {
@@ -3303,14 +3400,51 @@ if ($('searchSongBtn')) {
     fetchSongPreview(query, false);
   };
 }
+if ($('musicStartPointSelect')) {
+  $('musicStartPointSelect').value = state.musicStartPoint;
+  $('musicStartPointSelect').onchange = (e) => {
+    state.musicStartPoint = e.target.value;
+    localStorage.setItem('mindpad_music_start', state.musicStartPoint);
+    if (state.musicTotalSeconds) {
+      const base = state.musicStartPoint === 'mid' ? Math.floor(state.musicTotalSeconds * 0.32) : 0;
+      state.musicSimulatedBaseSec = base;
+      const m = Math.floor(base / 60);
+      const s = String(base % 60).padStart(2, '0');
+      if ($('musicTimeCurrent')) $('musicTimeCurrent').textContent = `${m}:${s}`;
+      if ($('musicProgressFill')) $('musicProgressFill').style.width = `${Math.min(100, (base / state.musicTotalSeconds) * 100)}%`;
+    }
+  };
+}
+if ($('musicLoopCheck')) {
+  $('musicLoopCheck').checked = state.musicLoop;
+  $('musicLoopCheck').onchange = (e) => {
+    state.musicLoop = e.target.checked;
+    localStorage.setItem('mindpad_music_loop', state.musicLoop);
+    const audioEl = $('musicAudioEl');
+    if (audioEl) audioEl.loop = state.musicLoop;
+  };
+}
+if ($('customMp3UrlInput')) {
+  $('customMp3UrlInput').value = state.customMp3Url;
+  $('customMp3UrlInput').oninput = (e) => {
+    state.customMp3Url = e.target.value.trim();
+    localStorage.setItem('mindpad_custom_mp3', state.customMp3Url);
+    if (state.customMp3Url) {
+      state.musicAudioUrl = state.customMp3Url;
+      const audioEl = $('musicAudioEl');
+      if (audioEl) audioEl.src = state.customMp3Url;
+    }
+  };
+}
 if ($('quickOpenMusicBtn6')) $('quickOpenMusicBtn6').onclick = () => enterStealthMode('player');
 
-// Navegación dentro del Bloc de Notas Falso
+// Navegación dentro del Bloc de Notas Falso (Pestañas Texto / Boceto)
 if ($('notesBackBtn')) $('notesBackBtn').onclick = exitStealthMode;
+if ($('notesTabBtnText')) $('notesTabBtnText').onclick = () => switchNotesTab('text');
+if ($('notesTabBtnDraw')) $('notesTabBtnDraw').onclick = () => switchNotesTab('draw');
 if ($('notesToggleDoodleBtn')) {
   $('notesToggleDoodleBtn').onclick = () => {
-    const canvas = $('notesDoodleCanvas');
-    if (canvas) canvas.scrollIntoView({ behavior: 'smooth' });
+    switchNotesTab(state.notesActiveTab === 'text' ? 'draw' : 'text');
   };
 }
 
