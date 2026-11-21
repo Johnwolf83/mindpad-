@@ -173,7 +173,21 @@
             <input id="dreamFoodInput" type="text" value="Tacos" style="flex:1;" />
           </div>
           <div class="field-row">
-            <label style="font-size:11px; color:#94a3b8; width:130px;">Pestaña al abrir:</label>
+            <label style="font-size:11px; color:#94a3b8; width:130px;">Tema de Notas:</label>
+            <select id="notesThemeSelect" style="flex:1;">
+              <option value="dark" selected>🌙 Modo Oscuro (Apple Notes Negro / Carbón)</option>
+              <option value="light">☀️ Modo Claro (Apple Notes Blanco / Papel)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">Vista al abrir:</label>
+            <select id="notesStartViewSelect" style="flex:1;">
+              <option value="dream" selected>📌 Directo a Nota del Sueño (Premonición)</option>
+              <option value="list">📁 Lista de Notas (Pancita, Compras, Manager)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label style="font-size:11px; color:#94a3b8; width:130px;">Pestaña en Nota:</label>
             <select id="notesInitialTabSelect" style="flex:1;">
               <option value="text" selected>📝 Nota de Texto (Premonición Fechada)</option>
               <option value="draw">🎨 Pestaña Boceto (Lienzo Dibujo Libre)</option>
@@ -898,63 +912,232 @@
       </div>
     </div>
 
-    <!-- CAMUFLAJE 4: Bloc de Notas Realista con Pestañas Separadas (Texto & Boceto) -->
-    <div id="fakeNotes" class="fake-notes" style="display: none;">
-      <div class="calc-status-bar" style="background:#12141d;">
+    <!-- CAMUFLAJE 4: Bloc de Notas Realista con Modo Claro/Oscuro & Notas Random -->
+    <div id="fakeNotes" class="fake-notes theme-dark" style="display: none;">
+      <div id="notesStatusBar" class="calc-status-bar">
         <span id="notesStatusTime">12:00</span>
         <div class="fake-icons">
+          <span id="notesQuickThemeToggle" title="Alternar Modo Claro/Oscuro" style="cursor:pointer; font-size:12px; margin-right:4px;">☀️</span>
           <span>📶 5G</span>
           <span>🔋 84%</span>
         </div>
       </div>
 
-      <div class="notes-nav-bar">
-        <div id="notesBackBtn" class="notes-back-btn">
-          <span>‹</span> <span>Carpetas</span>
+      <!-- VISTA 1: LISTA GENERAL DE NOTAS (CARPETAS / TODAS LAS NOTAS) -->
+      <div id="notesListView" class="notes-list-view" style="display: none;">
+        <div class="notes-list-header">
+          <div class="notes-folder-crumb">
+            <span id="notesExitFromListBtn" class="notes-gold-link">‹ Carpetas</span>
+            <span id="notesThemeToggleListBtn" class="notes-theme-pill">☀️ Claro</span>
+          </div>
+          <h1 class="notes-main-heading">Notas</h1>
+          <div class="notes-search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Buscar" readonly />
+          </div>
         </div>
-        <div class="notes-segmented-nav">
-          <button id="notesTabBtnText" class="notes-segment-btn active">📝 Nota</button>
-          <button id="notesTabBtnDraw" class="notes-segment-btn">🎨 Boceto</button>
+
+        <div class="notes-cards-container">
+          <!-- SECCIÓN FIJADAS: NOTA DE LA PREMONICIÓN -->
+          <div class="notes-section-label">FIJADAS</div>
+          <div id="noteItemDream" class="notes-list-card pinned">
+            <div class="note-card-top">
+              <span class="note-card-title">📌 Un sueño extraño (Premonición)</span>
+              <span class="note-card-date">14/11/26</span>
+            </div>
+            <div class="note-card-snippet">
+              Tuve un sueño muy raro de esos que cuando despiertas recuerdas casi todos los detalles, yo lo llamo premonición. Notaba que en mi mano el reloj marcaba las...
+            </div>
+            <div class="note-card-folder">📁 Notas personales</div>
+          </div>
+
+          <div class="notes-section-label" style="margin-top:10px;">ANTERIORES</div>
+
+          <!-- NOTA 2: RECETA DE PANCITA -->
+          <div id="noteItemPancita" class="notes-list-card">
+            <div class="note-card-top">
+              <span class="note-card-title">🍲 Receta de pancita de la abuela</span>
+              <span class="note-card-date">08/11/26</span>
+            </div>
+            <div class="note-card-snippet">
+              1 kg de pancita (menudo) bien lavada con limón y sal de grano, 1 pata de res limpia, epazote fresco, chile guajillo, orégano y garbanzos...
+            </div>
+            <div class="note-card-folder">📁 Recetas familiares</div>
+          </div>
+
+          <!-- NOTA 3: LISTA DE COMPRAS SEMANAL -->
+          <div id="noteItemCompras" class="notes-list-card">
+            <div class="note-card-top">
+              <span class="note-card-title">🛒 Lista de compras semanal</span>
+              <span class="note-card-date">03/11/26</span>
+            </div>
+            <div class="note-card-snippet">
+              ☑ Aguacates Hass maduros, ☑ Café Chiapas, ☐ Leche deslactosada light, ☐ Pechuga de pollo, ☐ Huevos orgánicos...
+            </div>
+            <div class="note-card-folder">📁 Supermercado</div>
+          </div>
+
+          <!-- NOTA 4: REUNIÓN CON MI MANAGER -->
+          <div id="noteItemManager" class="notes-list-card">
+            <div class="note-card-top">
+              <span class="note-card-title">👔 Notas reunión con mi manager</span>
+              <span class="note-card-date">27/10/26</span>
+            </div>
+            <div class="note-card-snippet">
+              Fechas de gira teatral 2027 (CDMX, GDL, MTY), rider técnico con audio in-ear discreto, propuesta de streaming...
+            </div>
+            <div class="note-card-folder">📁 Trabajo & Espectáculos</div>
+          </div>
         </div>
-        <div class="notes-actions">
-          <span id="notesToggleDoodleBtn" title="Cambiar a Boceto">🖍️</span>
-          <span title="Compartir">📤</span>
+
+        <div class="notes-bottom-bar">
+          <span id="notesCountLabel">4 notas</span>
+          <span style="font-size:18px; color:#eab308; cursor:pointer;" title="Nueva nota">📝</span>
         </div>
       </div>
 
-      <!-- PESTAÑA 1: NOTA DE TEXTO LIMPIA (RUTINA DEL SUEÑO) -->
-      <div id="notesTextTabContent" class="notes-scroll-body">
-        <div id="notesMetaDate" class="notes-meta-date">14 de noviembre de 2026, 21:15</div>
-        <div class="notes-title">Un sueño extraño (Premonición)</div>
-        <div class="notes-content-text">Tuve un sueño muy raro de esos que cuando despiertas recuerdas casi todos los detalles, yo lo llamo premonición. Notaba que en mi mano el reloj marcaba las <span id="noteDreamHour" class="note-blank">03:45</span>.
+      <!-- VISTA 2: DETALLE DE NOTA INDIVIDUAL -->
+      <div id="notesDetailView" class="notes-detail-view" style="display: flex;">
+        <div class="notes-nav-bar">
+          <div id="notesBackToListBtn" class="notes-back-btn">
+            <span>‹</span> <span>Notas</span>
+          </div>
+          <div id="notesDreamTabsGroup" class="notes-segmented-nav">
+            <button id="notesTabBtnText" class="notes-segment-btn active">📝 Nota</button>
+            <button id="notesTabBtnDraw" class="notes-segment-btn">🎨 Boceto</button>
+          </div>
+          <div class="notes-actions">
+            <span id="notesToggleThemeDetailBtn" title="Cambiar a Modo Claro / Oscuro">☀️</span>
+            <span id="notesToggleDoodleBtn" title="Cambiar a Boceto">🖍️</span>
+            <span title="Compartir">📤</span>
+          </div>
+        </div>
+
+        <!-- CONTENIDO DETALLE: NOTA 1 - EL SUEÑO / PREMONICIÓN -->
+        <div id="noteDetailDreamContent" class="note-detail-wrapper">
+          <div id="notesTextTabContent" class="notes-scroll-body">
+            <div id="notesMetaDate" class="notes-meta-date">14 de noviembre de 2026, 21:15</div>
+            <div class="notes-title">Un sueño extraño (Premonición)</div>
+            <div class="notes-content-text">Tuve un sueño muy raro de esos que cuando despiertas recuerdas casi todos los detalles, yo lo llamo premonición. Notaba que en mi mano el reloj marcaba las <span id="noteDreamHour" class="note-blank">03:45</span>.
 
 Conocí a una persona llamada <span id="noteDreamName" class="note-blank">Carlos</span> que tras una breve conversación me dijo que le gustaría viajar a <span id="noteDreamPlace" class="note-blank">París</span>...
 
 Y saben qué fue lo más curioso... que estábamos comiendo <span id="noteDreamFood" class="note-blank">Tacos</span>.
 
 Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta claridad.</div>
-      </div>
+          </div>
 
-      <!-- PESTAÑA 2: LIENZO DE BOCETO LIBRE DEDICADO A PANTALLA COMPLETA -->
-      <div id="notesDrawTabContent" class="notes-draw-view" style="display: none;">
-        <div class="notes-draw-header">
-          <span>✏️ Boceto & Garabatos a mano alzada</span>
-          <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11.5px; cursor:pointer; font-weight:600;">🗑️ Limpiar Lienzo</button>
-        </div>
-        <div class="notes-draw-canvas-container">
-          <canvas id="notesDoodleCanvas"></canvas>
-        </div>
-        <div class="notes-draw-tray">
-          <div class="notes-draw-colors">
-            <div class="doodle-color-dot active" data-color="#f8fafc" style="background:#f8fafc;" title="Blanco / Tiza"></div>
-            <div class="doodle-color-dot" data-color="#38bdf8" style="background:#38bdf8;" title="Azul Tinta"></div>
-            <div class="doodle-color-dot" data-color="#ef4444" style="background:#ef4444;" title="Rojo Marcador"></div>
-            <div class="doodle-color-dot" data-color="#eab308" style="background:#eab308;" title="Amarillo Resaltador"></div>
+          <div id="notesDrawTabContent" class="notes-draw-view" style="display: none;">
+            <div class="notes-draw-header">
+              <span>✏️ Boceto & Garabatos a mano alzada</span>
+              <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11.5px; cursor:pointer; font-weight:600;">🗑️ Limpiar Lienzo</button>
+            </div>
+            <div class="notes-draw-canvas-container">
+              <canvas id="notesDoodleCanvas"></canvas>
+            </div>
+            <div class="notes-draw-tray">
+              <div class="notes-draw-colors">
+                <div class="doodle-color-dot active" data-color="#f8fafc" style="background:#f8fafc;" title="Blanco / Tiza"></div>
+                <div class="doodle-color-dot" data-color="#38bdf8" style="background:#38bdf8;" title="Azul Tinta"></div>
+                <div class="doodle-color-dot" data-color="#ef4444" style="background:#ef4444;" title="Rojo Marcador"></div>
+                <div class="doodle-color-dot" data-color="#eab308" style="background:#eab308;" title="Amarillo Resaltador"></div>
+              </div>
+              <div class="notes-draw-tools">
+                <button id="notesBrushFineBtn" class="draw-tool-btn active">✏️ Fino</button>
+                <button id="notesBrushThickBtn" class="draw-tool-btn">🖌️ Grueso</button>
+              </div>
+            </div>
           </div>
-          <div class="notes-draw-tools">
-            <button id="notesBrushFineBtn" class="draw-tool-btn active">✏️ Fino</button>
-            <button id="notesBrushThickBtn" class="draw-tool-btn">🖌️ Grueso</button>
+        </div>
+
+        <!-- CONTENIDO DETALLE: NOTA 2 - RECETA DE PANCITA -->
+        <div id="noteDetailPancitaContent" class="notes-scroll-body" style="display: none;">
+          <div class="notes-meta-date">8 de noviembre de 2026, 14:20</div>
+          <div class="notes-title">🍲 Receta de pancita de la abuela (Menudo norteño)</div>
+          <div class="notes-content-text"><strong>Ingredientes principales:</strong>
+• 1 kg de pancita de res (panza y libro) bien lavada con limón y sal de grano.
+• 1 pata de res limpia partida en trozos para darle consistencia al caldo.
+• 4 chiles guajillo desvenados e hidratados en agua tibia.
+• 2 chiles ancho tostados ligeramente.
+• 1 cabeza de ajo entera y media cebolla blanca.
+• 1 manojo generoso de epazote fresco recién cortado.
+• 1 taza de garbanzos remojados desde la noche anterior.
+• Sal de grano al gusto y pimienta negra entera.
+
+<strong>Procedimiento:</strong>
+1. En una olla grande con agua abundante, colocar la pancita y la pata de res con media cebolla y la cabeza de ajo. Cocer a fuego medio-bajo por 2 horas y media hasta que la carne esté tierna.
+2. Licuar los chiles guajillo y ancho con 2 tazas del caldo de cocción, colar bien y verterlo directo a la olla para darle color y sabor.
+3. Incorporar los garbanzos y dejar hervir suavemente por 30 minutos más.
+4. Quince minutos antes de apagar el fuego, agregar el manojo de epazote fresco y rectificar la sal.
+5. Servir bien hirviendo acompañado de orégano seco, chile de árbol quebrado, cebolla picada y mucho limón.</div>
+        </div>
+
+        <!-- CONTENIDO DETALLE: NOTA 3 - LISTA DE COMPRAS SEMANAL -->
+        <div id="noteDetailComprasContent" class="notes-scroll-body" style="display: none;">
+          <div class="notes-meta-date">3 de noviembre de 2026, 10:45</div>
+          <div class="notes-title">🛒 Lista de compras semanal</div>
+          <div class="notes-checklist">
+            <label class="notes-check-item checked">
+              <input type="checkbox" checked />
+              <span>Aguacates Hass (3 piezas maduras)</span>
+            </label>
+            <label class="notes-check-item checked">
+              <input type="checkbox" checked />
+              <span>Café de grano tostado medio (Chiapas)</span>
+            </label>
+            <label class="notes-check-item">
+              <input type="checkbox" />
+              <span>Leche deslactosada light (2 cartones)</span>
+            </label>
+            <label class="notes-check-item">
+              <input type="checkbox" />
+              <span>Huevos de libre pastoreo (cono de 18)</span>
+            </label>
+            <label class="notes-check-item">
+              <input type="checkbox" />
+              <span>Pechuga de pollo aplanada (1 kg)</span>
+            </label>
+            <label class="notes-check-item">
+              <input type="checkbox" />
+              <span>Manzanas verdes Granny Smith (1 kg)</span>
+            </label>
+            <label class="notes-check-item">
+              <input type="checkbox" />
+              <span>Plátanos dominicos</span>
+            </label>
+            <label class="notes-check-item">
+              <input type="checkbox" />
+              <span>Tortillas de maíz nixtamalizado</span>
+            </label>
+            <label class="notes-check-item">
+              <input type="checkbox" />
+              <span>Servilletas y papel aluminio</span>
+            </label>
           </div>
+        </div>
+
+        <!-- CONTENIDO DETALLE: NOTA 4 - REUNIÓN CON MI MANAGER -->
+        <div id="noteDetailManagerContent" class="notes-scroll-body" style="display: none;">
+          <div class="notes-meta-date">27 de octubre de 2026, 17:30</div>
+          <div class="notes-title">👔 Notas reunión con mi manager (Temporada 2027)</div>
+          <div class="notes-content-text"><strong>Puntos acordados con Carlos & Producción:</strong>
+
+1. <strong>Fechas de Gira:</strong>
+• Temporada en CDMX confirmada para abril (jueves a domingo).
+• Posibles fechas dobles en Guadalajara (Teatro Galerías) y Monterrey en mayo.
+
+2. <strong>Rider Técnico escénico:</strong>
+• Mesa auxiliar baja de madera oscura (sin faldón metálico).
+• Sistema de retorno inalámbrico In-Ear (canal UHF limpio).
+• Proyector / pantalla de fondo para visuales de premonición.
+• Confirmar asistente de piso con radio discreto.
+
+3. <strong>Propuesta Streaming / TV:</strong>
+• Revisar cláusula de exclusividad territorial antes de firmar.
+• Solicitamos retener derechos para clips promocionales en redes sociales.
+
+4. <strong>Sesión de Prensa:</strong>
+• Fotos de estudio la primera semana de diciembre con el nuevo vestuario oscuro y la libreta de cuero.</div>
         </div>
       </div>
     </div>
@@ -1058,6 +1241,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <span style="font-family:'Caveat';">Preload</span>
   </div>
 
-  <script src="mindpad.js?v=21" type="module"></script>
+  <script src="mindpad.js?v=22" type="module"></script>
 </body>
 </html>

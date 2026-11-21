@@ -190,6 +190,9 @@ const state = {
   dreamFood: localStorage.getItem('mindpad_dream_food') || 'Tacos',
   notesActiveTab: localStorage.getItem('mindpad_notes_tab') || 'text',
   notesInitialTab: localStorage.getItem('mindpad_notes_initial_tab') || 'text',
+  notesTheme: localStorage.getItem('mindpad_notes_theme') || 'dark',
+  notesStartView: localStorage.getItem('mindpad_notes_start_view') || 'dream',
+  notesCurrentView: 'dream',
 
   // Melodía Telepática & Reproductor de Música Camuflado (iTunes)
   dreamSong: localStorage.getItem('mindpad_dream_song') || 'Bohemian Rhapsody',
@@ -1163,8 +1166,12 @@ function enterStealthMode(forcedMode) {
   if ($('aodClock')) $('aodClock').style.display = isAOD ? 'block' : 'none';
 
   if (isNotes) {
+    applyNotesTheme(state.notesTheme);
     updateDreamNoteDOM();
-    switchNotesTab(state.notesInitialTab || 'text');
+    showNoteView(state.notesStartView || 'dream');
+    if ((state.notesStartView || 'dream') === 'dream') {
+      switchNotesTab(state.notesInitialTab || 'text');
+    }
     setTimeout(() => {
       initNotesDoodle();
     }, 40);
@@ -2721,6 +2728,78 @@ let isDoodling = false;
 let lastDoodleX = 0;
 let lastDoodleY = 0;
 
+function applyNotesTheme(theme) {
+  state.notesTheme = theme || 'dark';
+  localStorage.setItem('mindpad_notes_theme', state.notesTheme);
+
+  const notesEl = $('fakeNotes');
+  if (notesEl) {
+    notesEl.classList.remove('theme-dark', 'theme-light');
+    notesEl.classList.add(`theme-${state.notesTheme}`);
+  }
+
+  const isDark = state.notesTheme === 'dark';
+  const icon = isDark ? '☀️' : '🌙';
+
+  if ($('notesQuickThemeToggle')) $('notesQuickThemeToggle').textContent = icon;
+  if ($('notesToggleThemeDetailBtn')) $('notesToggleThemeDetailBtn').textContent = icon;
+  if ($('notesThemeToggleListBtn')) $('notesThemeToggleListBtn').textContent = isDark ? '☀️ Claro' : '🌙 Oscuro';
+  if ($('notesThemeSelect')) $('notesThemeSelect').value = state.notesTheme;
+
+  // En modo claro, el trazo inicial pasa a tinta oscura
+  if (state.notesTheme === 'light' && (state.doodleColor === '#f8fafc' || !state.doodleColor)) {
+    state.doodleColor = '#1c1c1e';
+  } else if (state.notesTheme === 'dark' && state.doodleColor === '#1c1c1e') {
+    state.doodleColor = '#f8fafc';
+  }
+
+  if (state.notesActiveTab === 'draw' && typeof redrawNotesDoodleCanvas === 'function') {
+    redrawNotesDoodleCanvas();
+  }
+}
+
+function showNoteView(noteId) {
+  state.notesCurrentView = noteId || 'dream';
+  const listView = $('notesListView');
+  const detailView = $('notesDetailView');
+
+  if (noteId === 'list') {
+    if (listView) listView.style.display = 'flex';
+    if (detailView) detailView.style.display = 'none';
+    return;
+  }
+
+  if (listView) listView.style.display = 'none';
+  if (detailView) detailView.style.display = 'flex';
+
+  const wrappers = [
+    'noteDetailDreamContent',
+    'noteDetailPancitaContent',
+    'noteDetailComprasContent',
+    'noteDetailManagerContent'
+  ];
+  wrappers.forEach((id) => {
+    if ($(id)) $(id).style.display = 'none';
+  });
+
+  const dreamTabs = $('notesDreamTabsGroup');
+  const doodleBtn = $('notesToggleDoodleBtn');
+
+  if (noteId === 'dream') {
+    if ($('noteDetailDreamContent')) $('noteDetailDreamContent').style.display = 'block';
+    if (dreamTabs) dreamTabs.style.display = 'flex';
+    if (doodleBtn) doodleBtn.style.display = 'inline-block';
+    switchNotesTab(state.notesActiveTab || 'text');
+  } else {
+    if (dreamTabs) dreamTabs.style.display = 'none';
+    if (doodleBtn) doodleBtn.style.display = 'none';
+
+    if (noteId === 'pancita' && $('noteDetailPancitaContent')) $('noteDetailPancitaContent').style.display = 'flex';
+    if (noteId === 'compras' && $('noteDetailComprasContent')) $('noteDetailComprasContent').style.display = 'flex';
+    if (noteId === 'manager' && $('noteDetailManagerContent')) $('noteDetailManagerContent').style.display = 'flex';
+  }
+}
+
 function switchNotesTab(tab) {
   state.notesActiveTab = tab;
   localStorage.setItem('mindpad_notes_tab', tab);
@@ -2893,7 +2972,7 @@ function redrawNotesDoodleCanvas() {
     const scaleY = (canvas.height - pad * 2) / maxY;
     const scale = Math.min(scaleX, scaleY);
 
-    notesDoodleCtx.strokeStyle = '#f8fafc';
+    notesDoodleCtx.strokeStyle = state.notesTheme === 'light' ? '#1c1c1e' : '#f8fafc';
     notesDoodleCtx.lineWidth = 2.2;
     notesDoodleCtx.lineCap = 'round';
     notesDoodleCtx.lineJoin = 'round';
@@ -3478,6 +3557,19 @@ if ($('notesInitialTabSelect')) {
     localStorage.setItem('mindpad_notes_initial_tab', state.notesInitialTab);
   };
 }
+if ($('notesThemeSelect')) {
+  $('notesThemeSelect').value = state.notesTheme;
+  $('notesThemeSelect').onchange = (e) => {
+    applyNotesTheme(e.target.value);
+  };
+}
+if ($('notesStartViewSelect')) {
+  $('notesStartViewSelect').value = state.notesStartView;
+  $('notesStartViewSelect').onchange = (e) => {
+    state.notesStartView = e.target.value;
+    localStorage.setItem('mindpad_notes_start_view', state.notesStartView);
+  };
+}
 
 if ($('quickOpenNotesBtn5')) $('quickOpenNotesBtn5').onclick = () => enterStealthMode('notes');
 if ($('quickSyncDreamBtn5')) {
@@ -3563,8 +3655,9 @@ if ($('openOfficialYTMusicBtn')) {
 }
 if ($('quickOpenMusicBtn6')) $('quickOpenMusicBtn6').onclick = () => enterStealthMode('player');
 
-// Navegación dentro del Bloc de Notas Falso (Pestañas Texto / Boceto)
-if ($('notesBackBtn')) $('notesBackBtn').onclick = exitStealthMode;
+// Navegación dentro del Bloc de Notas Falso (Pestañas, Lista y Temas)
+if ($('notesBackToListBtn')) $('notesBackToListBtn').onclick = () => showNoteView('list');
+if ($('notesExitFromListBtn')) $('notesExitFromListBtn').onclick = exitStealthMode;
 if ($('notesTabBtnText')) $('notesTabBtnText').onclick = () => switchNotesTab('text');
 if ($('notesTabBtnDraw')) $('notesTabBtnDraw').onclick = () => switchNotesTab('draw');
 if ($('notesToggleDoodleBtn')) {
@@ -3572,6 +3665,54 @@ if ($('notesToggleDoodleBtn')) {
     switchNotesTab(state.notesActiveTab === 'text' ? 'draw' : 'text');
   };
 }
+
+// Tarjetas de notas en la lista general
+if ($('noteItemDream')) $('noteItemDream').onclick = () => showNoteView('dream');
+if ($('noteItemPancita')) $('noteItemPancita').onclick = () => showNoteView('pancita');
+if ($('noteItemCompras')) $('noteItemCompras').onclick = () => showNoteView('compras');
+if ($('noteItemManager')) $('noteItemManager').onclick = () => showNoteView('manager');
+
+// Alternador de tema Claro / Oscuro en las notas
+function toggleNotesThemeDirect() {
+  const nextTheme = state.notesTheme === 'dark' ? 'light' : 'dark';
+  applyNotesTheme(nextTheme);
+  triggerHaptic([30]);
+}
+if ($('notesQuickThemeToggle')) $('notesQuickThemeToggle').onclick = (e) => {
+  e.stopPropagation();
+  toggleNotesThemeDirect();
+};
+if ($('notesToggleThemeDetailBtn')) $('notesToggleThemeDetailBtn').onclick = (e) => {
+  e.stopPropagation();
+  toggleNotesThemeDirect();
+};
+if ($('notesThemeToggleListBtn')) $('notesThemeToggleListBtn').onclick = (e) => {
+  e.stopPropagation();
+  toggleNotesThemeDirect();
+};
+
+// 3 Toques rápidos en la barra de estado de notas para volver a la configuración
+let notesTripleTapCount = 0;
+let notesTripleTapTimer = null;
+if ($('notesStatusBar')) {
+  $('notesStatusBar').onclick = () => {
+    notesTripleTapCount++;
+    clearTimeout(notesTripleTapTimer);
+    notesTripleTapTimer = setTimeout(() => { notesTripleTapCount = 0; }, 700);
+    if (notesTripleTapCount >= 3) {
+      notesTripleTapCount = 0;
+      triggerHaptic([30, 40, 50]);
+      exitStealthMode();
+    }
+  };
+}
+
+// Checklist interactivo en la nota del súper
+document.querySelectorAll('.notes-check-item input[type="checkbox"]').forEach((chk) => {
+  chk.onchange = () => {
+    chk.parentElement.classList.toggle('checked', chk.checked);
+  };
+});
 
 if ($('quickOpenCalcBtn1')) $('quickOpenCalcBtn1').onclick = () => enterStealthMode('calculator');
 if ($('quickOpenStealthBtn1')) $('quickOpenStealthBtn1').onclick = () => enterStealthMode(state.stealthCamouflage === 'lockscreen' ? 'lockscreen' : 'aod');
@@ -3671,6 +3812,7 @@ previewCanvas.addEventListener('pointerup', () => {
 initTTS();
 initCalculator();
 updateCalcDisplay();
+applyNotesTheme(state.notesTheme);
 updateDreamNoteDOM();
 initMusicPlayerEvents();
 applyMusicPlayerTheme(state.musicPlayerTheme);
