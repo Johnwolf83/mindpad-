@@ -179,7 +179,8 @@ const state = {
   vibrate: true,
   ttsRate: 1.2,
   selectedVoice: null,
-  stealthCamouflage: localStorage.getItem('mindpad_stealth_camouflage') || 'calculator',
+  stealthCamouflage: localStorage.getItem('mindpad_stealth_camouflage') || 'aod',
+  activeCamouflageMode: 'aod',
   smartwatchEnabled: false,
 
   // La Rutina del Sueño & Notas Camufladas
@@ -1135,19 +1136,19 @@ function startClocks() {
 
 // Entrar / Salir de Modo Sigiloso
 function enterStealthMode(forcedMode) {
-  if (forcedMode) {
-    state.stealthCamouflage = forcedMode;
-    if ($('stealthCamouflage')) $('stealthCamouflage').value = forcedMode;
-  }
+  // Modo activo para esta sesión. Si no se especifica forzado, usa el modo sigilo configurado (por defecto 'aod' protector negro)
+  const activeMode = forcedMode || state.stealthCamouflage || 'aod';
+  state.activeCamouflageMode = activeMode;
+
   $('setupView').style.display = 'none';
   $('stealthView').style.display = 'block';
   document.body.className = 'mode-stealth';
 
-  const isCalc = state.stealthCamouflage === 'calculator';
-  const isNotes = state.stealthCamouflage === 'notes';
-  const isPlayer = state.stealthCamouflage === 'player';
-  const isLock = state.stealthCamouflage === 'lockscreen';
-  const isAOD = !isCalc && !isNotes && !isPlayer && !isLock;
+  const isCalc = activeMode === 'calculator';
+  const isNotes = activeMode === 'notes';
+  const isPlayer = activeMode === 'player';
+  const isLock = activeMode === 'lockscreen';
+  const isAOD = activeMode === 'aod' || (!isCalc && !isNotes && !isPlayer && !isLock);
 
   if ($('fakeCalculator')) $('fakeCalculator').style.display = isCalc ? 'flex' : 'none';
   if ($('fakeNotes')) $('fakeNotes').style.display = isNotes ? 'flex' : 'none';
@@ -1209,9 +1210,9 @@ stealthView.addEventListener('touchstart', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
   // Si estamos en la calculadora, notas o reproductor, no activar peek con toques en su UI
   if (
-    (state.stealthCamouflage === 'calculator' && e.target.closest('#fakeCalculator')) ||
-    (state.stealthCamouflage === 'notes' && e.target.closest('#fakeNotes')) ||
-    (state.stealthCamouflage === 'player' && e.target.closest('#fakeMusicPlayer'))
+    (state.activeCamouflageMode === 'calculator' && e.target.closest('#fakeCalculator')) ||
+    (state.activeCamouflageMode === 'notes' && e.target.closest('#fakeNotes')) ||
+    (state.activeCamouflageMode === 'player' && e.target.closest('#fakeMusicPlayer'))
   ) {
     return;
   }
@@ -1256,9 +1257,9 @@ stealthView.addEventListener('touchcancel', hidePeek);
 stealthView.addEventListener('mousedown', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
   if (
-    (state.stealthCamouflage === 'calculator' && e.target.closest('#fakeCalculator')) ||
-    (state.stealthCamouflage === 'notes' && e.target.closest('#fakeNotes')) ||
-    (state.stealthCamouflage === 'player' && e.target.closest('#fakeMusicPlayer'))
+    (state.activeCamouflageMode === 'calculator' && e.target.closest('#fakeCalculator')) ||
+    (state.activeCamouflageMode === 'notes' && e.target.closest('#fakeNotes')) ||
+    (state.activeCamouflageMode === 'player' && e.target.closest('#fakeMusicPlayer'))
   ) {
     return;
   }
@@ -1517,11 +1518,7 @@ function switchPresentationLayer(layerNum) {
   };
   if ($('activeLayerBadge')) $('activeLayerBadge').textContent = badges[layerNum] || `Capa ${layerNum}`;
 
-  if (layerNum === 1) {
-    state.stealthCamouflage = 'calculator';
-    if ($('stealthCamouflage')) $('stealthCamouflage').value = 'calculator';
-    localStorage.setItem('mindpad_stealth_camouflage', 'calculator');
-  } else if (layerNum === 2) {
+  if (layerNum === 2) {
     if (state.exifDaysBack === 0) {
       state.exifDaysBack = 3;
       if ($('exifDaysBackSelect')) $('exifDaysBackSelect').value = '3';
@@ -1536,14 +1533,7 @@ function switchPresentationLayer(layerNum) {
     if ($('slateLiveSyncCheck')) $('slateLiveSyncCheck').checked = true;
     localStorage.setItem('mindpad_slate_live_sync', 'true');
   } else if (layerNum === 5) {
-    state.stealthCamouflage = 'notes';
-    if ($('stealthCamouflage')) $('stealthCamouflage').value = 'notes';
-    localStorage.setItem('mindpad_stealth_camouflage', 'notes');
     updateDreamNoteDOM();
-  } else if (layerNum === 6) {
-    state.stealthCamouflage = 'player';
-    if ($('stealthCamouflage')) $('stealthCamouflage').value = 'player';
-    localStorage.setItem('mindpad_stealth_camouflage', 'player');
   }
 }
 
@@ -3303,7 +3293,11 @@ if ($('musicModeBtn')) {
   $('musicModeBtn').onclick = () => enterStealthMode('player');
 }
 if ($('stealthBtn')) {
-  $('stealthBtn').onclick = () => enterStealthMode();
+  $('stealthBtn').onclick = () => {
+    // Modo Sigilo siempre abre la pantalla de sigilo: AOD pantalla negra o lockscreen
+    const stealthMode = state.stealthCamouflage === 'lockscreen' ? 'lockscreen' : 'aod';
+    enterStealthMode(stealthMode);
+  };
 }
 
 // Capas de Presentación
@@ -3449,7 +3443,7 @@ if ($('notesToggleDoodleBtn')) {
 }
 
 if ($('quickOpenCalcBtn1')) $('quickOpenCalcBtn1').onclick = () => enterStealthMode('calculator');
-if ($('quickOpenStealthBtn1')) $('quickOpenStealthBtn1').onclick = () => enterStealthMode('lockscreen');
+if ($('quickOpenStealthBtn1')) $('quickOpenStealthBtn1').onclick = () => enterStealthMode(state.stealthCamouflage === 'lockscreen' ? 'lockscreen' : 'aod');
 
 if ($('vipEventName')) {
   $('vipEventName').value = state.vipEventName;

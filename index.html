@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=14" />
+  <link rel="stylesheet" href="styles.css?v=15" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=19').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=20').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -101,7 +101,7 @@
           </div>
           <div style="display:flex; gap:8px;">
             <button id="quickOpenCalcBtn1" class="btn small cta" style="flex:1;">🧮 Abrir Calculadora Camuflada</button>
-            <button id="quickOpenStealthBtn1" class="btn small secondary" style="flex:1;">🤫 Abrir Pantalla Bloqueo</button>
+            <button id="quickOpenStealthBtn1" class="btn small secondary" style="flex:1;">🤫 Abrir Modo Sigilo (Pantalla Negra)</button>
           </div>
         </div>
 
@@ -482,13 +482,13 @@
           </label>
         </div>
         <div class="field-row">
-          <label for="stealthCamouflage">Camuflaje de Pantalla:</label>
+          <label for="stealthCamouflage">Pantalla de Modo Sigilo:</label>
           <select id="stealthCamouflage">
-            <option value="calculator" selected>Calculadora Realista (Peek en Display)</option>
-            <option value="notes">Bloc de Notas Realista (Doodle & Rutina del Sueño)</option>
-            <option value="player">Reproductor de Música (Spotify / Canción Pensada)</option>
-            <option value="lockscreen">Pantalla de Bloqueo Real (WhatsApp)</option>
-            <option value="aod">AOD Reloj Minimalista Negro</option>
+            <option value="aod" selected>⬛ AOD Pantalla Negra Minimalista (Protector / Apagada)</option>
+            <option value="lockscreen">🔒 Pantalla de Bloqueo Real (Reloj + WhatsApp)</option>
+            <option value="calculator">🧮 Calculadora Realista (Peek en Display)</option>
+            <option value="notes">📝 Bloc de Notas Realista (Texto & Boceto)</option>
+            <option value="player">🎵 Reproductor de Música (Spotify / Canción Pensada)</option>
           </select>
         </div>
         <div class="field-row">
@@ -1025,6 +1025,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     </div>
   </div>
 
-  <script src="mindpad.js?v=19" type="module"></script>
+  <script src="mindpad.js?v=20" type="module"></script>
 </body>
 </html>
