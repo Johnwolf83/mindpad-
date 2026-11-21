@@ -1814,50 +1814,109 @@ function drawChalkText(ctx, w, h, text, subtitle = '', customY = null, customSiz
   const chalkColor = isDark ? '#f8fafc' : '#1e293b';
 
   ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
 
   const centerY = customY !== null ? customY : (h / 2);
-  const fontSize = customSize || Math.min(130, Math.max(54, Math.floor(w / Math.max(4.2, text.length * 0.52))));
+  const baseSize = customSize || Math.min(135, Math.max(54, Math.floor(w / Math.max(4.2, text.length * 0.55))));
 
-  // Tipografías manuscritas auténticas (Caveat, Kalam, Permanent Marker)
-  ctx.font = `700 ${fontSize}px "Caveat", "Kalam", "Permanent Marker", cursive, sans-serif`;
+  // Fuentes de letra fea, irregular y desordenada estilo tiza escolar / graffiti
+  const messyChalkFonts = [
+    '"Rock Salt"',
+    '"Walter Turncoat"',
+    '"Gochi Hand"',
+    '"Gloria Hallelujah"',
+    '"Reenie Beanie"',
+    '"Permanent Marker"',
+    'cursive',
+    'sans-serif'
+  ].join(', ');
 
-  // Multi-pass de tiza con micro-offset para textura rústica
-  ctx.fillStyle = chalkColor;
-  ctx.globalAlpha = 0.88;
-  ctx.fillText(text, w / 2, centerY);
+  // Medir cada letra y calcular anchos totales con asimetría y saltos orgánicos
+  ctx.font = `400 ${baseSize}px ${messyChalkFonts}`;
 
-  ctx.globalAlpha = 0.45;
-  ctx.fillText(text, w / 2 + 1.2, centerY + 0.6);
+  const chars = text.split('');
+  const letterMetrics = chars.map((ch, idx) => {
+    // Semilla pseudo-aleatoria determinista para que cada letra tenga su propia inclinación fija
+    const seed = (text.charCodeAt(idx % text.length) * 19 + (idx + 1) * 37) % 100;
+    const rotDeg = ((seed % 15) - 7); // Inclinación asimétrica entre -7° y +7°
+    const scaleVar = 0.88 + ((seed * 7) % 24) / 100; // Variación de altura/ancho entre 88% y 112%
+    const yShift = ((seed * 11) % 18) - 9; // Letra que sube o baja entre -9px y +9px
+    const fontS = Math.round(baseSize * scaleVar);
 
-  ctx.globalAlpha = 0.3;
-  ctx.fillText(text, w / 2 - 0.8, centerY - 0.8);
+    ctx.font = `400 ${fontS}px ${messyChalkFonts}`;
+    const m = ctx.measureText(ch);
+    return {
+      char: ch,
+      width: m.width,
+      rotRad: (rotDeg * Math.PI) / 180,
+      fontS: fontS,
+      yShift: yShift,
+      seed: seed
+    };
+  });
 
-  // Micro-polvo de gis disperso alrededor del texto
-  const textMetrics = ctx.measureText(text);
-  const textW = textMetrics.width;
-  ctx.fillStyle = chalkColor;
-  const dustCount = Math.floor(text.length * 5);
-  for (let i = 0; i < dustCount; i++) {
-    const rx = (Math.random() - 0.5) * (textW * 1.15);
-    const ry = (Math.random() - 0.5) * (fontSize * 1.1);
-    ctx.globalAlpha = 0.15 + Math.random() * 0.35;
-    ctx.beginPath();
-    ctx.arc(w / 2 + rx, centerY + ry, 0.6 + Math.random() * 0.8, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  const totalW = letterMetrics.reduce((acc, curr) => acc + curr.width * 1.04, 0);
+  let curX = (w - totalW) / 2;
 
-  // Doble subrayado rústico en tiza
-  const lineW = textW * 1.08;
-  const lineY = centerY + fontSize * 0.44;
-  drawChalkLine(ctx, w / 2 - lineW / 2, lineY, w / 2 + lineW / 2, lineY, chalkColor, 3.5);
-  drawChalkLine(ctx, w / 2 - lineW * 0.42, lineY + 6, w / 2 + lineW * 0.38, lineY + 6, chalkColor, 1.8);
+  // Dibujar cada letra con su ángulo y posición imperfecta
+  letterMetrics.forEach((lm) => {
+    ctx.save();
+    const charCenterX = curX + lm.width / 2;
+    const charCenterY = centerY + lm.yShift;
+
+    ctx.translate(charCenterX, charCenterY);
+    ctx.rotate(lm.rotRad);
+
+    ctx.font = `400 ${lm.fontS}px ${messyChalkFonts}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // 1. Capa base de tiza áspera
+    ctx.fillStyle = chalkColor;
+    ctx.globalAlpha = 0.88;
+    ctx.fillText(lm.char, 0, 0);
+
+    // 2. Desplazamiento rústico de gis
+    ctx.globalAlpha = 0.42;
+    ctx.fillText(lm.char, 1.4, 0.7);
+
+    // 3. Raspadura de tiza seca
+    ctx.globalAlpha = 0.25;
+    ctx.fillText(lm.char, -1.2, -0.6);
+
+    // 4. Polvillo de tiza alrededor de los trazos de cada letra
+    const dustCount = Math.floor(4 + (lm.seed % 6));
+    ctx.fillStyle = chalkColor;
+    for (let d = 0; d < dustCount; d++) {
+      const dx = (Math.random() - 0.5) * lm.width * 1.25;
+      const dy = (Math.random() - 0.5) * lm.fontS * 0.95;
+      ctx.globalAlpha = 0.12 + Math.random() * 0.35;
+      ctx.beginPath();
+      ctx.arc(dx, dy, 0.5 + Math.random() * 0.9, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+    curX += lm.width * 1.04;
+  });
+
+  // Subrayado torcido a mano alzada (curvado, con principio grueso y final desvanecido)
+  const lineY = centerY + baseSize * 0.48;
+  const lineStartX = (w - totalW) / 2 - 14;
+  const lineEndX = (w + totalW) / 2 + 16;
+  const midX = (lineStartX + lineEndX) / 2;
+  const midY = lineY + ((text.length * 7) % 10) - 5; // curvatura asimétrica
+
+  drawChalkLine(ctx, lineStartX, lineY + 3, midX, midY, chalkColor, 4.2);
+  drawChalkLine(ctx, midX, midY, lineEndX, lineY - 3, chalkColor, 3.4);
+
+  // Segunda pasada rápida e incompleta de gis
+  drawChalkLine(ctx, lineStartX + 20, lineY + 8, lineEndX - 30, lineY + 9, chalkColor, 1.8);
 
   if (subtitle) {
-    ctx.font = `italic 600 ${Math.floor(fontSize * 0.32)}px "Caveat", "Kalam", sans-serif`;
+    ctx.font = `italic ${Math.floor(baseSize * 0.32)}px ${messyChalkFonts}`;
+    ctx.textAlign = 'center';
     ctx.globalAlpha = 0.75;
-    ctx.fillText(subtitle, w / 2, lineY + 28);
+    ctx.fillText(subtitle, w / 2, lineY + 36);
   }
 
   ctx.restore();
