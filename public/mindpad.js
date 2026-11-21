@@ -1808,7 +1808,7 @@ function drawChalkPlayingCard(ctx, w, h, cardCode = 'AS') {
   ctx.restore();
 }
 
-function drawChalkText(ctx, w, h, text, subtitle = '') {
+function drawChalkText(ctx, w, h, text, subtitle = '', customY = null, customSize = null) {
   if (!text) return;
   const isDark = state.slateStyle !== 'inverted';
   const chalkColor = isDark ? '#f8fafc' : '#1e293b';
@@ -1817,24 +1817,47 @@ function drawChalkText(ctx, w, h, text, subtitle = '') {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const fontSize = Math.min(68, Math.floor(w / Math.max(6, text.length * 0.65)));
-  ctx.font = `700 ${fontSize}px "Caveat", "Patrick Hand", system-ui, sans-serif`;
+  const centerY = customY !== null ? customY : (h / 2);
+  const fontSize = customSize || Math.min(130, Math.max(54, Math.floor(w / Math.max(4.2, text.length * 0.52))));
 
+  // Tipografías manuscritas auténticas (Caveat, Kalam, Permanent Marker)
+  ctx.font = `700 ${fontSize}px "Caveat", "Kalam", "Permanent Marker", cursive, sans-serif`;
+
+  // Multi-pass de tiza con micro-offset para textura rústica
   ctx.fillStyle = chalkColor;
-  ctx.globalAlpha = 0.85;
-  ctx.fillText(text, w / 2, h / 2 - 20);
-  ctx.globalAlpha = 0.5;
-  ctx.fillText(text, w / 2 + 1, h / 2 - 19);
+  ctx.globalAlpha = 0.88;
+  ctx.fillText(text, w / 2, centerY);
 
-  // Subrayado rústico en tiza
+  ctx.globalAlpha = 0.45;
+  ctx.fillText(text, w / 2 + 1.2, centerY + 0.6);
+
+  ctx.globalAlpha = 0.3;
+  ctx.fillText(text, w / 2 - 0.8, centerY - 0.8);
+
+  // Micro-polvo de gis disperso alrededor del texto
   const textMetrics = ctx.measureText(text);
-  const lineW = textMetrics.width * 1.15;
-  drawChalkLine(ctx, w / 2 - lineW / 2, h / 2 + fontSize * 0.45, w / 2 + lineW / 2, h / 2 + fontSize * 0.45, chalkColor, 3.5);
+  const textW = textMetrics.width;
+  ctx.fillStyle = chalkColor;
+  const dustCount = Math.floor(text.length * 5);
+  for (let i = 0; i < dustCount; i++) {
+    const rx = (Math.random() - 0.5) * (textW * 1.15);
+    const ry = (Math.random() - 0.5) * (fontSize * 1.1);
+    ctx.globalAlpha = 0.15 + Math.random() * 0.35;
+    ctx.beginPath();
+    ctx.arc(w / 2 + rx, centerY + ry, 0.6 + Math.random() * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Doble subrayado rústico en tiza
+  const lineW = textW * 1.08;
+  const lineY = centerY + fontSize * 0.44;
+  drawChalkLine(ctx, w / 2 - lineW / 2, lineY, w / 2 + lineW / 2, lineY, chalkColor, 3.5);
+  drawChalkLine(ctx, w / 2 - lineW * 0.42, lineY + 6, w / 2 + lineW * 0.38, lineY + 6, chalkColor, 1.8);
 
   if (subtitle) {
-    ctx.font = `italic ${Math.floor(fontSize * 0.38)}px system-ui, sans-serif`;
-    ctx.globalAlpha = 0.7;
-    ctx.fillText(subtitle, w / 2, h / 2 + fontSize * 0.85);
+    ctx.font = `italic 600 ${Math.floor(fontSize * 0.32)}px "Caveat", "Kalam", sans-serif`;
+    ctx.globalAlpha = 0.75;
+    ctx.fillText(subtitle, w / 2, lineY + 28);
   }
 
   ctx.restore();
@@ -1910,15 +1933,16 @@ function redrawChalkSlate() {
     drawChalkDoodle(ctx, w, h, state.currentDrawing);
   } else {
     // 'strokes' (por defecto)
-    drawChalkStrokes(ctx, w, h);
-    if (state.currentWord || state.currentDrawing) {
-      const note = state.currentWord || state.currentDrawing;
-      ctx.save();
-      ctx.fillStyle = state.slateStyle === 'inverted' ? '#475569' : '#94a3b8';
-      ctx.textAlign = 'center';
-      ctx.font = 'italic 16px sans-serif';
-      ctx.fillText(note, w / 2, h - 30);
-      ctx.restore();
+    if (state.strokes && state.strokes.length > 0) {
+      drawChalkStrokes(ctx, w, h);
+      // Si además se detectó una palabra, ponerla abajo en letra de tiza grande y elegante
+      if (state.currentWord) {
+        drawChalkText(ctx, w, h, state.currentWord, '', h * 0.85, Math.min(56, Math.floor(w / 12)));
+      }
+    } else {
+      // Si NO hay trazos todavía en la tableta pero hay palabra o dibujo, ¡aparece EN GRANDE Y EN EL CENTRO!
+      const textToShow = state.currentWord || state.currentDrawing || state.currentNumber || 'Navidad';
+      drawChalkText(ctx, w, h, textToShow);
     }
   }
 }
@@ -2886,6 +2910,15 @@ initSlateSettingsUI();
 resizeCanvases();
 updatePageUI();
 updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
+
+// Re-renderizar pizarra cuando carguen las fuentes manuscritas de Google Fonts
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    if (typeof redrawChalkSlate === 'function') {
+      redrawChalkSlate();
+    }
+  });
+}
 
 // Comprobar parámetros de URL: ?view=slate o ?slate=1 para monitores Kindle / E-Ink
 const urlParams = new URLSearchParams(window.location.search);
