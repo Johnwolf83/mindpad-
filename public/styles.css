@@ -565,16 +565,17 @@ button.primary {
 
 .calc-status-bar {
   position: absolute;
-  top: env(safe-area-inset-top, 8px);
-  left: 20px;
-  right: 20px;
+  top: max(env(safe-area-inset-top, 0px), 10px);
+  left: max(env(safe-area-inset-left, 0px), 16px);
+  right: max(env(safe-area-inset-right, 0px), 16px);
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
   font-weight: 600;
   color: #a0aec0;
-  padding-top: 6px;
+  padding-top: 4px;
+  box-sizing: border-box;
 }
 
 .calc-display-box {
@@ -898,14 +899,60 @@ button.primary {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* Barra de estado dedicada de Notas con safe-area para notch y esquinas curvas */
+.notes-status-bar {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: max(env(safe-area-inset-top, 0px), 10px) max(env(safe-area-inset-right, 0px), 18px) 6px max(env(safe-area-inset-left, 0px), 18px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 100;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.notes-status-time {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.notes-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.notes-status-badge {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+.notes-theme-pill-small {
+  cursor: pointer;
+  padding: 2px 7px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+}
+.fake-notes.theme-light .notes-theme-pill-small {
+  background: rgba(0, 0, 0, 0.08);
+}
+
 /* Modo Oscuro (Apple Notes Dark) */
 .fake-notes.theme-dark {
   background: #000000;
   color: #f4f4f5;
 }
-.fake-notes.theme-dark .calc-status-bar {
+.fake-notes.theme-dark .notes-status-bar {
   background: #000000;
   color: #a1a1aa;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .fake-notes.theme-dark .notes-nav-bar,
 .fake-notes.theme-dark .notes-list-header {
@@ -983,9 +1030,10 @@ button.primary {
   background: #f2f2f7;
   color: #1c1c1e;
 }
-.fake-notes.theme-light .calc-status-bar {
+.fake-notes.theme-light .notes-status-bar {
   background: #f2f2f7;
   color: #3c3c43;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.1);
 }
 .fake-notes.theme-light .notes-nav-bar,
 .fake-notes.theme-light .notes-list-header {
@@ -1320,6 +1368,15 @@ button.primary {
   transition: all 0.15s ease;
 }
 
+.note-detail-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
 /* Vista 2: Lienzo de Dibujo Dedicado a Pantalla Completa (Pestaña Boceto) */
 .notes-draw-view {
   flex: 1;
@@ -1328,6 +1385,9 @@ button.primary {
   position: relative;
   background-size: 18px 18px;
   overflow: hidden;
+  height: 100%;
+  width: 100%;
+  touch-action: none;
 }
 .notes-draw-header {
   display: flex;
@@ -1336,20 +1396,25 @@ button.primary {
   padding: 8px 16px;
   font-size: 11.5px;
   color: #94a3b8;
+  flex-shrink: 0;
 }
 .notes-draw-canvas-container {
   flex: 1;
   position: relative;
   width: 100%;
   height: 100%;
+  min-height: 250px;
   overflow: hidden;
+  touch-action: none;
 }
 #notesDoodleCanvas {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   touch-action: none;
+  cursor: crosshair;
 }
 .notes-draw-tray {
   display: flex;
@@ -1357,6 +1422,7 @@ button.primary {
   align-items: center;
   padding: 10px 16px;
   z-index: 10;
+  flex-shrink: 0;
 }
 .notes-draw-colors {
   display: flex;

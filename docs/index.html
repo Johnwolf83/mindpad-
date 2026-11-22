@@ -914,12 +914,13 @@
 
     <!-- CAMUFLAJE 4: Bloc de Notas Realista con Modo Claro/Oscuro & Notas Random -->
     <div id="fakeNotes" class="fake-notes theme-dark" style="display: none;">
-      <div id="notesStatusBar" class="calc-status-bar">
-        <span id="notesStatusTime">12:00</span>
-        <div class="fake-icons">
-          <span id="notesQuickThemeToggle" title="Alternar Modo Claro/Oscuro" style="cursor:pointer; font-size:12px; margin-right:4px;">☀️</span>
-          <span>📶 5G</span>
-          <span>🔋 84%</span>
+      <!-- BARRA DE ESTADO DE NOTAS CON PADDING SEGURO PARA NO CORTAR 5G NI BATERÍA -->
+      <div id="notesStatusBar" class="notes-status-bar">
+        <span id="notesStatusTime" class="notes-status-time">12:00</span>
+        <div class="notes-status-icons">
+          <span id="notesQuickThemeToggle" class="notes-theme-pill-small" title="Alternar Modo Claro/Oscuro">☀️</span>
+          <span class="notes-status-badge">📶 5G</span>
+          <span class="notes-status-badge">🔋 84%</span>
         </div>
       </div>
 
@@ -1241,6 +1242,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <span style="font-family:'Caveat';">Preload</span>
   </div>
 
-  <script src="mindpad.js?v=22" type="module"></script>
+  <script src="mindpad.js?v=23" type="module"></script>
 </body>
 </html>

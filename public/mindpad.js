@@ -2786,7 +2786,7 @@ function showNoteView(noteId) {
   const doodleBtn = $('notesToggleDoodleBtn');
 
   if (noteId === 'dream') {
-    if ($('noteDetailDreamContent')) $('noteDetailDreamContent').style.display = 'block';
+    if ($('noteDetailDreamContent')) $('noteDetailDreamContent').style.display = 'flex';
     if (dreamTabs) dreamTabs.style.display = 'flex';
     if (doodleBtn) doodleBtn.style.display = 'inline-block';
     switchNotesTab(state.notesActiveTab || 'text');
@@ -2812,7 +2812,10 @@ function switchNotesTab(tab) {
   if ($('notesTabBtnDraw')) $('notesTabBtnDraw').className = `notes-segment-btn ${!isText ? 'active' : ''}`;
 
   if (!isText) {
-    setTimeout(initNotesDoodle, 40);
+    requestAnimationFrame(() => {
+      initNotesDoodle();
+      setTimeout(initNotesDoodle, 50);
+    });
   }
 }
 
@@ -2839,20 +2842,37 @@ function updateDreamNoteDOM() {
   if ($('dreamFoodInput')) $('dreamFoodInput').value = state.dreamFood;
 }
 
+let notesDoodleEventsBound = false;
+
 function initNotesDoodle() {
   const canvas = $('notesDoodleCanvas');
   if (!canvas) return;
   const container = canvas.parentElement;
-  const rect = container ? container.getBoundingClientRect() : canvas.getBoundingClientRect();
-  const w = Math.floor(rect.width || window.innerWidth);
-  const h = Math.floor(rect.height || (window.innerHeight - 120));
+  if (!container) return;
 
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w;
-    canvas.height = h;
+  const rect = container.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const cw = Math.floor(rect.width || container.clientWidth || window.innerWidth);
+  const ch = Math.floor(rect.height || container.clientHeight || (window.innerHeight - 150));
+
+  if (cw <= 0 || ch <= 0) {
+    requestAnimationFrame(initNotesDoodle);
+    return;
   }
+
+  // Dimensiones físicas del canvas con DPR para ultra nitidez
+  canvas.width = Math.round(cw * dpr);
+  canvas.height = Math.round(ch * dpr);
+  canvas.style.width = `${cw}px`;
+  canvas.style.height = `${ch}px`;
+
   notesDoodleCtx = canvas.getContext('2d');
+  notesDoodleCtx.setTransform(1, 0, 0, 1, 0, 0);
+  notesDoodleCtx.scale(dpr, dpr);
   redrawNotesDoodleCanvas();
+
+  if (notesDoodleEventsBound) return;
+  notesDoodleEventsBound = true;
 
   // Selector de colores
   const dots = document.querySelectorAll('.doodle-color-dot');
@@ -2869,9 +2889,8 @@ function initNotesDoodle() {
     $('notesClearDoodleBtn').onclick = (e) => {
       e.stopPropagation();
       state.notesDoodleStrokes = [];
-      if (notesDoodleCtx) {
-        notesDoodleCtx.clearRect(0, 0, canvas.width, canvas.height);
-      }
+      redrawNotesDoodleCanvas();
+      triggerHaptic([30]);
     };
   }
 
@@ -2894,33 +2913,44 @@ function initNotesDoodle() {
 
   function getDoodlePos(e) {
     const r = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    }
     return {
       x: clientX - r.left,
       y: clientY - r.top
     };
   }
 
-  canvas.onpointerdown = (e) => {
-    e.stopPropagation();
+  function startDraw(pos) {
     isDoodling = true;
-    const pos = getDoodlePos(e);
     lastDoodleX = pos.x;
     lastDoodleY = pos.y;
+    const color = state.doodleColor || (state.notesTheme === 'light' ? '#1c1c1e' : '#f8fafc');
+    const size = state.doodleBrushSize || 2.4;
     state.notesDoodleStrokes.push({
-      color: state.doodleColor,
-      size: state.doodleBrushSize || 2.2,
+      color: color,
+      size: size,
       points: [{ x: pos.x, y: pos.y }]
     });
-  };
 
-  canvas.onpointermove = (e) => {
+    if (notesDoodleCtx) {
+      notesDoodleCtx.fillStyle = color;
+      notesDoodleCtx.beginPath();
+      notesDoodleCtx.arc(pos.x, pos.y, size / 2, 0, Math.PI * 2);
+      notesDoodleCtx.fill();
+    }
+  }
+
+  function moveDraw(pos) {
     if (!isDoodling || !notesDoodleCtx) return;
-    e.stopPropagation();
-    const pos = getDoodlePos(e);
-    notesDoodleCtx.strokeStyle = state.doodleColor;
-    notesDoodleCtx.lineWidth = state.doodleBrushSize || 2.2;
+    const color = state.doodleColor || (state.notesTheme === 'light' ? '#1c1c1e' : '#f8fafc');
+    const size = state.doodleBrushSize || 2.4;
+    notesDoodleCtx.strokeStyle = color;
+    notesDoodleCtx.lineWidth = size;
     notesDoodleCtx.lineCap = 'round';
     notesDoodleCtx.lineJoin = 'round';
     notesDoodleCtx.beginPath();
@@ -2932,28 +2962,87 @@ function initNotesDoodle() {
     lastDoodleY = pos.y;
     const current = state.notesDoodleStrokes[state.notesDoodleStrokes.length - 1];
     if (current) current.points.push({ x: pos.x, y: pos.y });
-  };
+  }
 
-  const stopDoodling = (e) => {
-    if (e) e.stopPropagation();
+  function endDraw() {
     isDoodling = false;
-  };
-  canvas.onpointerup = stopDoodling;
-  canvas.onpointercancel = stopDoodling;
+  }
+
+  // Pointer Events para móviles y desktop con PointerCapture
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    startDraw(getDoodlePos(e));
+  }, { passive: false });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!isDoodling) return;
+    e.preventDefault();
+    e.stopPropagation();
+    moveDraw(getDoodlePos(e));
+  }, { passive: false });
+
+  canvas.addEventListener('pointerup', (e) => {
+    e.preventDefault();
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+    endDraw();
+  }, { passive: false });
+
+  canvas.addEventListener('pointercancel', (e) => {
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+    endDraw();
+  });
+
+  // Touch Events directos de respaldo para cualquier navegador móvil
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    startDraw(getDoodlePos(e));
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    moveDraw(getDoodlePos(e));
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    endDraw();
+  }, { passive: false });
 }
 
 function redrawNotesDoodleCanvas() {
   const canvas = $('notesDoodleCanvas');
   if (!canvas || !notesDoodleCtx) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cw = parseFloat(canvas.style.width) || (canvas.width / dpr);
+  const ch = parseFloat(canvas.style.height) || (canvas.height / dpr);
+
+  notesDoodleCtx.save();
+  notesDoodleCtx.setTransform(1, 0, 0, 1, 0, 0);
   notesDoodleCtx.clearRect(0, 0, canvas.width, canvas.height);
+  notesDoodleCtx.scale(dpr, dpr);
 
   // 1. Trazos libres hechos con el dedo
   state.notesDoodleStrokes.forEach((stroke) => {
-    if (!stroke.points || stroke.points.length < 2) return;
-    notesDoodleCtx.strokeStyle = stroke.color || '#f8fafc';
-    notesDoodleCtx.lineWidth = stroke.size || 2.2;
+    if (!stroke.points || stroke.points.length === 0) return;
+    const strokeColor = stroke.color || (state.notesTheme === 'light' ? '#1c1c1e' : '#f8fafc');
+    const strokeSize = stroke.size || 2.4;
+    notesDoodleCtx.strokeStyle = strokeColor;
+    notesDoodleCtx.lineWidth = strokeSize;
     notesDoodleCtx.lineCap = 'round';
     notesDoodleCtx.lineJoin = 'round';
+
+    if (stroke.points.length === 1) {
+      notesDoodleCtx.fillStyle = strokeColor;
+      notesDoodleCtx.beginPath();
+      notesDoodleCtx.arc(stroke.points[0].x, stroke.points[0].y, strokeSize / 2, 0, Math.PI * 2);
+      notesDoodleCtx.fill();
+      return;
+    }
+
     notesDoodleCtx.beginPath();
     notesDoodleCtx.moveTo(stroke.points[0].x, stroke.points[0].y);
     for (let i = 1; i < stroke.points.length; i++) {
@@ -2967,13 +3056,13 @@ function redrawNotesDoodleCanvas() {
     const isPortrait = state.orientation.startsWith('portrait');
     const maxX = isPortrait ? 28200 : 37400;
     const maxY = isPortrait ? 37400 : 28200;
-    const pad = 20;
-    const scaleX = (canvas.width - pad * 2) / maxX;
-    const scaleY = (canvas.height - pad * 2) / maxY;
+    const pad = 24;
+    const scaleX = (cw - pad * 2) / maxX;
+    const scaleY = (ch - pad * 2) / maxY;
     const scale = Math.min(scaleX, scaleY);
 
     notesDoodleCtx.strokeStyle = state.notesTheme === 'light' ? '#1c1c1e' : '#f8fafc';
-    notesDoodleCtx.lineWidth = 2.2;
+    notesDoodleCtx.lineWidth = 2.4;
     notesDoodleCtx.lineCap = 'round';
     notesDoodleCtx.lineJoin = 'round';
 
@@ -2987,6 +3076,8 @@ function redrawNotesDoodleCanvas() {
       notesDoodleCtx.stroke();
     });
   }
+
+  notesDoodleCtx.restore();
 }
 
 // ==========================================
