@@ -442,6 +442,10 @@ async function recognizeWithOpenRouterVision(strokes, apiKey) {
 
   const base64Data = c.toDataURL('image/jpeg', 0.85);
 
+  const promptText = state.currentLayer === 5
+    ? 'Eres el asistente secreto de un mentalista en la rutina del sueño. El espectador escribe 4 cosas manuscritas en lista o renglones: 1) Hora (ej: 03:45, 4:00, 11:30), 2) Nombre de persona (ej: Carlos, María), 3) Lugar o ciudad para viajar (ej: París, Tokio, Cancún), 4) Comida favorita (ej: Tacos, Pizza, Sushi). Responde ESTRICTAMENTE un JSON con este formato exacto: {"hora": "...", "nombre": "...", "lugar": "...", "comida": "..."}. Sin explicaciones ni markdown.'
+    : 'Eres el asistente secreto de un mentalista. Analiza este dibujo/nota manuscrita. El espectador suele escribir: un número (dígitos), una palabra manuscrita y/o un dibujo (ej. gato, auto, árbol, estrella, cara, etc.). Responde ESTRICTAMENTE un JSON con este formato exacto: {"numero": "...", "palabra": "...", "figura": "...", "figura_en": "..."}. Si alguno no está presente, déjalo como string vacío "". Sin explicaciones ni markdown.';
+
   const payload = {
     model: 'google/gemini-2.5-flash',
     messages: [
@@ -450,7 +454,7 @@ async function recognizeWithOpenRouterVision(strokes, apiKey) {
         content: [
           {
             type: 'text',
-            text: 'Eres el asistente secreto de un mentalista. Analiza este dibujo/nota manuscrita. El espectador suele escribir: un número (dígitos), una palabra manuscrita y/o un dibujo (ej. gato, auto, árbol, estrella, cara, etc.). Responde ESTRICTAMENTE un JSON con este formato exacto: {"numero": "...", "palabra": "...", "figura": "...", "figura_en": "..."}. Si alguno no está presente, déjalo como string vacío "". Sin explicaciones ni markdown.'
+            text: promptText
           },
           {
             type: 'image_url',
@@ -480,6 +484,55 @@ async function recognizeWithOpenRouterVision(strokes, apiKey) {
   return JSON.parse(clean);
 }
 
+function parseDreamRoutineText(rawLines) {
+  let allTokens = [];
+  rawLines.forEach((line) => {
+    if (!line) return;
+    const words = line.trim().split(/\s+/).filter(Boolean);
+    allTokens.push(...words);
+  });
+
+  let hour = '';
+  let nonHourTokens = [];
+
+  for (let i = 0; i < allTokens.length; i++) {
+    const t = allTokens[i].trim();
+    if (!t) continue;
+
+    if (!hour && (t.match(/\b\d{1,2}[:.]\d{2}\b/) || t.match(/\b\d{1,2}(?:am|pm|hrs)\b/i))) {
+      hour = t.replace('.', ':');
+    } else if (!hour && t.match(/^\d{3,4}$/)) {
+      const padded = t.padStart(4, '0');
+      hour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
+    } else {
+      const cleanWord = t.replace(/[^\p{L}\p{M}'-]/gu, '').trim();
+      if (cleanWord && cleanWord.length >= 2) {
+        const capitalized = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1).toLowerCase();
+        nonHourTokens.push(capitalized);
+      }
+    }
+  }
+
+  if (!hour && allTokens.length > 0 && /\d/.test(allTokens[0])) {
+    const rawNum = allTokens[0].replace(/[^\d:]/g, '');
+    if (rawNum.includes(':')) {
+      hour = rawNum;
+    } else if (rawNum.length === 3 || rawNum.length === 4) {
+      const padded = rawNum.padStart(4, '0');
+      hour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
+    } else if (rawNum.length <= 2) {
+      hour = `${rawNum}:00`;
+    }
+  }
+
+  return {
+    hour: hour || state.dreamHour || '03:45',
+    name: nonHourTokens[0] || state.dreamName || 'Carlos',
+    place: nonHourTokens[1] || state.dreamPlace || 'París',
+    food: nonHourTokens[2] || state.dreamFood || 'Tacos'
+  };
+}
+
 async function onParticipantFinished() {
   if (!state.strokes.length) return;
 
@@ -496,6 +549,81 @@ async function onParticipantFinished() {
   let detectedNumber = '';
 
   const pagePrefix = state.pages.length > 1 ? `Espectador ${state.currentPageIndex + 1}: ` : '';
+
+  // CASO ESPECIAL: CAPA 5 "EL SUEÑO (NOTAS)"
+  if (state.currentLayer === 5) {
+    let dreamRes = null;
+    let usedVision = false;
+
+    if (state.openRouterKey && state.openRouterVision) {
+      try {
+        const vData = await recognizeWithOpenRouterVision(state.strokes, state.openRouterKey);
+        if (vData && (vData.hora || vData.nombre || vData.lugar || vData.comida)) {
+          dreamRes = {
+            hour: (vData.hora || '').trim() || state.dreamHour || '03:45',
+            name: (vData.nombre || '').trim() || state.dreamName || 'Carlos',
+            place: (vData.lugar || '').trim() || state.dreamPlace || 'París',
+            food: (vData.comida || '').trim() || state.dreamFood || 'Tacos'
+          };
+          usedVision = true;
+        }
+      } catch (err) {
+        console.warn('Vision para El Sueño falló, recurriendo a OCR multirenglón:', err);
+      }
+    }
+
+    if (!usedVision) {
+      const bands = segmentStrokes(state.strokes);
+      const bandOcrPromises = bands.map((b) => recognizeText(b));
+      const bandOcrResults = await Promise.all(bandOcrPromises);
+      const rawLines = bandOcrResults.map((r) => r?.[0] || '');
+      dreamRes = parseDreamRoutineText(rawLines);
+    }
+
+    if (dreamRes) {
+      state.dreamHour = dreamRes.hour;
+      state.dreamName = dreamRes.name;
+      state.dreamPlace = dreamRes.place;
+      state.dreamFood = dreamRes.food;
+
+      localStorage.setItem('mindpad_dream_hour', state.dreamHour);
+      localStorage.setItem('mindpad_dream_name', state.dreamName);
+      localStorage.setItem('mindpad_dream_place', state.dreamPlace);
+      localStorage.setItem('mindpad_dream_food', state.dreamFood);
+
+      updateDreamNoteDOM();
+
+      // Transmitir a Pizarra E-Ink
+      state.slateContentType = 'dream_list';
+      if ($('slateContentTypeSelect')) $('slateContentTypeSelect').value = 'dream_list';
+      redrawChalkSlate();
+      broadcastSlateUpdate();
+
+      finalSpeech = `${pagePrefix}El Sueño revelado: A las ${state.dreamHour}, con ${state.dreamName}, viajando a ${state.dreamPlace}, comiendo ${state.dreamFood}`;
+      displayTitle = `💤 ${state.dreamHour} | ${state.dreamName} | ${state.dreamPlace} | ${state.dreamFood}`;
+      candidates = [state.dreamHour, state.dreamName, state.dreamPlace, state.dreamFood];
+
+      state.lastSpokenText = finalSpeech;
+      $('lastResult').textContent = displayTitle;
+      $('stealthOverlayText').textContent = displayTitle;
+      renderCandidates(candidates);
+
+      speakTTS(finalSpeech);
+      if (state.vibrate) triggerHaptic([120, 80, 120]);
+
+      sendToSmartwatch('El Sueño (Notas)', `💤 ${state.dreamHour} • ${state.dreamName} • ${state.dreamPlace} • ${state.dreamFood}`);
+
+      state.pages[state.currentPageIndex] = {
+        strokes: JSON.parse(JSON.stringify(state.strokes)),
+        displayTitle,
+        speech: finalSpeech,
+        dream: { ...dreamRes }
+      };
+
+      $('stealthStatusDot').className = 'stealth-dot ready';
+      return;
+    }
+  }
 
   if (state.detectMode === 'esp' || state.detectMode === 'digits' || !navigator.onLine) {
     const offlineResult = classifyOffline(state.strokes, state.detectMode);
@@ -661,6 +789,11 @@ async function onParticipantFinished() {
 
     if ($('autoGenerateAICheck') && $('autoGenerateAICheck').checked) {
       generateAIImage();
+    }
+
+    if (state.slateLiveSync && typeof redrawChalkSlate === 'function') {
+      redrawChalkSlate();
+      broadcastSlateUpdate();
     }
   }
 
@@ -1873,7 +2006,7 @@ function drawChalkText(ctx, w, h, text, subtitle = '', customY = null, customSiz
   ctx.save();
 
   const centerY = customY !== null ? customY : (h / 2);
-  const baseSize = customSize || Math.min(135, Math.max(54, Math.floor(w / Math.max(4.2, text.length * 0.55))));
+  const baseSize = customSize || Math.min(240, Math.max(72, Math.floor(Math.min(h * 0.35, w / Math.max(3.2, text.length * 0.52)))));
 
   // Fuentes de letra fea, irregular y desordenada estilo tiza escolar / graffiti
   const messyChalkFonts = [
@@ -2084,11 +2217,7 @@ function redrawChalkSlate() {
   const type = state.slateContentType;
   if (type === 'card') {
     drawChalkPlayingCard(ctx, w, h, state.selectedPlayingCard);
-  } else if (type === 'word') {
-    const textToShow = state.currentWord || state.currentNumber || 'Premonición';
-    const sub = state.currentNumber && state.currentWord ? `Código: ${state.currentNumber}` : '';
-    drawChalkText(ctx, w, h, textToShow, sub);
-  } else if (type === 'dream_list') {
+  } else if (type === 'dream_list' || state.currentLayer === 5) {
     const items = [
       `1. Hora: ${state.dreamHour || '03:45'}`,
       `2. Nombre: ${state.dreamName || 'Carlos'}`,
@@ -2096,16 +2225,16 @@ function redrawChalkSlate() {
       `4. Comida: ${state.dreamFood || 'Tacos'}`
     ];
     drawChalkList(ctx, w, h, items);
+  } else if (type === 'word') {
+    const textToShow = state.currentWord || state.currentNumber || 'Navidad';
+    const sub = state.currentNumber && state.currentWord ? `Código: ${state.currentNumber}` : '';
+    drawChalkText(ctx, w, h, textToShow, sub);
   } else if (type === 'doodle') {
     drawChalkDoodle(ctx, w, h, state.currentDrawing);
   } else {
     // 'strokes' (por defecto)
     if (state.strokes && state.strokes.length > 0) {
       drawChalkStrokes(ctx, w, h);
-      // Si además se detectó una palabra, ponerla abajo en letra de tiza grande y elegante
-      if (state.currentWord) {
-        drawChalkText(ctx, w, h, state.currentWord, '', h * 0.85, Math.min(56, Math.floor(w / 12)));
-      }
     } else {
       // Si NO hay trazos todavía en la tableta pero hay palabra o dibujo, ¡aparece EN GRANDE Y EN EL CENTRO!
       const textToShow = state.currentWord || state.currentDrawing || state.currentNumber || 'Navidad';
@@ -2835,6 +2964,10 @@ function updateDreamNoteDOM() {
   if ($('noteDreamName')) $('noteDreamName').textContent = state.dreamName || 'Carlos';
   if ($('noteDreamPlace')) $('noteDreamPlace').textContent = state.dreamPlace || 'París';
   if ($('noteDreamFood')) $('noteDreamFood').textContent = state.dreamFood || 'Tacos';
+
+  if ($('noteDreamSnippet')) {
+    $('noteDreamSnippet').textContent = `Tuve un sueño muy raro de esos que cuando despiertas recuerdas casi todos los detalles yo lo llamo premonición: notaba que en mi mano el reloj marcaba las ${state.dreamHour || '03:45'}. Conocí a una persona llamada ${state.dreamName || 'Carlos'} que tras una breve conversación me dijo que le gustaría viajar a ${state.dreamPlace || 'París'} y estábamos comiendo ${state.dreamFood || 'Tacos'}...`;
+  }
 
   if ($('dreamHourInput')) $('dreamHourInput').value = state.dreamHour;
   if ($('dreamNameInput')) $('dreamNameInput').value = state.dreamName;
