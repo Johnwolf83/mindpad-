@@ -241,6 +241,14 @@ function buildTabletCmd(cmdId) {
   return new Uint8Array([0xCD, cmdId, 0, 0, 0, 0, 0, 0]);
 }
 
+function updateLiveStatusPill(status, text) {
+  const pill = $('liveStatusPill');
+  const txt = $('liveStatusText');
+  if (!pill) return;
+  pill.className = `live-status-pill ${status}`;
+  if (txt) txt.textContent = text;
+}
+
 async function connectBLE() {
   if (!navigator.bluetooth) {
     alert('Tu navegador no soporta Web Bluetooth. Usa Google Chrome en tu Android.');
@@ -250,6 +258,7 @@ async function connectBLE() {
   try {
     $('bleStatusBadge').textContent = 'Buscando...';
     $('bleStatusBadge').className = 'badge searching';
+    updateLiveStatusPill('searching', 'Buscando...');
 
     const device = await navigator.bluetooth.requestDevice({
       filters: [
@@ -264,6 +273,7 @@ async function connectBLE() {
     device.addEventListener('gattserverdisconnected', onDisconnected);
 
     $('bleStatusBadge').textContent = 'Conectando...';
+    updateLiveStatusPill('searching', 'Conectando...');
     const server = await device.gatt.connect();
     state.bleServer = server;
 
@@ -281,6 +291,7 @@ async function connectBLE() {
 
     $('bleStatusBadge').textContent = 'Conectada (En vivo)';
     $('bleStatusBadge').className = 'badge connected';
+    updateLiveStatusPill('connected', 'Huion X10 En Vivo');
     $('bleConnectBtn').style.display = 'none';
     $('bleDisconnectBtn').style.display = 'inline-block';
 
@@ -290,6 +301,7 @@ async function connectBLE() {
     console.error('Error BLE:', err);
     $('bleStatusBadge').textContent = 'Desconectada';
     $('bleStatusBadge').className = 'badge disconnected';
+    updateLiveStatusPill('disconnected', 'BLE Desconectada');
     if (err.name !== 'NotFoundError') {
       alert('No se pudo conectar: ' + err.message);
     }
@@ -318,6 +330,7 @@ async function sendKeepAlive() {
 function onDisconnected() {
   $('bleStatusBadge').textContent = 'Desconectada';
   $('bleStatusBadge').className = 'badge disconnected';
+  updateLiveStatusPill('disconnected', 'BLE Desconectada');
   $('bleConnectBtn').style.display = 'inline-block';
   $('bleDisconnectBtn').style.display = 'none';
   clearInterval(state.keepAliveTimer);
@@ -3731,6 +3744,8 @@ if ($('layer5Btn')) $('layer5Btn').onclick = () => switchPresentationLayer(5);
 if ($('layer6Btn')) $('layer6Btn').onclick = () => switchPresentationLayer(6);
 if ($('viewDossierBtn')) {
   $('viewDossierBtn').onclick = () => {
+    const tabBtn = document.querySelector('.app-tab-btn[data-tab="tab-dossier"]');
+    if (tabBtn) tabBtn.click();
     const el = $('routinesDossier');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
@@ -4032,7 +4047,68 @@ previewCanvas.addEventListener('pointerup', () => {
   }
 });
 
+function initAppTabs() {
+  const tabBtns = document.querySelectorAll('.app-tab-btn');
+  const tabPanes = document.querySelectorAll('.tab-pane');
+
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-tab');
+      if (!targetId) return;
+
+      tabBtns.forEach((b) => b.classList.remove('active'));
+      tabPanes.forEach((p) => p.classList.remove('active'));
+
+      btn.classList.add('active');
+      const targetPane = document.getElementById(targetId);
+      if (targetPane) targetPane.classList.add('active');
+
+      localStorage.setItem('mindpad_active_app_tab', targetId);
+
+      // Reajustar lienzos al cambiar de pestaña
+      requestAnimationFrame(() => {
+        resizeCanvases();
+        if (targetId === 'tab-live') {
+          redrawPreview();
+        } else if (targetId === 'tab-slate') {
+          redrawChalkSlate();
+        }
+      });
+    });
+  });
+
+  // Restaurar última pestaña visitada
+  const savedTab = localStorage.getItem('mindpad_active_app_tab') || 'tab-live';
+  const activeBtn = document.querySelector(`.app-tab-btn[data-tab="${savedTab}"]`);
+  if (activeBtn) {
+    activeBtn.click();
+  }
+
+  // Vincular botones rápidos de En Vivo con sus respectivas acciones
+  if ($('liveRevealSlateBtn')) {
+    $('liveRevealSlateBtn').onclick = () => {
+      if ($('slateRevealBtn')) $('slateRevealBtn').click();
+    };
+  }
+  if ($('liveStealthBtn')) {
+    $('liveStealthBtn').onclick = () => {
+      const stealthMode = state.stealthCamouflage === 'lockscreen' ? 'lockscreen' : 'aod';
+      enterStealthMode(stealthMode);
+    };
+  }
+  if ($('liveCalcBtn')) {
+    $('liveCalcBtn').onclick = () => enterStealthMode('calculator');
+  }
+  if ($('liveNotesBtn')) {
+    $('liveNotesBtn').onclick = () => enterStealthMode('notes');
+  }
+  if ($('liveMusicBtn')) {
+    $('liveMusicBtn').onclick = () => enterStealthMode('player');
+  }
+}
+
 // Inicialización
+initAppTabs();
 initTTS();
 initCalculator();
 updateCalcDisplay();

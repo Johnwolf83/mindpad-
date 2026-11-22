@@ -8,9 +8,9 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  background: #090b14;
-  color: #e2e8f0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0d0e12;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
   overflow-x: hidden;
   user-select: none;
 }
@@ -31,51 +31,199 @@ body.mode-stealth {
 #setupView {
   display: flex;
   flex-direction: column;
+  min-height: 100%;
+  background: #0d0e12;
 }
 
-header {
+header, .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 18px;
-  background: #111528;
-  border-bottom: 1px solid #1f2747;
+  background: #121318;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .logo h1 {
   margin: 0;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  color: #f8fafc;
 }
 
 .logo h1 span {
-  color: #7c8cff;
+  color: #eab308;
+  font-weight: 800;
+  font-size: 12px;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-left: 4px;
 }
 
+.live-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #1c1d24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+.live-status-pill .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f87171;
+}
+.live-status-pill.connected {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+.live-status-pill.connected .status-dot {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+.live-status-pill.searching {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(234, 179, 8, 0.3);
+  color: #facc15;
+}
+.live-status-pill.searching .status-dot {
+  background: #eab308;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.header-pill-btn {
+  background: #181920 !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 6px 10px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease;
+}
+.header-pill-btn:hover {
+  background: #232530 !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+.header-stealth-btn {
+  background: #221c10 !important;
+  color: #facc15 !important;
+  border: 1px solid #ca8a04 !important;
+  padding: 6px 12px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+}
+
+/* ===================================================
+   BARRA DE PESTAÑAS PRINCIPALES (TAB BAR)
+   =================================================== */
+.app-nav-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #101116;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.app-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+.app-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #16171e;
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-tab-btn:hover {
+  background: #1e2028;
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.app-tab-btn.active {
+  background: #22242f;
+  color: #facc15;
+  border-color: #ca8a04;
+  box-shadow: 0 2px 10px rgba(202, 138, 4, 0.22);
+}
+.app-tab-btn .tab-icon {
+  font-size: 14px;
+}
+
+/* ===================================================
+   PANEL CONTENT & PESTAÑAS (TAB PANES)
+   =================================================== */
 .content {
   flex: 1;
   padding: 16px;
-  max-width: 650px;
+  max-width: 680px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
   overflow-y: auto;
 }
 
+.tab-pane {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  animation: tabFadeIn 0.22s ease-out;
+}
+.tab-pane.active {
+  display: flex;
+}
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================================================
+   CARDS DE DISEÑO PRO TACTICAL (ADIÓS ESTILO IA GENÉRICO)
+   =================================================== */
 .card {
-  background: #111528;
-  border: 1px solid #1f2747;
+  background: #14151b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  padding: 14px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 .card-title {
@@ -83,28 +231,29 @@ header {
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-  font-weight: 600;
-  color: #cbd5e1;
+  font-weight: 700;
+  color: #f8fafc;
   margin-bottom: 8px;
+  letter-spacing: 0.2px;
 }
 
 .desc {
   font-size: 12px;
   color: #94a3b8;
   margin: 0 0 12px 0;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .badge {
   font-size: 11px;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: 20px;
-  font-weight: 600;
+  font-weight: 700;
 }
-.badge.disconnected { background: #371b22; color: #f87171; }
-.badge.searching { background: #3b2d14; color: #fbbf24; }
-.badge.connected { background: #133324; color: #4ade80; }
-.badge.page-num { background: #1e1b4b; color: #a855f7; border: 1px solid #4c1d95; }
+.badge.disconnected { background: #2a1518; color: #f87171; border: 1px solid #4c1d24; }
+.badge.searching { background: #2b210e; color: #fbbf24; border: 1px solid #4a3818; }
+.badge.connected { background: #0c281a; color: #4ade80; border: 1px solid #14462c; }
+.badge.page-num { background: #1f212d; color: #facc15; border: 1px solid #ca8a04; }
 
 .multi-row {
   display: flex;
@@ -117,20 +266,45 @@ header {
 }
 
 .btn {
-  background: #1e2544;
+  background: #1d1e26;
   color: #f1f5f9;
-  border: 1px solid #2e3866;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
   padding: 10px 14px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
-.btn:active { background: #28325a; }
+.btn:active {
+  transform: scale(0.98);
+  background: #252732;
+}
 .btn.cta {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: linear-gradient(135deg, #ca8a04, #eab308);
+  color: #0b0c10;
   border: none;
+  font-weight: 700;
   width: 100%;
+  box-shadow: 0 2px 12px rgba(234, 179, 8, 0.25);
+}
+.btn.cta:active {
+  background: #ca8a04;
+}
+.btn.primary {
+  background: #222430;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f8fafc;
+}
+.btn.primary:hover {
+  background: #2a2c3a;
+  border-color: #ca8a04;
+  color: #facc15;
+}
+.btn.secondary {
+  background: #16171e;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
 }
 .btn.small {
   padding: 6px 10px;
@@ -138,6 +312,33 @@ header {
 }
 .btn.full {
   width: 100%;
+}
+
+/* Grid de Acciones Rápidas en Vivo */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+@media (min-width: 480px) {
+  .quick-actions-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 10px;
+  font-size: 12px;
+  border-radius: 10px;
+  text-align: center;
+}
+.quick-action-btn .btn-icon {
+  font-size: 16px;
+}
 }
 
 .meta-row {
@@ -160,12 +361,12 @@ header {
   font-size: 13px;
   gap: 8px;
 }
-.field-row select, .field-row input[type=range] {
-  background: #090b14;
+.field-row select, .field-row input[type=range], .field-row input[type=text] {
+  background: #101116;
   color: #f1f5f9;
-  border: 1px solid #2e3866;
-  border-radius: 6px;
-  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 7px 10px;
   font-size: 13px;
   max-width: 60%;
 }
@@ -179,9 +380,9 @@ header {
 }
 
 .preview-box {
-  background: #090b14;
-  border: 1px dashed #242c52;
-  border-radius: 10px;
+  background: #0d0e12;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
   height: 260px;
   position: relative;
   overflow: hidden;
@@ -197,21 +398,24 @@ header {
 
 .result-box {
   margin-top: 10px;
-  background: #090b14;
-  border: 1px solid #1f2747;
-  border-radius: 8px;
-  padding: 10px;
+  background: #101116;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
 }
 .result-label {
   font-size: 11px;
   color: #94a3b8;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
 }
 .result-text {
-  font-size: 18px;
-  font-weight: 700;
-  color: #38bdf8;
+  font-size: 20px;
+  font-weight: 800;
+  color: #facc15;
   margin: 4px 0 8px 0;
+  letter-spacing: 0.3px;
 }
 .alts {
   display: flex;
@@ -457,23 +661,23 @@ button.primary {
    TARJETA PREDICCIÓN IA & INSTAGRAM
    =================================================== */
 .ai-card {
-  border: 1px solid #4c1d95;
-  background: linear-gradient(180deg, #16122c 0%, #111528 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #14151b;
 }
 .prompt-box {
   margin-top: 10px;
 }
 .prompt-header {
   font-size: 11px;
-  color: #c084fc;
-  font-weight: 600;
+  color: #eab308;
+  font-weight: 700;
   margin-bottom: 4px;
 }
 #aiPromptText {
   width: 100%;
-  background: #090b14;
+  background: #101116;
   color: #f1f5f9;
-  border: 1px solid #3b2866;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 12px;
@@ -482,16 +686,16 @@ button.primary {
   font-family: inherit;
 }
 .ai-preview-container {
-  background: #090b14;
-  border: 1px solid #3b2866;
+  background: #101116;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 10px;
   text-align: center;
 }
 .ai-status {
   font-size: 13px;
-  color: #c084fc;
-  font-weight: 600;
+  color: #facc15;
+  font-weight: 700;
   margin-bottom: 8px;
 }
 .ai-result-img {
@@ -499,7 +703,7 @@ button.primary {
   max-height: 380px;
   object-fit: cover;
   border-radius: 10px;
-  border: 1px solid #2e1065;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
 }
 .hint-small {
@@ -510,7 +714,8 @@ button.primary {
 }
 .btn.outline {
   background: transparent;
-  border: 1px solid #475569;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
 }
 
 .concept-chips-row {
@@ -527,13 +732,17 @@ button.primary {
 }
 .concept-field label {
   font-size: 11px;
-  color: #c084fc;
-  font-weight: 600;
+  color: #94a3b8;
+  font-weight: 700;
 }
 .concept-field input {
-  background: #090b14;
+  background: #101116;
   color: #f1f5f9;
-  border: 1px solid #3b2866;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
   border-radius: 6px;
   padding: 6px 8px;
   font-size: 12px;
@@ -673,8 +882,10 @@ button.primary {
    CAPAS DE PRESENTACIÓN (UI DASHBOARD)
    =================================================== */
 .layer-selector button.active {
-  border: 2px solid #818cf8 !important;
-  box-shadow: 0 0 10px rgba(129, 140, 248, 0.4);
+  border: 1px solid #ca8a04 !important;
+  box-shadow: 0 2px 10px rgba(202, 138, 4, 0.3);
+  color: #facc15 !important;
+  background: #232532 !important;
 }
 
 /* ===================================================
