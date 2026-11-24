@@ -165,6 +165,8 @@ const state = {
   // Pizarra E-Ink (Slate of Mind)
   slateStyle: localStorage.getItem('mindpad_slate_style') || 'blackboard',
   slateContentType: localStorage.getItem('mindpad_slate_content_type') || 'strokes',
+  slateText: '',
+  songPendingAutoplay: false,
   selectedPlayingCard: localStorage.getItem('mindpad_selected_card') || 'AS',
   slateLiveSync: localStorage.getItem('mindpad_slate_live_sync') !== 'false',
   slateRoomId: localStorage.getItem('mindpad_slate_room') || 'SLATE_MIND',
@@ -196,10 +198,10 @@ const state = {
   notesCurrentView: 'dream',
 
   // Melodía Telepática & Reproductor de Música Camuflado (iTunes)
-  dreamSong: localStorage.getItem('mindpad_dream_song') || 'Bohemian Rhapsody',
-  musicTrackTitle: 'Bohemian Rhapsody',
-  musicArtistName: 'Queen • A Night at the Opera',
-  musicCoverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
+  dreamSong: localStorage.getItem('mindpad_dream_song') || '',
+  musicTrackTitle: localStorage.getItem('mindpad_music_title') || '',
+  musicArtistName: localStorage.getItem('mindpad_music_artist') || '',
+  musicCoverUrl: localStorage.getItem('mindpad_music_cover') || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80',
   musicAudioUrl: '',
   musicIsPlaying: false,
   musicTotalSeconds: 354,
@@ -556,7 +558,7 @@ function segmentStrokes(strokes, autoDeskew = true) {
   }
 
   // 3. Segmentar renglones limpios
-  const items = workingStrokes.map((s) => {
+  const items = workingStrokes.map((s, order) => {
     let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
     s.points.forEach((p) => {
       if (p.x < minX) minX = p.x;
@@ -564,7 +566,7 @@ function segmentStrokes(strokes, autoDeskew = true) {
       if (p.y < minY) minY = p.y;
       if (p.y > maxY) maxY = p.y;
     });
-    return { s, minX, maxX, minY, maxY, h: maxY - minY, w: maxX - minX, cy: (minY + maxY) / 2 };
+    return { s, order, minX, maxX, minY, maxY, h: maxY - minY, w: maxX - minX, cy: (minY + maxY) / 2 };
   });
 
   items.sort((a, b) => a.cy - b.cy);
@@ -576,7 +578,7 @@ function segmentStrokes(strokes, autoDeskew = true) {
       const overlap = it.minY <= b.maxY && it.maxY >= b.minY;
       const centerDist = Math.abs(it.cy - b.cy);
       if (overlap || centerDist < 0.048) {
-        b.items.push(it.s);
+        b.items.push(it);
         b.minY = Math.min(b.minY, it.minY);
         b.maxY = Math.max(b.maxY, it.maxY);
         b.cy = (b.minY + b.maxY) / 2;
@@ -585,11 +587,12 @@ function segmentStrokes(strokes, autoDeskew = true) {
       }
     }
     if (!added) {
-      bands.push({ items: [it.s], minY: it.minY, maxY: it.maxY, cy: it.cy });
+      bands.push({ items: [it], minY: it.minY, maxY: it.maxY, cy: it.cy });
     }
   });
 
-  return bands.map((b) => b.items);
+  // El reconocedor depende del orden temporal de los trazos: devolverlos en el orden en que se escribieron
+  return bands.map((b) => b.items.sort((a, c) => a.order - c.order).map((it) => it.s));
 }
 
 // ==========================================
@@ -611,9 +614,13 @@ async function recognizeWithOpenRouterVision(strokes, apiKey) {
 
   const base64Data = c.toDataURL('image/jpeg', 0.85);
 
-  const promptText = state.currentLayer === 5
-    ? 'Eres el asistente secreto de un mentalista en la rutina del sueño. El espectador escribe 4 cosas manuscritas en lista o renglones: 1) Hora (ej: 03:45, 4:00, 11:30), 2) Nombre de persona (ej: Carlos, María), 3) Lugar o ciudad para viajar (ej: París, Tokio, Cancún), 4) Comida favorita (ej: Tacos, Pizza, Sushi). Responde ESTRICTAMENTE un JSON con este formato exacto: {"hora": "...", "nombre": "...", "lugar": "...", "comida": "..."}. Sin explicaciones ni markdown.'
-    : 'Eres el asistente secreto de un mentalista. Analiza este dibujo/nota manuscrita. El espectador suele escribir: un número (dígitos), una palabra manuscrita y/o un dibujo (ej. gato, auto, árbol, estrella, cara, etc.). Responde ESTRICTAMENTE un JSON con este formato exacto: {"numero": "...", "palabra": "...", "figura": "...", "figura_en": "..."}. Si alguno no está presente, déjalo como string vacío "". Sin explicaciones ni markdown.';
+  const VISION_PROMPTS = {
+    4: 'Eres el asistente secreto de un mentalista. Transcribe EXACTAMENTE el texto manuscrito de la imagen, respetando los renglones (sepáralos con \\n). Corrige solo errores evidentes de letra fea. Responde ESTRICTAMENTE un JSON con este formato exacto: {"texto": "..."}. Sin explicaciones ni markdown.',
+    5: 'Eres el asistente secreto de un mentalista en la rutina del sueño. El espectador escribe 4 cosas manuscritas en lista o renglones: 1) Hora (ej: 03:45, 4:00, 11:30), 2) Nombre de persona (ej: Carlos, María), 3) Lugar o ciudad para viajar (ej: París, Tokio, Cancún), 4) Comida favorita (ej: Tacos, Pizza, Sushi). Responde ESTRICTAMENTE un JSON con este formato exacto: {"hora": "...", "nombre": "...", "lugar": "...", "comida": "..."}. Sin explicaciones ni markdown.',
+    6: 'Eres el asistente secreto de un mentalista. El espectador escribió a mano el nombre de una canción (y quizá el artista). Transcríbelo y corrige la ortografía para que coincida con el título real de la canción más conocida con ese nombre. Responde ESTRICTAMENTE un JSON con este formato exacto: {"cancion": "...", "artista": "..."}. Si no hay artista escrito, deja "artista" como string vacío "". Sin explicaciones ni markdown.'
+  };
+  const promptText = VISION_PROMPTS[state.currentLayer] ||
+    'Eres el asistente secreto de un mentalista. Analiza este dibujo/nota manuscrita. El espectador suele escribir: un número (dígitos), una palabra manuscrita y/o un dibujo (ej. gato, auto, árbol, estrella, cara, etc.). Responde ESTRICTAMENTE un JSON con este formato exacto: {"numero": "...", "palabra": "...", "figura": "...", "figura_en": "..."}. Si alguno no está presente, déjalo como string vacío "". Sin explicaciones ni markdown.';
 
   const payload = {
     model: 'google/gemini-2.5-flash',
@@ -731,7 +738,36 @@ function fuzzyMatchDictionary(inputWord, dictionary, maxDistance = 2) {
   return bestMatch;
 }
 
+function parseDreamHour(text) {
+  const norm = text.replace(/\s+/g, '').replace(/[Oo]/g, '0').replace(/[Iil|]/g, '1');
+  const m = norm.match(/(\d{1,2})[:.](\d{2})/);
+  if (m) return `${m[1].padStart(2, '0')}:${m[2]}`;
+  if (/^\d{3,4}$/.test(norm)) {
+    const padded = norm.padStart(4, '0');
+    return `${padded.slice(0, 2)}:${padded.slice(2)}`;
+  }
+  return '';
+}
+
 function parseDreamRoutineText(rawLines) {
+  // Los 4 renglones se escriben en orden (hora, nombre, lugar, comida): la posición manda,
+  // y el diccionario solo corrige la letra fea dentro de su propia categoría.
+  const lines = rawLines.map((l) => (l || '').trim()).filter(Boolean);
+  const hourIdx = lines.findIndex((l) => parseDreamHour(l));
+  const rest = lines.filter((_, i) => i !== hourIdx);
+  if (hourIdx !== -1 && rest.length === 3) {
+    const fix = (text, dict) => {
+      const clean = text.replace(/[^\p{L}\p{M}' -]/gu, '').trim();
+      return fuzzyMatchDictionary(clean, dict) || clean.charAt(0).toUpperCase() + clean.slice(1);
+    };
+    return {
+      hour: parseDreamHour(lines[hourIdx]),
+      name: fix(rest[0], DREAM_DICTIONARIES.names) || state.dreamName,
+      place: fix(rest[1], DREAM_DICTIONARIES.places) || state.dreamPlace,
+      food: fix(rest[2], DREAM_DICTIONARIES.foods) || state.dreamFood
+    };
+  }
+
   let allTokens = [];
   rawLines.forEach((line) => {
     if (!line) return;
@@ -909,6 +945,16 @@ async function onParticipantFinished() {
       }
       return;
     }
+  }
+
+  const isSongModeActive = (state.currentLayer === 6 || state.activeCamouflageMode === 'player');
+  if (isSongModeActive && navigator.onLine) {
+    if (await revealSongRoutine(pagePrefix)) return;
+  }
+
+  const slateTextTypes = ['strokes', 'word', 'text', 'dream_list'];
+  if (state.currentLayer === 4 && navigator.onLine && slateTextTypes.includes(state.slateContentType)) {
+    if (await revealSlateTextRoutine(pagePrefix)) return;
   }
 
   if (state.detectMode === 'esp' || state.detectMode === 'digits' || !navigator.onLine) {
@@ -1089,6 +1135,160 @@ async function onParticipantFinished() {
   }
 }
 
+// Lee el texto manuscrito renglón por renglón (OCR de Google Input Tools)
+async function recognizeHandwrittenLines(strokes) {
+  const bands = segmentStrokes(strokes);
+  const results = await Promise.all(bands.map((b) => recognizeText(b).catch(() => [])));
+  const lines = results.map((r) => (r?.[0] || '').trim()).filter(Boolean);
+  const alternatives = results.length === 1 ? results[0].slice(1, 5) : [];
+  return { lines, alternatives };
+}
+
+async function readRoutineVision(field) {
+  if (!state.openRouterKey || !state.openRouterVision) return null;
+  try {
+    const v = await recognizeWithOpenRouterVision(state.strokes, state.openRouterKey);
+    return v && v[field] ? v : null;
+  } catch (err) {
+    console.warn('OpenRouter Vision falló, usando OCR local:', err);
+    return null;
+  }
+}
+
+function finishRoutineReveal({ displayTitle, speech, candidates, watchTitle, pageExtra = {} }) {
+  state.lastSpokenText = speech;
+  $('lastResult').textContent = displayTitle;
+  $('stealthOverlayText').textContent = displayTitle;
+  renderCandidates(candidates);
+  speakTTS(speech);
+  if (state.vibrate) triggerHaptic([120, 80, 120]);
+  sendToSmartwatch(watchTitle, displayTitle);
+  state.pages[state.currentPageIndex] = {
+    strokes: JSON.parse(JSON.stringify(state.strokes)),
+    displayTitle,
+    speech,
+    ...pageExtra
+  };
+  $('stealthStatusDot').className = 'stealth-dot ready';
+  if (typeof redrawNotesDoodleCanvas === 'function') redrawNotesDoodleCanvas();
+}
+
+// CAPA 6: el espectador escribe una canción → se carga en el reproductor camuflado
+async function revealSongRoutine(pagePrefix) {
+  const queries = [];
+  let alternatives = [];
+
+  const vision = await readRoutineVision('cancion');
+  if (vision) {
+    queries.push([vision.cancion, vision.artista].filter(Boolean).join(' ').trim());
+  }
+
+  // 1. Frase completa directa (ideal para títulos como "The Power of Love", "Hotel California")
+  const fullPhrase = await recognizeText(state.strokes).catch(() => []);
+  if (fullPhrase && fullPhrase.length) {
+    queries.push(fullPhrase[0].trim());
+    queries.push(...fullPhrase.slice(1, 4).map((s) => s.trim()));
+  }
+
+  // 2. Reconocimiento línea por línea
+  const ocr = await recognizeHandwrittenLines(state.strokes);
+  if (ocr.lines.length) queries.push(ocr.lines.join(' '));
+  alternatives = ocr.alternatives;
+  queries.push(...alternatives);
+
+  const uniqueQueries = [...new Set(queries.map((q) => q.trim()).filter(Boolean))];
+  if (!uniqueQueries.length) return false;
+
+  let track = null;
+  let usedQuery = uniqueQueries[0];
+  for (const q of uniqueQueries) {
+    track = await fetchSongPreview(q, false);
+    if (track) { usedQuery = q; break; }
+  }
+
+  state.dreamSong = track ? track.trackName : usedQuery;
+  state.musicTrackTitle = track ? track.trackName : usedQuery;
+  state.musicArtistName = track ? `${track.artistName} • ${track.collectionName || 'Single'}` : 'Canción Pensada';
+  localStorage.setItem('mindpad_dream_song', state.dreamSong);
+  localStorage.setItem('mindpad_music_title', state.musicTrackTitle);
+  localStorage.setItem('mindpad_music_artist', state.musicArtistName);
+  if (track && state.musicCoverUrl) localStorage.setItem('mindpad_music_cover', state.musicCoverUrl);
+
+  // Sincronizar inmediatamente la interfaz de Capa 6
+  if ($('dreamSongInput')) $('dreamSongInput').value = state.dreamSong;
+  if ($('songFoundTitle')) $('songFoundTitle').textContent = state.musicTrackTitle;
+  if ($('songFoundArtist')) $('songFoundArtist').textContent = state.musicArtistName;
+  if (track && $('songFoundCover') && state.musicCoverUrl) $('songFoundCover').src = state.musicCoverUrl;
+
+  // Sincronizar el reproductor camuflado
+  if ($('musicTrackTitle')) $('musicTrackTitle').textContent = state.musicTrackTitle;
+  if ($('musicArtistName')) $('musicArtistName').textContent = state.musicArtistName;
+  if (track && $('musicCoverImg') && state.musicCoverUrl) $('musicCoverImg').src = state.musicCoverUrl;
+
+  if (!track) {
+    finishRoutineReveal({
+      displayTitle: `🎵 ${usedQuery}`,
+      speech: `${pagePrefix}Canción escrita: ${usedQuery}`,
+      candidates: uniqueQueries,
+      watchTitle: 'Canción Pensada',
+      pageExtra: { word: usedQuery }
+    });
+    return true;
+  }
+
+  const playerVisible = state.activeCamouflageMode === 'player' && $('stealthView')?.style.display !== 'none';
+  if (playerVisible) {
+    startMusicPlayback();
+  } else {
+    state.songPendingAutoplay = true;
+  }
+
+  finishRoutineReveal({
+    displayTitle: `🎵 ${track.trackName} — ${track.artistName}`,
+    speech: `${pagePrefix}Canción: ${track.trackName}, de ${track.artistName}`,
+    candidates: uniqueQueries,
+    watchTitle: 'Canción Pensada',
+    pageExtra: { word: track.trackName }
+  });
+  return true;
+}
+
+// CAPA 4: lo escrito en la tableta aparece como texto con tipografía de tiza
+async function revealSlateTextRoutine(pagePrefix) {
+  let lines = [];
+  let alternatives = [];
+
+  const vision = await readRoutineVision('texto');
+  if (vision) {
+    lines = String(vision.texto).split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  }
+  if (!lines.length) {
+    const ocr = await recognizeHandwrittenLines(state.strokes);
+    lines = ocr.lines;
+    alternatives = ocr.alternatives;
+  }
+  if (!lines.length) return false;
+
+  state.slateText = lines.join('\n');
+  state.currentWord = lines.join(' ');
+  state.slateContentType = 'text';
+  localStorage.setItem('mindpad_slate_content_type', 'text');
+  if ($('slateContentTypeSelect')) $('slateContentTypeSelect').value = 'text';
+  if ($('conceptWord')) $('conceptWord').value = state.currentWord;
+
+  redrawChalkSlate();
+  broadcastSlateUpdate();
+
+  finishRoutineReveal({
+    displayTitle: `📋 ${state.currentWord}`,
+    speech: `${pagePrefix}Escribió: ${state.currentWord}`,
+    candidates: [state.currentWord, ...alternatives],
+    watchTitle: 'Pizarra',
+    pageExtra: { word: state.currentWord }
+  });
+  return true;
+}
+
 // ----------------------------------------------------
 // MOTOR OFFLINE HEURÍSTICO (ESP Zener & Dígitos 0-9)
 // ----------------------------------------------------
@@ -1131,7 +1331,11 @@ function classifyOffline(strokes, mode = 'both') {
     if (numStrokes >= 2 && numStrokes <= 3 && aspect > 1.3) {
       return { title: '♒ ONDAS (ESP)', speech: 'Símbolo: Ondas', confidence: 0.92, alternatives: ['Ondas', 'Líneas'] };
     }
-    if (numStrokes === 1 && isLoop && aspect >= 0.75 && aspect <= 1.35) {
+    // Perímetro relativo: círculo ≈ 3.1, cuadrado ≈ 4, estrella de 5 puntas ≈ 5
+    if (numStrokes === 1 && totalLen > Math.max(w, h) * 4.4) {
+      return { title: '⭐ ESTRELLA (ESP)', speech: 'Símbolo: Estrella', confidence: 0.88, alternatives: ['Estrella'] };
+    }
+    if (numStrokes === 1 && isLoop && aspect >= 0.75 && aspect <= 1.35 && totalLen < Math.max(w, h) * 3.6) {
       return { title: '⭕ CÍRCULO (ESP)', speech: 'Símbolo: Círculo', confidence: 0.9, alternatives: ['Círculo', 'Cero'] };
     }
     if ((numStrokes === 1 || numStrokes === 4) && aspect >= 0.8 && aspect <= 1.25) {
@@ -1185,24 +1389,42 @@ async function recognizeDrawing(strokes) {
   return data[0] === 'SUCCESS' ? data[1]?.[0]?.[1] || [] : [];
 }
 
-// Reconocimiento Online Texto
-async function recognizeText(strokes) {
+// Reconocimiento Online Texto (multilenguaje: español e inglés)
+async function recognizeText(strokes, lang = 'es') {
   const ink = toQuickDrawInk(strokes, 600, 300);
   const payload = {
     options: 'enable_pre_space',
     requests: [{
       writing_guide: { writing_area_width: 600, writing_area_height: 300 },
       ink,
-      language: 'es'
+      language: lang
     }]
   };
-  const res = await fetch('https://inputtools.google.com/request?itc=es-t-i0-handwrit&app=mindpadx10', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
-  return data[0] === 'SUCCESS' ? data[1]?.[0]?.[1] || [] : [];
+
+  try {
+    const res = await fetch('https://inputtools.google.com/request?ime=handwriting&app=mobilesearch&cs=1&oe=UTF-8', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    const results = data[0] === 'SUCCESS' ? data[1]?.[0]?.[1] || [] : [];
+    if (results.length > 0) return results;
+  } catch (err) {
+    console.warn('Fallo endpoint mobilesearch, intentando itc:', err);
+  }
+
+  try {
+    const res2 = await fetch('https://inputtools.google.com/request?itc=es-t-i0-handwrit&app=mindpadx10', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data2 = await res2.json();
+    return data2[0] === 'SUCCESS' ? data2[1]?.[0]?.[1] || [] : [];
+  } catch (err2) {
+    return [];
+  }
 }
 
 function toQuickDrawInk(strokes, targetW, targetH) {
@@ -1240,8 +1462,24 @@ function renderCandidates(list) {
     const badge = document.createElement('span');
     badge.className = 'cand-badge';
     badge.textContent = item;
-    badge.onclick = () => {
+    badge.onclick = async () => {
       speakTTS(item);
+      if (state.currentLayer === 6) {
+        const track = await fetchSongPreview(item, state.activeCamouflageMode === 'player' && $('stealthView')?.style.display !== 'none');
+        state.dreamSong = track ? `${track.trackName} ${track.artistName}` : item;
+        localStorage.setItem('mindpad_dream_song', state.dreamSong);
+        if ($('dreamSongInput')) $('dreamSongInput').value = state.dreamSong;
+        if (track) $('lastResult').textContent = `🎵 ${track.trackName} — ${track.artistName}`;
+        return;
+      }
+      if (state.currentLayer === 4 && state.slateContentType === 'text') {
+        state.slateText = item;
+        state.currentWord = item;
+        redrawChalkSlate();
+        broadcastSlateUpdate();
+        $('lastResult').textContent = `📋 ${item}`;
+        return;
+      }
       state.currentDrawing = item;
       if ($('conceptDrawing')) $('conceptDrawing').value = item;
       updateAIPromptFromDetection(state.currentDrawing, state.currentWord, state.currentNumber);
@@ -1588,6 +1826,17 @@ function enterStealthMode(forcedMode) {
   if ($('fakeMusicPlayer')) $('fakeMusicPlayer').style.display = isPlayer ? 'flex' : 'none';
   if ($('fakeLockscreen')) $('fakeLockscreen').style.display = isLock ? 'flex' : 'none';
   if ($('aodClock')) $('aodClock').style.display = isAOD ? 'block' : 'none';
+
+  if (isPlayer) {
+    switchPresentationLayer(6);
+    if ($('musicTrackTitle')) $('musicTrackTitle').textContent = state.musicTrackTitle || state.dreamSong || '— Canción pensada —';
+    if ($('musicArtistName')) $('musicArtistName').textContent = state.musicArtistName || '— Artista —';
+    if ($('musicCoverImg') && state.musicCoverUrl) $('musicCoverImg').src = state.musicCoverUrl;
+    if (state.songPendingAutoplay) {
+      state.songPendingAutoplay = false;
+      startMusicPlayback();
+    }
+  }
 
   if (isNotes) {
     applyNotesTheme(state.notesTheme);
@@ -1996,6 +2245,11 @@ function switchPresentationLayer(layerNum) {
     localStorage.setItem('mindpad_slate_live_sync', 'true');
   } else if (layerNum === 5) {
     updateDreamNoteDOM();
+  } else if (layerNum === 6) {
+    if ($('dreamSongInput')) $('dreamSongInput').value = state.dreamSong || '';
+    if ($('songFoundTitle')) $('songFoundTitle').textContent = state.musicTrackTitle || state.dreamSong || '— Canción pensada —';
+    if ($('songFoundArtist')) $('songFoundArtist').textContent = state.musicArtistName || '— Artista —';
+    if ($('songFoundCover') && state.musicCoverUrl) $('songFoundCover').src = state.musicCoverUrl;
   } else if (layerNum === 7) {
     if (typeof redrawNotesDoodleCanvas === 'function') {
       redrawNotesDoodleCanvas();
@@ -2110,6 +2364,8 @@ function broadcastSlateUpdate() {
     room: state.slateRoomId,
     strokes: state.strokes,
     word: state.currentWord,
+    text: state.slateText,
+    dream: { hour: state.dreamHour, name: state.dreamName, place: state.dreamPlace, food: state.dreamFood },
     drawing: state.currentDrawing,
     number: state.currentNumber,
     card: state.selectedPlayingCard,
@@ -2133,6 +2389,13 @@ function applyRemoteSlateData(data) {
   if (data.contentType) state.slateContentType = data.contentType;
   if (data.card) state.selectedPlayingCard = data.card;
   if (data.word) state.currentWord = data.word;
+  if (data.text) state.slateText = data.text;
+  if (data.dream) {
+    state.dreamHour = data.dream.hour || state.dreamHour;
+    state.dreamName = data.dream.name || state.dreamName;
+    state.dreamPlace = data.dream.place || state.dreamPlace;
+    state.dreamFood = data.dream.food || state.dreamFood;
+  }
   if (data.drawing) state.currentDrawing = data.drawing;
   if (data.number) state.currentNumber = data.number;
   if (data.strokes) state.strokes = data.strokes;
@@ -2551,6 +2814,13 @@ function redrawChalkSlate() {
     drawChalkText(ctx, w, h, textToShow, sub);
   } else if (type === 'doodle') {
     drawChalkDoodle(ctx, w, h, state.currentDrawing);
+  } else if (type === 'text') {
+    const lines = (state.slateText || state.currentWord || '').split('\n').filter(Boolean);
+    const rowH = h / Math.max(1, lines.length);
+    lines.forEach((line, i) => {
+      const size = Math.max(40, Math.floor(Math.min(240, rowH * 0.7, (w * 0.88) / Math.max(3.2, line.length * 0.8))));
+      drawChalkText(ctx, w, h, line, '', rowH * (i + 0.5), size);
+    });
   } else {
     // 'strokes' (por defecto)
     if (state.strokes && state.strokes.length > 0) {
@@ -3804,7 +4074,7 @@ function renderHumanizedStrokes(ctx, normStrokes, nMinX, nMinY, spanX, spanY, sc
       const ldx = (lastRaw.x - clusterCenterX) * clusterScale;
       const ldy = (lastRaw.y - clusterCenterY) * clusterScale;
       const lrx = ldx * Math.cos(clusterRot) - ldy * Math.sin(clusterRot);
-      const lry = ldx * Math.sin(clusterRot) + dy * Math.cos(clusterRot);
+      const lry = ldx * Math.sin(clusterRot) + ldy * Math.cos(clusterRot);
       screenPoints.push({
         x: originX + (clusterCenterX + lrx - nMinX) * scale + clusterShiftX,
         y: originY + (clusterCenterY + lry - nMinY) * scale + clusterShiftY
@@ -4663,8 +4933,26 @@ if ($('layer6Btn')) $('layer6Btn').onclick = () => switchPresentationLayer(6);
 if ($('layer7Btn')) $('layer7Btn').onclick = () => switchPresentationLayer(7);
 
 // Botones de acceso rápido en la barra superior de rutina activa
+const ROUTINE_LISTEN_LABELS = {
+  1: 'Post-it', 2: 'VIP', 3: 'Ticket', 4: 'Pizarra', 5: 'Sueño', 6: 'Canción', 7: 'Boceto'
+};
+
+function startRoutineListening(layerNum) {
+  switchPresentationLayer(layerNum);
+  clearTimeout(state.inactivityTimer);
+  state.strokes = [];
+  state.currentStroke = null;
+  state.lastSpokenText = '';
+  if ($('confidenceList')) $('confidenceList').innerHTML = '';
+  if ($('lastResult')) $('lastResult').textContent = `👂 Escuchando · ${ROUTINE_LISTEN_LABELS[layerNum] || 'Rutina'}`;
+  if ($('stealthStatusDot')) $('stealthStatusDot').className = 'stealth-dot active';
+  redrawAllStrokes();
+  if (typeof redrawNotesDoodleCanvas === 'function') redrawNotesDoodleCanvas();
+  triggerHaptic([30]);
+}
+
 document.querySelectorAll('.routine-chip-btn').forEach((btn) => {
-  btn.onclick = () => switchPresentationLayer(+btn.getAttribute('data-layer'));
+  btn.onclick = () => startRoutineListening(+btn.getAttribute('data-layer'));
 });
 if ($('viewDossierBtn')) {
   $('viewDossierBtn').onclick = () => {
@@ -5274,7 +5562,7 @@ function initAppTabs() {
       requestAnimationFrame(() => {
         resizeCanvases();
         if (targetId === 'tab-live') {
-          redrawPreview();
+          redrawAllStrokes();
         } else if (targetId === 'tab-slate') {
           redrawChalkSlate();
         }
