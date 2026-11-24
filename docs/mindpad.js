@@ -502,6 +502,78 @@ async function recognizeWithOpenRouterVision(strokes, apiKey) {
   return JSON.parse(clean);
 }
 
+// ==========================================
+// 6.1 DICCIONARIOS DE AUTOCORRECCIÓN & FUZZY MATCHING PARA EL SUEÑO (LETRA FEA)
+// ==========================================
+const DREAM_DICTIONARIES = {
+  names: [
+    'Carlos', 'Ana', 'Juan', 'Pedro', 'María', 'Maria', 'David', 'Sofía', 'Sofia', 
+    'Luis', 'José', 'Jose', 'Jorge', 'Laura', 'Daniel', 'Alejandro', 'Gabriel', 
+    'Lucía', 'Lucia', 'Elena', 'Fernando', 'Ricardo', 'Diego', 'Mateo', 'Valentina',
+    'Camila', 'Santiago', 'Sebastián', 'Sebastian', 'Manuel', 'Pablo', 'Andrés', 'Andres',
+    'Roberto', 'Javier', 'Mario', 'Carmen', 'Raúl', 'Raul', 'Rosa', 'Isabel', 'Paula',
+    'Miguel', 'Marcos', 'Victor', 'Clara', 'Gonzalo', 'Alex', 'Leo', 'Lucas'
+  ],
+  places: [
+    'París', 'Paris', 'Roma', 'Tokio', 'Tokyo', 'Madrid', 'Londres', 'London', 
+    'Nueva York', 'New York', 'Cancún', 'Cancun', 'Berlín', 'Berlin', 'Barcelona', 
+    'Venecia', 'Ámsterdam', 'Amsterdam', 'Grecia', 'Atenas', 'Egipto', 'El Cairo',
+    'Buenos Aires', 'Río de Janeiro', 'Miami', 'Los Ángeles', 'Los Angeles', 'San Francisco',
+    'Hawái', 'Hawaii', 'Cartagena', 'Cusco', 'Praga', 'Viena', 'Sidney', 'Sydney', 'Las Vegas'
+  ],
+  foods: [
+    'Tacos', 'Pizza', 'Sushi', 'Hamburguesa', 'Pasta', 'Ensalada', 'Ceviche', 
+    'Paella', 'Helado', 'Ramen', 'Burritos', 'Lasagna', 'Pozole', 'Quesadillas',
+    'Tamales', 'Carnitas', 'Mariscos', 'Asado', 'Empanadas', 'Chiles Rellenos',
+    'Pancita', 'Menudo', 'Hot Dog', 'Tortas', 'Chilaquiles', 'Sopa', 'Carne Asada'
+  ]
+};
+
+function levenshteinDistance(a, b) {
+  const al = a.length, bl = b.length;
+  if (!al) return bl;
+  if (!bl) return al;
+  const matrix = [];
+  for (let i = 0; i <= al; i++) matrix[i] = [i];
+  for (let j = 0; j <= bl; j++) matrix[0][j] = j;
+  for (let i = 1; i <= al; i++) {
+    for (let j = 1; j <= bl; j++) {
+      const cost = a[i - 1].toLowerCase() === b[j - 1].toLowerCase() ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[al][bl];
+}
+
+function fuzzyMatchDictionary(inputWord, dictionary, maxDistance = 2) {
+  if (!inputWord) return null;
+  const clean = inputWord.trim();
+  if (clean.length < 3) return null;
+
+  // 1. Coincidencia exacta insensible a mayúsculas y acentos
+  const exact = dictionary.find((w) => w.localeCompare(clean, undefined, { sensitivity: 'accent' }) === 0 || w.toLowerCase() === clean.toLowerCase());
+  if (exact) return exact;
+
+  // 2. Coincidencia difusa (tolerante a caligrafía manuscrita defectuosa)
+  let bestMatch = null;
+  let bestDist = maxDistance + 1;
+
+  for (const dictWord of dictionary) {
+    const dist = levenshteinDistance(clean, dictWord);
+    const allowedDist = clean.length <= 4 ? 1 : maxDistance;
+    if (dist < bestDist && dist <= allowedDist) {
+      bestDist = dist;
+      bestMatch = dictWord;
+    }
+  }
+
+  return bestMatch;
+}
+
 function parseDreamRoutineText(rawLines) {
   let allTokens = [];
   rawLines.forEach((line) => {
@@ -510,44 +582,77 @@ function parseDreamRoutineText(rawLines) {
     allTokens.push(...words);
   });
 
-  let hour = '';
-  let nonHourTokens = [];
+  let detectedHour = '';
+  let detectedName = '';
+  let detectedPlace = '';
+  let detectedFood = '';
+  const unassigned = [];
 
   for (let i = 0; i < allTokens.length; i++) {
     const t = allTokens[i].trim();
     if (!t) continue;
 
-    if (!hour && (t.match(/\b\d{1,2}[:.]\d{2}\b/) || t.match(/\b\d{1,2}(?:am|pm|hrs)\b/i))) {
-      hour = t.replace('.', ':');
-    } else if (!hour && t.match(/^\d{3,4}$/)) {
-      const padded = t.padStart(4, '0');
-      hour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
-    } else {
-      const cleanWord = t.replace(/[^\p{L}\p{M}'-]/gu, '').trim();
-      if (cleanWord && cleanWord.length >= 2) {
-        const capitalized = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1).toLowerCase();
-        nonHourTokens.push(capitalized);
+    // A. Detección de hora (03:45, 11.30, 345, 4am)
+    if (!detectedHour) {
+      if (t.match(/\b\d{1,2}[:.]\d{2}\b/) || t.match(/\b\d{1,2}(?:am|pm|hrs)\b/i)) {
+        detectedHour = t.replace('.', ':');
+        continue;
+      }
+      if (t.match(/^\d{3,4}$/)) {
+        const padded = t.padStart(4, '0');
+        detectedHour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
+        continue;
       }
     }
-  }
 
-  if (!hour && allTokens.length > 0 && /\d/.test(allTokens[0])) {
-    const rawNum = allTokens[0].replace(/[^\d:]/g, '');
-    if (rawNum.includes(':')) {
-      hour = rawNum;
-    } else if (rawNum.length === 3 || rawNum.length === 4) {
-      const padded = rawNum.padStart(4, '0');
-      hour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
-    } else if (rawNum.length <= 2) {
-      hour = `${rawNum}:00`;
+    // B. Autocorrección semántica por diccionario difuso (tolera letra fea)
+    const foodMatch = fuzzyMatchDictionary(t, DREAM_DICTIONARIES.foods);
+    if (foodMatch && !detectedFood) {
+      detectedFood = foodMatch;
+      continue;
+    }
+
+    const placeMatch = fuzzyMatchDictionary(t, DREAM_DICTIONARIES.places);
+    if (placeMatch && !detectedPlace) {
+      detectedPlace = placeMatch;
+      continue;
+    }
+
+    const nameMatch = fuzzyMatchDictionary(t, DREAM_DICTIONARIES.names);
+    if (nameMatch && !detectedName) {
+      detectedName = nameMatch;
+      continue;
+    }
+
+    const cleanWord = t.replace(/[^\p{L}\p{M}'-]/gu, '').trim();
+    if (cleanWord && cleanWord.length >= 2) {
+      unassigned.push(cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1).toLowerCase());
     }
   }
 
+  // C. Si falta la hora pero el primer token tiene dígitos
+  if (!detectedHour && allTokens.length > 0 && /\d/.test(allTokens[0])) {
+    const rawNum = allTokens[0].replace(/[^\d:]/g, '');
+    if (rawNum.includes(':')) {
+      detectedHour = rawNum;
+    } else if (rawNum.length === 3 || rawNum.length === 4) {
+      const padded = rawNum.padStart(4, '0');
+      detectedHour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
+    } else if (rawNum.length <= 2) {
+      detectedHour = `${rawNum}:00`;
+    }
+  }
+
+  // D. Asignar palabras no identificadas al orden clásico: Nombre -> Lugar -> Comida
+  if (!detectedName && unassigned.length > 0) detectedName = unassigned.shift();
+  if (!detectedPlace && unassigned.length > 0) detectedPlace = unassigned.shift();
+  if (!detectedFood && unassigned.length > 0) detectedFood = unassigned.shift();
+
   return {
-    hour: hour || state.dreamHour || '03:45',
-    name: nonHourTokens[0] || state.dreamName || 'Carlos',
-    place: nonHourTokens[1] || state.dreamPlace || 'París',
-    food: nonHourTokens[2] || state.dreamFood || 'Tacos'
+    hour: detectedHour || state.dreamHour || '03:45',
+    name: detectedName || state.dreamName || 'Carlos',
+    place: detectedPlace || state.dreamPlace || 'París',
+    food: detectedFood || state.dreamFood || 'Tacos'
   };
 }
 
@@ -1393,10 +1498,10 @@ peekContainer.addEventListener('touchend', hidePeek);
 
 stealthView.addEventListener('touchstart', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
-  // Si estamos en la calculadora, notas o reproductor, no activar peek con toques en su UI
+  // Si estamos en la calculadora, notas, doodle o reproductor, no activar peek con toques en su UI
   if (
     (state.activeCamouflageMode === 'calculator' && e.target.closest('#fakeCalculator')) ||
-    (state.activeCamouflageMode === 'notes' && e.target.closest('#fakeNotes')) ||
+    ((state.activeCamouflageMode === 'notes' || state.activeCamouflageMode === 'doodle') && e.target.closest('#fakeNotes')) ||
     (state.activeCamouflageMode === 'player' && e.target.closest('#fakeMusicPlayer'))
   ) {
     return;
@@ -1443,7 +1548,7 @@ stealthView.addEventListener('mousedown', (e) => {
   if (e.target.id === 'exitStealthTrigger') return;
   if (
     (state.activeCamouflageMode === 'calculator' && e.target.closest('#fakeCalculator')) ||
-    (state.activeCamouflageMode === 'notes' && e.target.closest('#fakeNotes')) ||
+    ((state.activeCamouflageMode === 'notes' || state.activeCamouflageMode === 'doodle') && e.target.closest('#fakeNotes')) ||
     (state.activeCamouflageMode === 'player' && e.target.closest('#fakeMusicPlayer'))
   ) {
     return;
@@ -1686,7 +1791,9 @@ let theatricalSeconds = 0;
 
 function switchPresentationLayer(layerNum) {
   state.currentLayer = layerNum;
-  for (let i = 1; i <= 6; i++) {
+  localStorage.setItem('mindpad_active_layer', layerNum);
+
+  for (let i = 1; i <= 7; i++) {
     const btn = $(`layer${i}Btn`);
     if (btn) btn.className = `btn small ${layerNum === i ? 'primary active' : 'secondary'}`;
     const content = $(`layer${i}Content`);
@@ -1694,14 +1801,23 @@ function switchPresentationLayer(layerNum) {
   }
 
   const badges = {
-    1: 'Capa 1: Post-it',
-    2: 'Capa 2: Redes / VIP',
-    3: 'Capa 3: TV / Sprocket',
-    4: 'Capa 4: Pizarra E-Ink',
-    5: 'Capa 5: El Sueño (Notas)',
-    6: 'Capa 6: Canción Pensada'
+    1: '📝 Capa 1: Post-it Casual',
+    2: '📷 Capa 2: Redes / VIP',
+    3: '🖨️ Capa 3: TV / Sprocket',
+    4: '📋 Capa 4: Pizarra E-Ink',
+    5: '💤 Capa 5: El Sueño (Notas)',
+    6: '🎵 Capa 6: Canción Pensada',
+    7: '🎨 Capa 7: Doodle Pad (Boceto)'
   };
-  if ($('activeLayerBadge')) $('activeLayerBadge').textContent = badges[layerNum] || `Capa ${layerNum}`;
+  const badgeText = badges[layerNum] || `Capa ${layerNum}`;
+  if ($('activeLayerBadge')) $('activeLayerBadge').textContent = badgeText;
+  if ($('activeRoutineBadge')) $('activeRoutineBadge').textContent = badgeText;
+
+  // Actualizar estado activo en los botones de acceso rápido de la barra superior
+  document.querySelectorAll('.routine-chip-btn').forEach((chip) => {
+    const chipLayer = +chip.getAttribute('data-layer');
+    chip.classList.toggle('active', chipLayer === layerNum);
+  });
 
   if (layerNum === 2) {
     if (state.exifDaysBack === 0) {
@@ -1719,6 +1835,10 @@ function switchPresentationLayer(layerNum) {
     localStorage.setItem('mindpad_slate_live_sync', 'true');
   } else if (layerNum === 5) {
     updateDreamNoteDOM();
+  } else if (layerNum === 7) {
+    if (typeof redrawNotesDoodleCanvas === 'function') {
+      redrawNotesDoodleCanvas();
+    }
   }
 }
 
@@ -3240,6 +3360,35 @@ function redrawNotesDoodleCanvas() {
   }
 
   notesDoodleCtx.restore();
+
+  // 3. Renderizar también a los canvases de previsualización de la consola (Capa 7 y En Vivo)
+  const previewCanvases = [
+    $('consoleDoodlePreviewCanvas'),
+    $('consoleDoodlePreviewCanvasLive')
+  ].filter(Boolean);
+
+  previewCanvases.forEach((c) => {
+    const cpCtx = c.getContext('2d');
+    if (!cpCtx) return;
+    const cpW = c.width || c.clientWidth || 380;
+    const cpH = c.height || c.clientHeight || 200;
+    cpCtx.save();
+    cpCtx.clearRect(0, 0, cpW, cpH);
+    if (strokesToRender && strokesToRender.length > 0) {
+      renderOrganicDoodleDuplication(cpCtx, strokesToRender, cpW, cpH, {
+        mode: state.doodleDuplicationMode,
+        variance: state.doodleVarianceLevel,
+        theme: 'dark',
+        concept: state.currentDrawing
+      });
+    } else {
+      cpCtx.fillStyle = '#64748b';
+      cpCtx.font = '12px sans-serif';
+      cpCtx.textAlign = 'center';
+      cpCtx.fillText('— Dibuja en la tableta para ver la duplicación —', cpW / 2, cpH / 2);
+    }
+    cpCtx.restore();
+  });
 }
 
 // ==========================================
@@ -4350,6 +4499,12 @@ if ($('layer3Btn')) $('layer3Btn').onclick = () => switchPresentationLayer(3);
 if ($('layer4Btn')) $('layer4Btn').onclick = () => switchPresentationLayer(4);
 if ($('layer5Btn')) $('layer5Btn').onclick = () => switchPresentationLayer(5);
 if ($('layer6Btn')) $('layer6Btn').onclick = () => switchPresentationLayer(6);
+if ($('layer7Btn')) $('layer7Btn').onclick = () => switchPresentationLayer(7);
+
+// Botones de acceso rápido en la barra superior de rutina activa
+document.querySelectorAll('.routine-chip-btn').forEach((btn) => {
+  btn.onclick = () => switchPresentationLayer(+btn.getAttribute('data-layer'));
+});
 if ($('viewDossierBtn')) {
   $('viewDossierBtn').onclick = () => {
     const tabBtn = document.querySelector('.app-tab-btn[data-tab="tab-dossier"]');
@@ -4394,6 +4549,54 @@ if ($('dreamFoodInput')) {
     localStorage.setItem('mindpad_dream_food', state.dreamFood);
     updateDreamNoteDOM();
     if (state.slateContentType === 'dream_list') redrawChalkSlate();
+  };
+}
+
+// Chips de Selección Rápida 1-Touch para Letra Fea / Emergencia en El Sueño
+document.querySelectorAll('.dream-chip').forEach((btn) => {
+  btn.onclick = (e) => {
+    e.preventDefault();
+    const field = btn.getAttribute('data-field');
+    const val = btn.getAttribute('data-val');
+    if (!field || !val) return;
+
+    if (field === 'hour') {
+      state.dreamHour = val;
+      if ($('dreamHourInput')) $('dreamHourInput').value = val;
+    } else if (field === 'name') {
+      state.dreamName = val;
+      if ($('dreamNameInput')) $('dreamNameInput').value = val;
+    } else if (field === 'place') {
+      state.dreamPlace = val;
+      if ($('dreamPlaceInput')) $('dreamPlaceInput').value = val;
+    } else if (field === 'food') {
+      state.dreamFood = val;
+      if ($('dreamFoodInput')) $('dreamFoodInput').value = val;
+    }
+    localStorage.setItem(`mindpad_dream_${field}`, val);
+    updateDreamNoteDOM();
+    if (state.slateContentType === 'dream_list') redrawChalkSlate();
+    broadcastSlateUpdate();
+    triggerHaptic([30]);
+  };
+});
+
+// Botón de Forzar Sincronización Inmediata en Capa 5
+if ($('forceUpdateDreamNoteBtn')) {
+  $('forceUpdateDreamNoteBtn').onclick = () => {
+    if ($('dreamHourInput')) state.dreamHour = $('dreamHourInput').value.trim();
+    if ($('dreamNameInput')) state.dreamName = $('dreamNameInput').value.trim();
+    if ($('dreamPlaceInput')) state.dreamPlace = $('dreamPlaceInput').value.trim();
+    if ($('dreamFoodInput')) state.dreamFood = $('dreamFoodInput').value.trim();
+    localStorage.setItem('mindpad_dream_hour', state.dreamHour);
+    localStorage.setItem('mindpad_dream_name', state.dreamName);
+    localStorage.setItem('mindpad_dream_place', state.dreamPlace);
+    localStorage.setItem('mindpad_dream_food', state.dreamFood);
+    updateDreamNoteDOM();
+    if (state.slateContentType === 'dream_list') redrawChalkSlate();
+    broadcastSlateUpdate();
+    triggerHaptic([60, 40, 60]);
+    alert('✓ Nota de El Sueño actualizada en 0ms');
   };
 }
 
@@ -4536,6 +4739,131 @@ if ($('openOfficialYTMusicBtn')) {
   };
 }
 if ($('quickOpenMusicBtn6')) $('quickOpenMusicBtn6').onclick = () => enterStealthMode('player');
+
+// Capa 7: Eventos Doodle Pad (Boceto Duplicación) & Accesos Rápidos
+if ($('liveOpenDoodleQuickBtn')) $('liveOpenDoodleQuickBtn').onclick = () => enterStealthMode('doodle');
+if ($('quickOpenDoodlePadBtn7')) $('quickOpenDoodlePadBtn7').onclick = () => enterStealthMode('doodle');
+
+if ($('notesDoodleDupModeSelect7')) {
+  $('notesDoodleDupModeSelect7').value = state.doodleDuplicationMode;
+  $('notesDoodleDupModeSelect7').onchange = (e) => {
+    state.doodleDuplicationMode = e.target.value;
+    localStorage.setItem('mindpad_doodle_dup_mode', state.doodleDuplicationMode);
+    if ($('notesDoodleDupModeSelect')) $('notesDoodleDupModeSelect').value = state.doodleDuplicationMode;
+    updateNotesDoodleDupModePill();
+    redrawNotesDoodleCanvas();
+  };
+}
+
+if ($('notesDoodleVarianceSelect7')) {
+  $('notesDoodleVarianceSelect7').value = state.doodleVarianceLevel;
+  $('notesDoodleVarianceSelect7').onchange = (e) => {
+    state.doodleVarianceLevel = e.target.value;
+    localStorage.setItem('mindpad_doodle_var_level', state.doodleVarianceLevel);
+    if ($('notesDoodleVarianceSelect')) $('notesDoodleVarianceSelect').value = state.doodleVarianceLevel;
+    redrawNotesDoodleCanvas();
+  };
+}
+
+if ($('rerollDoodleVarBtn7')) {
+  $('rerollDoodleVarBtn7').onclick = () => {
+    redrawNotesDoodleCanvas();
+    triggerHaptic([30]);
+  };
+}
+
+// Botones de Limpieza Dedicados por Rutina (Capas 1 a 7)
+if ($('clearLayer1Btn')) {
+  $('clearLayer1Btn').onclick = () => {
+    state.strokes = [];
+    state.currentStroke = null;
+    state.lastSpokenText = '';
+    if ($('lastResult')) $('lastResult').textContent = '— Esperando trazos —';
+    if ($('confidenceList')) $('confidenceList').innerHTML = '';
+    redrawAllStrokes();
+    if (typeof redrawNotesDoodleCanvas === 'function') redrawNotesDoodleCanvas();
+    triggerHaptic([40]);
+  };
+}
+if ($('clearLayer2Btn')) {
+  $('clearLayer2Btn').onclick = () => {
+    if ($('exifDaysBackSelect')) {
+      $('exifDaysBackSelect').value = '0';
+      state.exifDaysBack = 0;
+      localStorage.setItem('mindpad_exif_days_back', '0');
+    }
+    triggerHaptic([40]);
+  };
+}
+if ($('clearLayer3Btn')) {
+  $('clearLayer3Btn').onclick = () => {
+    clearInterval(theatricalTimerInterval);
+    theatricalSeconds = 0;
+    updateTheatricalTimerUI();
+    triggerHaptic([40]);
+  };
+}
+if ($('clearLayer4Btn')) {
+  $('clearLayer4Btn').onclick = () => {
+    state.strokes = [];
+    state.currentWord = '';
+    state.currentDrawing = '';
+    state.currentNumber = '';
+    redrawAllStrokes();
+    redrawChalkSlate();
+    broadcastSlateUpdate();
+    triggerHaptic([40]);
+  };
+}
+if ($('clearLayer5Btn')) {
+  $('clearLayer5Btn').onclick = () => {
+    state.dreamHour = '03:45';
+    state.dreamName = 'Carlos';
+    state.dreamPlace = 'París';
+    state.dreamFood = 'Tacos';
+    if ($('dreamHourInput')) $('dreamHourInput').value = '03:45';
+    if ($('dreamNameInput')) $('dreamNameInput').value = 'Carlos';
+    if ($('dreamPlaceInput')) $('dreamPlaceInput').value = 'París';
+    if ($('dreamFoodInput')) $('dreamFoodInput').value = 'Tacos';
+    localStorage.setItem('mindpad_dream_hour', '03:45');
+    localStorage.setItem('mindpad_dream_name', 'Carlos');
+    localStorage.setItem('mindpad_dream_place', 'París');
+    localStorage.setItem('mindpad_dream_food', 'Tacos');
+    updateDreamNoteDOM();
+    if (state.slateContentType === 'dream_list') redrawChalkSlate();
+    broadcastSlateUpdate();
+    triggerHaptic([40]);
+  };
+}
+if ($('clearLayer6Btn')) {
+  $('clearLayer6Btn').onclick = () => {
+    state.dreamSong = '';
+    if ($('dreamSongInput')) $('dreamSongInput').value = '';
+    localStorage.setItem('mindpad_dream_song', '');
+    if (window._songAudio) {
+      window._songAudio.pause();
+      window._songAudio = null;
+    }
+    const cover = $('songPreviewCover');
+    if (cover) cover.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80';
+    if ($('songPreviewTitle')) $('songPreviewTitle').textContent = '— Canción pensada —';
+    if ($('songPreviewArtist')) $('songPreviewArtist').textContent = '— Artista —';
+    if ($('songPreviewAlbum')) $('songPreviewAlbum').textContent = '— Álbum —';
+    triggerHaptic([40]);
+  };
+}
+if ($('clearLayer7Btn')) {
+  $('clearLayer7Btn').onclick = () => {
+    state.strokes = [];
+    state.currentStroke = null;
+    state.lastSpokenText = '';
+    if ($('lastResult')) $('lastResult').textContent = '— Esperando trazos —';
+    if ($('confidenceList')) $('confidenceList').innerHTML = '';
+    redrawAllStrokes();
+    if (typeof redrawNotesDoodleCanvas === 'function') redrawNotesDoodleCanvas();
+    triggerHaptic([40]);
+  };
+}
 
 // Navegación dentro del Bloc de Notas Falso (Pestañas, Lista y Temas)
 if ($('notesBackToListBtn')) $('notesBackToListBtn').onclick = () => showNoteView('list');
@@ -4769,7 +5097,8 @@ updateDreamNoteDOM();
 initMusicPlayerEvents();
 applyMusicPlayerTheme(state.musicPlayerTheme);
 fetchSongPreview(state.dreamSong);
-switchPresentationLayer(1);
+const initLayer = +(localStorage.getItem('mindpad_active_layer') || 7);
+switchPresentationLayer(initLayer);
 initSlateControls();
 initSlateSettingsUI();
 resizeCanvases();

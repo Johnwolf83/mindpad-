@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=30" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=27').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=30').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -58,6 +58,24 @@
         </button>
       </div>
     </header>
+
+    <!-- BARRA DE AVISO DE RUTINA ACTIVA -->
+    <div class="active-routine-bar">
+      <div class="routine-indicator-box">
+        <span class="status-indicator-dot pulse"></span>
+        <span class="routine-caption">Rutina Activa:</span>
+        <span id="activeRoutineBadge" class="routine-badge-tag">🎨 Capa 7: Doodle Pad (Boceto)</span>
+      </div>
+      <div class="routine-quick-selector">
+        <button class="routine-chip-btn active" data-layer="7" title="Activar Doodle Pad (Boceto Duplicación)">🎨 Boceto</button>
+        <button class="routine-chip-btn" data-layer="5" title="Activar El Sueño (Notas)">💤 Sueño</button>
+        <button class="routine-chip-btn" data-layer="1" title="Activar Post-it Casual">📝 Post-it</button>
+        <button class="routine-chip-btn" data-layer="4" title="Activar Pizarra E-Ink">📋 Pizarra</button>
+        <button class="routine-chip-btn" data-layer="6" title="Activar Melodía Pensada">🎵 Música</button>
+        <button class="routine-chip-btn" data-layer="2" title="Activar Redes VIP">📷 VIP</button>
+        <button class="routine-chip-btn" data-layer="3" title="Activar Impresión">🖨️ Ticket</button>
+      </div>
+    </div>
 
     <!-- BARRA DE PESTAÑAS PRINCIPALES -->
     <nav class="app-nav-tabs" aria-label="Navegación de secciones">
@@ -151,6 +169,66 @@
             <div id="lastResult" class="result-text">— Esperando trazo en la tableta —</div>
             <div id="confidenceList" class="alts"></div>
           </div>
+
+          <!-- Mini Preview Boceto Live -->
+          <div id="liveDoodlePreviewContainer" class="console-doodle-preview-box" style="margin-top:10px;">
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#facc15; display:inline-flex; align-items:center; gap:5px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+                Vista Previa de Boceto (Duplicación que verá el público):
+              </span>
+              <button id="liveOpenDoodleQuickBtn" class="btn small" style="background:#ca8a04; color:#000; font-size:10.5px; font-weight:700; padding:2px 8px;">✏️ Abrir Boceto</button>
+            </div>
+            <canvas id="consoleDoodlePreviewCanvasLive" width="380" height="200" class="console-doodle-canvas"></canvas>
+          </div>
+
+          <!-- Auxilio Rápido de El Sueño (1 Toque / Letra Fea) -->
+          <div class="dream-emergency-box" style="margin-top:10px;">
+            <div class="dream-emergency-header">
+              <span style="font-size:11.5px; font-weight:700; color:#38bdf8; display:inline-flex; align-items:center; gap:5px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Auxilio Rápido de El Sueño (Letra Fea / 1 Toque):
+              </span>
+            </div>
+            <div class="dream-override-grid">
+              <div class="dream-override-col">
+                <label>Hora:</label>
+                <div class="quick-chip-row">
+                  <button class="dream-chip" data-field="hour" data-val="03:45">03:45</button>
+                  <button class="dream-chip" data-field="hour" data-val="11:11">11:11</button>
+                  <button class="dream-chip" data-field="hour" data-val="08:30">08:30</button>
+                  <button class="dream-chip" data-field="hour" data-val="12:00">12:00</button>
+                </div>
+              </div>
+              <div class="dream-override-col">
+                <label>Nombre:</label>
+                <div class="quick-chip-row">
+                  <button class="dream-chip" data-field="name" data-val="Carlos">Carlos</button>
+                  <button class="dream-chip" data-field="name" data-val="Juan">Juan</button>
+                  <button class="dream-chip" data-field="name" data-val="Ana">Ana</button>
+                  <button class="dream-chip" data-field="name" data-val="Pedro">Pedro</button>
+                </div>
+              </div>
+              <div class="dream-override-col">
+                <label>Lugar:</label>
+                <div class="quick-chip-row">
+                  <button class="dream-chip" data-field="place" data-val="París">París</button>
+                  <button class="dream-chip" data-field="place" data-val="Roma">Roma</button>
+                  <button class="dream-chip" data-field="place" data-val="Madrid">Madrid</button>
+                  <button class="dream-chip" data-field="place" data-val="Tokio">Tokio</button>
+                </div>
+              </div>
+              <div class="dream-override-col">
+                <label>Comida:</label>
+                <div class="quick-chip-row">
+                  <button class="dream-chip" data-field="food" data-val="Tacos">Tacos</button>
+                  <button class="dream-chip" data-field="food" data-val="Pizza">Pizza</button>
+                  <button class="dream-chip" data-field="food" data-val="Sushi">Sushi</button>
+                  <button class="dream-chip" data-field="food" data-val="Hamburguesa">Burger</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- Acceso Rápido a Salidas Secretas -->
@@ -228,6 +306,7 @@
             <button id="layer4Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">4</span> Pizarra E-Ink</button>
             <button id="layer5Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">5</span> El Sueño (Notas)</button>
             <button id="layer6Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">6</span> Canción Pensada</button>
+            <button id="layer7Btn" class="btn small secondary" style="flex:1; min-width:110px; background:#201c10; color:#facc15; border:1px solid rgba(250,204,21,0.4);"><span class="layer-num-badge" style="background:#ca8a04; color:#000;">7</span> 🎨 Doodle Pad</button>
             <button id="viewDossierBtn" class="btn small outline" style="border-color:#ca8a04; color:#fef08a; min-width:120px; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
               <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
               <span>Ver Dossier</span>
@@ -247,6 +326,10 @@
               <button id="quickOpenStealthBtn1" class="btn small secondary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
                 <span>Modo Sigilo (AOD)</span>
+              </button>
+              <button id="clearLayer1Btn" class="btn small btn-routine-clear" title="Limpiar trazos de la rutina Post-it">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                <span>Limpiar</span>
               </button>
             </div>
           </div>
@@ -268,6 +351,10 @@
               <button id="quickShareStoryBtn" class="btn small cta" style="flex:1; background:#ca8a04; color:#000; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                 <span>Instagram Stories</span>
+              </button>
+              <button id="clearLayer2Btn" class="btn small btn-routine-clear" title="Limpiar datos VIP y evento">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                <span>Limpiar</span>
               </button>
             </div>
           </div>
@@ -294,6 +381,10 @@
                   <span>Iniciar Teatralidad (60s)</span>
                 </button>
                 <button id="resetTheatricalTimerBtn" class="btn small secondary">↺ Reiniciar</button>
+                <button id="clearLayer3Btn" class="btn small btn-routine-clear" title="Limpiar cronómetro e impresión">
+                  <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                  <span>Limpiar</span>
+                </button>
               </div>
             </div>
           </div>
@@ -312,6 +403,10 @@
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
                 <span>Revelar en Pizarra</span>
               </button>
+              <button id="clearLayer4Btn" class="btn small btn-routine-clear" title="Limpiar trazos de la pizarra">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                <span>Limpiar</span>
+              </button>
             </div>
           </div>
 
@@ -320,22 +415,70 @@
             <div style="background:#191b24; border-left:3px solid #38bdf8; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
               <strong>Rutina del Sueño:</strong> Pides al espectador que escriba: Hora, Nombre, Lugar y Comida favorita en una hoja y la doble. Tu app de Notas camuflada completa una premonición fechada hace días o dibuja el doodle silenciosamente mientras el móvil está boca abajo en la mesa.
             </div>
-            <div class="field-row">
-              <label style="font-size:11px; color:#94a3b8; width:130px;">1. Hora exacta:</label>
-              <input id="dreamHourInput" type="text" value="03:45" style="flex:1;" />
+
+            <!-- PANEL DE AUXILIO Y CORRECCIÓN RÁPIDA (LETRA FEA / 1 TOQUE) -->
+            <div class="dream-emergency-box">
+              <div class="dream-emergency-header">
+                <span style="font-size:12px; font-weight:700; color:#facc15; display:inline-flex; align-items:center; gap:6px;">
+                  <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  Corrección Rápida / Auxilio (Letra Fea / 1 Toque)
+                </span>
+                <span style="font-size:11px; color:#94a3b8;">Si el espectador tiene letra ilegible o el OCR falló, toca una opción o escribe para corregir la nota en 0 segundos:</span>
+              </div>
+
+              <div class="dream-override-grid">
+                <div class="dream-override-col">
+                  <label>1. Hora Soñada:</label>
+                  <input id="dreamHourInput" type="text" value="03:45" />
+                  <div class="quick-chip-row">
+                    <button class="dream-chip" data-field="hour" data-val="03:45">03:45</button>
+                    <button class="dream-chip" data-field="hour" data-val="11:11">11:11</button>
+                    <button class="dream-chip" data-field="hour" data-val="08:30">08:30</button>
+                    <button class="dream-chip" data-field="hour" data-val="04:20">04:20</button>
+                    <button class="dream-chip" data-field="hour" data-val="12:00">12:00</button>
+                  </div>
+                </div>
+
+                <div class="dream-override-col">
+                  <label>2. Nombre de la Persona:</label>
+                  <input id="dreamNameInput" type="text" value="Carlos" />
+                  <div class="quick-chip-row">
+                    <button class="dream-chip" data-field="name" data-val="Carlos">Carlos</button>
+                    <button class="dream-chip" data-field="name" data-val="Juan">Juan</button>
+                    <button class="dream-chip" data-field="name" data-val="Ana">Ana</button>
+                    <button class="dream-chip" data-field="name" data-val="María">María</button>
+                    <button class="dream-chip" data-field="name" data-val="David">David</button>
+                    <button class="dream-chip" data-field="name" data-val="Pedro">Pedro</button>
+                  </div>
+                </div>
+
+                <div class="dream-override-col">
+                  <label>3. Destino / Viaje:</label>
+                  <input id="dreamPlaceInput" type="text" value="París" />
+                  <div class="quick-chip-row">
+                    <button class="dream-chip" data-field="place" data-val="París">París</button>
+                    <button class="dream-chip" data-field="place" data-val="Roma">Roma</button>
+                    <button class="dream-chip" data-field="place" data-val="Madrid">Madrid</button>
+                    <button class="dream-chip" data-field="place" data-val="Tokio">Tokio</button>
+                    <button class="dream-chip" data-field="place" data-val="Cancún">Cancún</button>
+                    <button class="dream-chip" data-field="place" data-val="Nueva York">NY</button>
+                  </div>
+                </div>
+
+                <div class="dream-override-col">
+                  <label>4. Comida Favorita:</label>
+                  <input id="dreamFoodInput" type="text" value="Tacos" />
+                  <div class="quick-chip-row">
+                    <button class="dream-chip" data-field="food" data-val="Tacos">Tacos</button>
+                    <button class="dream-chip" data-field="food" data-val="Pizza">Pizza</button>
+                    <button class="dream-chip" data-field="food" data-val="Sushi">Sushi</button>
+                    <button class="dream-chip" data-field="food" data-val="Hamburguesa">Burger</button>
+                    <button class="dream-chip" data-field="food" data-val="Pasta">Pasta</button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="field-row">
-              <label style="font-size:11px; color:#94a3b8; width:130px;">2. Nombre persona:</label>
-              <input id="dreamNameInput" type="text" value="Carlos" style="flex:1;" />
-            </div>
-            <div class="field-row">
-              <label style="font-size:11px; color:#94a3b8; width:130px;">3. Lugar para viajar:</label>
-              <input id="dreamPlaceInput" type="text" value="París" style="flex:1;" />
-            </div>
-            <div class="field-row">
-              <label style="font-size:11px; color:#94a3b8; width:130px;">4. Comida favorita:</label>
-              <input id="dreamFoodInput" type="text" value="Tacos" style="flex:1;" />
-            </div>
+
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">Tema de Notas:</label>
               <select id="notesThemeSelect" style="flex:1;">
@@ -357,38 +500,22 @@
                 <option value="draw">Pestaña Boceto (Lienzo Dibujo Libre)</option>
               </select>
             </div>
-            <div class="field-row">
-              <label style="font-size:11px; color:#94a3b8; width:130px;">Duplicación Boceto:</label>
-              <select id="notesDoodleDupModeSelect" style="flex:1;">
-                <option value="organic" selected>Variación Orgánica (Similar pero no idéntico)</option>
-                <option value="conceptual">Re-interpretación Conceptual (Boceto inteligente)</option>
-                <option value="exact">Duplicación Idéntica 1:1 (Trazo exacto)</option>
-              </select>
-            </div>
-            <div class="field-row">
-              <label style="font-size:11px; color:#94a3b8; width:130px;">Variación de Trazo:</label>
-              <select id="notesDoodleVarianceSelect" style="flex:1;">
-                <option value="subtle">Sutil (Ligeras diferencias de trazo)</option>
-                <option value="medium" selected>Media (Recomendado — Misma idea y trazo propio)</option>
-                <option value="creative">Creativa (Elementos con estilo libre)</option>
-              </select>
-            </div>
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
-              <button id="quickOpenDoodlePadBtn5" class="btn small cta" style="flex:1 1 45%; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
-                <span>Doodle Pad (Boceto)</span>
-              </button>
-              <button id="quickOpenNotesBtn5" class="btn small secondary" style="flex:1 1 45%; background:#0284c7; color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <button id="quickOpenNotesBtn5" class="btn small cta" style="flex:1 1 45%; background:#0284c7; color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
-                <span>Ver Texto Nota</span>
+                <span>Abrir Nota del Sueño</span>
               </button>
-              <button id="quickSyncDreamBtn5" class="btn small secondary" style="flex:1 1 45%; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <button id="forceUpdateDreamNoteBtn" class="btn small primary" style="flex:1 1 45%; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <span>Sincronizar</span>
+                <span>⚡ Guardar & Sincronizar</span>
               </button>
               <button id="quickSpeakDreamBtn5" class="btn small secondary" title="Dictar por audífono BT" style="flex:1 1 45%; display:inline-flex; align-items:center; justify-content:center; gap:5px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                 <span>Audio</span>
+              </button>
+              <button id="clearLayer5Btn" class="btn small btn-routine-clear" style="flex:1 1 45%;" title="Limpiar datos del sueño y reiniciar premonición">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                <span>🗑️ Limpiar Sueño</span>
               </button>
             </div>
           </div>
@@ -442,12 +569,62 @@
               <label style="font-size:11px; color:#94a3b8; width:130px;">MP3 personal (opc):</label>
               <input id="customMp3UrlInput" type="text" placeholder="https://.../cancion_completa.mp3" style="flex:1;" />
             </div>
-            <div style="display:flex; gap:8px;">
-              <button id="quickOpenMusicBtn6" class="btn small cta" style="flex:1; background:#059669; color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <button id="quickOpenMusicBtn6" class="btn small cta" style="flex:1 1 45%; background:#059669; color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                 <span>Abrir Reproductor</span>
               </button>
-              <button id="openOfficialYTMusicBtn" class="btn small" style="flex:1; background:#dc2626; color:#fff; font-weight:700; border:none; padding:7px 10px;" title="Abrir en tu app instalada de YouTube Music">Abrir App YT Music</button>
+              <button id="openOfficialYTMusicBtn" class="btn small" style="flex:1 1 30%; background:#dc2626; color:#fff; font-weight:700; border:none; padding:7px 10px;" title="Abrir en tu app instalada de YouTube Music">App YT Music</button>
+              <button id="clearLayer6Btn" class="btn small btn-routine-clear" style="flex:1 1 20%;" title="Limpiar canción y detener música">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                <span>Limpiar</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Capa 7: Doodle Pad / Duplicación de Dibujo Telepático -->
+          <div id="layer7Content" class="layer-panel" style="display:none;">
+            <div style="background:#191b24; border-left:3px solid #facc15; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
+              <strong>Rutina Doodle Pad (Boceto):</strong> El espectador dibuja cualquier objeto, figura o símbolo en la tableta Huion. Tu bloc de notas duplica el dibujo con un estilo natural y orgánico hecho a mano (no un clon digital idéntico sospechoso). Al abrir la nota frente al público, parece un boceto que dibujaste hace días.
+            </div>
+            <div class="field-row">
+              <label style="font-size:11px; color:#94a3b8; width:130px;">Modo Duplicación:</label>
+              <select id="notesDoodleDupModeSelect7" style="flex:1;">
+                <option value="organic" selected>✨ Variación Orgánica (Misma idea, trazo humano)</option>
+                <option value="exact">📱 Duplicación Idéntica 1:1 (Trazo exacto)</option>
+                <option value="conceptual">🎨 Re-interpretación Conceptual (Boceto inteligente)</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label style="font-size:11px; color:#94a3b8; width:130px;">Variación de Trazo:</label>
+              <select id="notesDoodleVarianceSelect7" style="flex:1;">
+                <option value="subtle">Sutil (Ligeras diferencias de trazo)</option>
+                <option value="medium" selected>Media (Recomendado — Misma idea y trazo propio)</option>
+                <option value="creative">Creativa (Elementos con estilo libre)</option>
+              </select>
+            </div>
+
+            <!-- VISTA PREVIA EN VIVO DE DUPLICACIÓN EN CONSOLA -->
+            <div class="console-doodle-preview-box">
+              <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; font-weight:700; color:#facc15; display:inline-flex; align-items:center; gap:5px;">
+                  <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+                  Vista Previa en Vivo de la Duplicación (Boceto que verá el público):
+                </span>
+                <button id="rerollDoodleVarBtn7" class="btn small" style="background:#202230; font-size:10.5px; padding:2px 8px;" title="Generar otra variación natural">🔄 Variar</button>
+              </div>
+              <canvas id="consoleDoodlePreviewCanvas" width="380" height="220" class="console-doodle-canvas"></canvas>
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+              <button id="quickOpenDoodlePadBtn7" class="btn small cta" style="flex:1 1 45%; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                <span>✏️ Abrir Doodle Pad en Teléfono</span>
+              </button>
+              <button id="clearLayer7Btn" class="btn small btn-routine-clear" style="flex:1 1 45%;" title="Limpiar trazos de tableta y boceto">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                <span>🗑️ Limpiar Boceto</span>
+              </button>
             </div>
           </div>
         </section>
@@ -1577,6 +1754,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <span style="font-family:'Caveat';">Preload</span>
   </div>
 
-  <script src="mindpad.js?v=29" type="module"></script>
+  <script src="mindpad.js?v=30" type="module"></script>
 </body>
 </html>
