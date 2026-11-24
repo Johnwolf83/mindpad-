@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=27" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=26').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=27').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -345,6 +345,22 @@
               <select id="notesInitialTabSelect" style="flex:1;">
                 <option value="text" selected>Nota de Texto (Premonición Fechada)</option>
                 <option value="draw">Pestaña Boceto (Lienzo Dibujo Libre)</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label style="font-size:11px; color:#94a3b8; width:130px;">Duplicación Boceto:</label>
+              <select id="notesDoodleDupModeSelect" style="flex:1;">
+                <option value="organic" selected>Variación Orgánica (Similar pero no idéntico)</option>
+                <option value="conceptual">Re-interpretación Conceptual (Boceto inteligente)</option>
+                <option value="exact">Duplicación Idéntica 1:1 (Trazo exacto)</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label style="font-size:11px; color:#94a3b8; width:130px;">Variación de Trazo:</label>
+              <select id="notesDoodleVarianceSelect" style="flex:1;">
+                <option value="subtle">Sutil (Ligeras diferencias de trazo)</option>
+                <option value="medium" selected>Media (Recomendado — Misma idea y trazo propio)</option>
+                <option value="creative">Creativa (Elementos con estilo libre)</option>
               </select>
             </div>
             <div style="display:flex; gap:8px; margin-top:8px;">
@@ -1302,10 +1318,13 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
                 Boceto & Garabatos a mano alzada
               </span>
-              <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11.5px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
-                Limpiar Lienzo
-              </button>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button id="notesToggleDupModeBtn" class="notes-mode-pill" title="Alternar modo: Orgánico / Conceptual / Idéntico 1:1">✨ Orgánico</button>
+                <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11.5px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                  <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                  Limpiar
+                </button>
+              </div>
             </div>
             <div class="notes-draw-canvas-container">
               <canvas id="notesDoodleCanvas"></canvas>
@@ -1543,6 +1562,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <span style="font-family:'Caveat';">Preload</span>
   </div>
 
-  <script src="mindpad.js?v=26" type="module"></script>
+  <script src="mindpad.js?v=27" type="module"></script>
 </body>
 </html>

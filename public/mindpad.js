@@ -209,10 +209,12 @@ const state = {
   musicSimulatedBaseSec: 84,
   musicPlayerTheme: localStorage.getItem('mindpad_music_theme') || 'ytmusic',
 
-  // Doodle en Notas
+  // Doodle en Notas & Duplicación Orgánica de Dibujo
   doodleColor: '#f8fafc',
   doodleBrushSize: 2.2,
   notesDoodleStrokes: [],
+  doodleDuplicationMode: localStorage.getItem('mindpad_doodle_dup_mode') || 'organic', // 'organic', 'conceptual', 'exact'
+  doodleVarianceLevel: localStorage.getItem('mindpad_doodle_var_level') || 'medium', // 'subtle', 'medium', 'creative'
 
   // Reloj & Gestos
   clockInterval: null,
@@ -3197,33 +3199,558 @@ function redrawNotesDoodleCanvas() {
     notesDoodleCtx.stroke();
   });
 
-  // 2. Si la tableta Huion envió trazos, dibujarlos a escala dentro del canvas de notas
+  // 2. Si la tableta Huion envió trazos, dibujarlos con el motor de duplicación de dibujo
   if (state.strokes && state.strokes.length > 0) {
-    const isPortrait = state.orientation.startsWith('portrait');
-    const maxX = isPortrait ? 28200 : 37400;
-    const maxY = isPortrait ? 37400 : 28200;
-    const pad = 24;
-    const scaleX = (cw - pad * 2) / maxX;
-    const scaleY = (ch - pad * 2) / maxY;
-    const scale = Math.min(scaleX, scaleY);
-
-    notesDoodleCtx.strokeStyle = state.notesTheme === 'light' ? '#1c1c1e' : '#f8fafc';
-    notesDoodleCtx.lineWidth = 2.4;
-    notesDoodleCtx.lineCap = 'round';
-    notesDoodleCtx.lineJoin = 'round';
-
-    state.strokes.forEach((stroke) => {
-      if (!stroke.points || stroke.points.length < 2) return;
-      notesDoodleCtx.beginPath();
-      notesDoodleCtx.moveTo(pad + stroke.points[0].x * scale, pad + stroke.points[0].y * scale);
-      for (let i = 1; i < stroke.points.length; i++) {
-        notesDoodleCtx.lineTo(pad + stroke.points[i].x * scale, pad + stroke.points[i].y * scale);
-      }
-      notesDoodleCtx.stroke();
+    renderOrganicDoodleDuplication(notesDoodleCtx, state.strokes, cw, ch, {
+      mode: state.doodleDuplicationMode,
+      variance: state.doodleVarianceLevel,
+      theme: state.notesTheme,
+      concept: state.currentDrawing
     });
   }
 
   notesDoodleCtx.restore();
+}
+
+// ==========================================
+// 12.1 MOTOR DE DUPLICACIÓN ORGÁNICA DE DIBUJO (MENTALISM ORGANIC SKETCH ENGINE)
+// ==========================================
+function seededPseudoRandom(seed) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function updateNotesDoodleDupModePill() {
+  const btn = $('notesToggleDupModeBtn');
+  if (!btn) return;
+  if (state.doodleDuplicationMode === 'organic') {
+    btn.textContent = '✨ Orgánico';
+    btn.title = 'Modo Orgánico: Similar pero no idéntico (Cero sospechas)';
+  } else if (state.doodleDuplicationMode === 'conceptual') {
+    btn.textContent = '🎨 Conceptual';
+    btn.title = 'Modo Conceptual: Dibuja un boceto del concepto identificado';
+  } else {
+    btn.textContent = '📱 Idéntico 1:1';
+    btn.title = 'Modo Exacto: Duplica el trazo idéntico de la tableta';
+  }
+}
+
+function renderOrganicDoodleDuplication(ctx, rawStrokes, cw, ch, options = {}) {
+  if (!rawStrokes || !rawStrokes.length) return;
+  const mode = options.mode || 'organic';
+  const variance = options.variance || 'medium';
+  const theme = options.theme || 'dark';
+  const strokeColor = theme === 'light' ? '#1c1c1e' : '#f8fafc';
+
+  if (mode === 'exact') {
+    renderExactStrokes(ctx, rawStrokes, cw, ch, strokeColor);
+    return;
+  }
+
+  if (mode === 'conceptual') {
+    const concept = (options.concept || state.currentDrawing || '').toLowerCase();
+    const handled = renderConceptualDoodle(ctx, concept, cw, ch, strokeColor);
+    if (handled) return;
+  }
+
+  // MODO ORGÁNICO: Variación humana auténtica (mismos elementos, pero redibujados como con el dedo)
+  renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, variance);
+}
+
+function renderExactStrokes(ctx, strokes, cw, ch, strokeColor) {
+  const isPortrait = state.orientation.startsWith('portrait');
+  const maxX = isPortrait ? 28200 : 37400;
+  const maxY = isPortrait ? 37400 : 28200;
+  const pad = 24;
+  const scaleX = (cw - pad * 2) / maxX;
+  const scaleY = (ch - pad * 2) / maxY;
+  const scale = Math.min(scaleX, scaleY);
+
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 2.4;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  strokes.forEach((stroke) => {
+    if (!stroke.points || stroke.points.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pad + stroke.points[0].x * scale, pad + stroke.points[0].y * scale);
+    for (let i = 1; i < stroke.points.length; i++) {
+      ctx.lineTo(pad + stroke.points[i].x * scale, pad + stroke.points[i].y * scale);
+    }
+    ctx.stroke();
+  });
+}
+
+function renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, varianceLevel) {
+  let minX = Infinity, minY = Infinity, maxXRaw = -Infinity, maxYRaw = -Infinity;
+  const validStrokes = [];
+
+  rawStrokes.forEach((s) => {
+    if (!s.points || s.points.length < 2) return;
+    const pts = s.points.filter((p) => typeof p.x === 'number' && typeof p.y === 'number');
+    if (pts.length < 2) return;
+    validStrokes.push(pts);
+    pts.forEach((p) => {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxXRaw) maxXRaw = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxYRaw) maxYRaw = p.y;
+    });
+  });
+
+  if (!validStrokes.length) return;
+
+  const rawW = Math.max(10, maxXRaw - minX);
+  const rawH = Math.max(10, maxYRaw - minY);
+
+  const pad = 34;
+  const targetW = cw - pad * 2;
+  const targetH = ch - pad * 2;
+  const fitScale = Math.min(targetW / rawW, targetH / rawH, 1.4);
+  const drawW = rawW * fitScale;
+  const drawH = rawH * fitScale;
+  const originX = (cw - drawW) / 2;
+  const originY = (ch - drawH) / 2;
+
+  // 2. Agrupación en Clusters (Componentes separados, ej: casa y sol)
+  const strokeBoxes = validStrokes.map((pts) => {
+    let sMinX = Infinity, sMinY = Infinity, sMaxX = -Infinity, sMaxY = -Infinity;
+    pts.forEach((p) => {
+      if (p.x < sMinX) sMinX = p.x;
+      if (p.x > sMaxX) sMaxX = p.x;
+      if (p.y < sMinY) sMinY = p.y;
+      if (p.y > sMaxY) sMaxY = p.y;
+    });
+    return {
+      pts,
+      minX: sMinX, maxX: sMaxX, minY: sMinY, maxY: sMaxY,
+      cx: (sMinX + sMaxX) / 2,
+      cy: (sMinY + sMaxY) / 2,
+      w: sMaxX - sMinX,
+      h: sMaxY - sMinY
+    };
+  });
+
+  const clusters = [];
+  const visited = new Set();
+  const thresholdDist = Math.max(rawW, rawH) * 0.18;
+
+  strokeBoxes.forEach((sb, idx) => {
+    if (visited.has(idx)) return;
+    const cluster = [sb];
+    visited.add(idx);
+
+    for (let j = idx + 1; j < strokeBoxes.length; j++) {
+      if (visited.has(j)) return;
+      const other = strokeBoxes[j];
+      const dist = Math.hypot(sb.cx - other.cx, sb.cy - other.cy);
+      if (dist < thresholdDist) {
+        cluster.push(other);
+        visited.add(j);
+      }
+    }
+    clusters.push(cluster);
+  });
+
+  let varMult = 1.0;
+  if (varianceLevel === 'subtle') varMult = 0.55;
+  if (varianceLevel === 'creative') varMult = 1.75;
+
+  ctx.strokeStyle = strokeColor;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  clusters.forEach((cluster, cIdx) => {
+    const seed = cIdx * 997 + Math.round(minX * 0.1);
+    const clusterShiftX = (seededPseudoRandom(seed + 1) - 0.5) * 14 * varMult;
+    const clusterShiftY = (seededPseudoRandom(seed + 2) - 0.5) * 14 * varMult;
+    const clusterScaleX = 1 + (seededPseudoRandom(seed + 3) - 0.5) * 0.14 * varMult;
+    const clusterScaleY = 1 + (seededPseudoRandom(seed + 4) - 0.5) * 0.14 * varMult;
+    const clusterRot = (seededPseudoRandom(seed + 5) - 0.5) * 0.07 * varMult;
+
+    let cMinX = Infinity, cMinY = Infinity, cMaxX = -Infinity, cMaxY = -Infinity;
+    cluster.forEach((b) => {
+      if (b.minX < cMinX) cMinX = b.minX;
+      if (b.maxX > cMaxX) cMaxX = b.maxX;
+      if (b.minY < cMinY) cMinY = b.minY;
+      if (b.maxY > cMaxY) cMaxY = b.maxY;
+    });
+    const clusterCenterX = (cMinX + cMaxX) / 2;
+    const clusterCenterY = (cMinY + cMaxY) / 2;
+
+    cluster.forEach((sb, sIdx) => {
+      const strokeSeed = seed + sIdx * 137;
+      const strokePoints = [];
+
+      const rawPts = sb.pts;
+      const step = Math.max(1, Math.floor(rawPts.length / 28));
+
+      for (let i = 0; i < rawPts.length; i += step) {
+        const p = rawPts[i];
+        let dx = p.x - clusterCenterX;
+        let dy = p.y - clusterCenterY;
+
+        dx *= clusterScaleX;
+        dy *= clusterScaleY;
+
+        const rx = dx * Math.cos(clusterRot) - dy * Math.sin(clusterRot);
+        const ry = dx * Math.sin(clusterRot) + dy * Math.cos(clusterRot);
+
+        const worldX = clusterCenterX + rx;
+        const worldY = clusterCenterY + ry;
+
+        let screenX = originX + (worldX - minX) * fitScale + clusterShiftX;
+        let screenY = originY + (worldY - minY) * fitScale + clusterShiftY;
+
+        const pointRatio = i / rawPts.length;
+        const jitterX = Math.sin(pointRatio * Math.PI * 4 + strokeSeed) * 1.8 * varMult;
+        const jitterY = Math.cos(pointRatio * Math.PI * 3 + strokeSeed) * 1.8 * varMult;
+
+        strokePoints.push({
+          x: screenX + jitterX,
+          y: screenY + jitterY
+        });
+      }
+
+      const lastRaw = rawPts[rawPts.length - 1];
+      let dx = (lastRaw.x - clusterCenterX) * clusterScaleX;
+      let dy = (lastRaw.y - clusterCenterY) * clusterScaleY;
+      const rx = dx * Math.cos(clusterRot) - dy * Math.sin(clusterRot);
+      const ry = dx * Math.sin(clusterRot) + dy * Math.cos(clusterRot);
+      strokePoints.push({
+        x: originX + (clusterCenterX + rx - minX) * fitScale + clusterShiftX,
+        y: originY + (clusterCenterY + ry - minY) * fitScale + clusterShiftY
+      });
+
+      if (strokePoints.length < 2) return;
+
+      ctx.lineWidth = 2.4 + (seededPseudoRandom(strokeSeed) * 0.8 * varMult);
+      ctx.beginPath();
+      ctx.moveTo(strokePoints[0].x, strokePoints[0].y);
+
+      for (let i = 1; i < strokePoints.length - 1; i++) {
+        const xc = (strokePoints[i].x + strokePoints[i + 1].x) / 2;
+        const yc = (strokePoints[i].y + strokePoints[i + 1].y) / 2;
+        ctx.quadraticCurveTo(strokePoints[i].x, strokePoints[i].y, xc, yc);
+      }
+      ctx.lineTo(strokePoints[strokePoints.length - 1].x, strokePoints[strokePoints.length - 1].y);
+      ctx.stroke();
+    });
+  });
+}
+
+function renderConceptualDoodle(ctx, conceptStr, cw, ch, strokeColor) {
+  if (!conceptStr) return false;
+  const c = conceptStr.toLowerCase();
+
+  const isHouse = c.includes('casa') || c.includes('house') || c.includes('hogar');
+  const isSun = c.includes('sol') || c.includes('sun');
+  const isTree = c.includes('arbol') || c.includes('árbol') || c.includes('tree');
+  const isStar = c.includes('estrella') || c.includes('star');
+  const isHeart = c.includes('corazon') || c.includes('corazón') || c.includes('heart');
+  const isCar = c.includes('coche') || c.includes('car') || c.includes('auto') || c.includes('carro');
+  const isCat = c.includes('gato') || c.includes('cat');
+  const isBoat = c.includes('barco') || c.includes('boat') || c.includes('velero') || c.includes('ship');
+  const isClock = c.includes('reloj') || c.includes('clock') || c.includes('watch');
+  const isFlower = c.includes('flor') || c.includes('flower');
+  const isMoon = c.includes('luna') || c.includes('moon');
+  const isSmile = c.includes('cara') || c.includes('sonrisa') || c.includes('smile') || c.includes('face');
+
+  if (!isHouse && !isSun && !isTree && !isStar && !isHeart && !isCar && !isCat && !isBoat && !isClock && !isFlower && !isMoon && !isSmile) {
+    return false;
+  }
+
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 2.6;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const midX = cw / 2;
+  const midY = ch / 2;
+
+  // 1. Casa (con o sin sol)
+  if (isHouse) {
+    const hw = Math.min(cw * 0.45, 140);
+    const hh = hw * 0.85;
+    const hx = midX - hw / 2 - (isSun ? 20 : 0);
+    const hy = midY + 15;
+
+    ctx.beginPath();
+    ctx.moveTo(hx, hy);
+    ctx.lineTo(hx + hw, hy);
+    ctx.lineTo(hx + hw, hy + hh);
+    ctx.lineTo(hx, hy + hh);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(hx - 12, hy);
+    ctx.lineTo(hx + hw / 2, hy - hh * 0.7);
+    ctx.lineTo(hx + hw + 12, hy);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(hx + hw * 0.75, hy - hh * 0.35);
+    ctx.lineTo(hx + hw * 0.75, hy - hh * 0.65);
+    ctx.lineTo(hx + hw * 0.88, hy - hh * 0.65);
+    ctx.lineTo(hx + hw * 0.88, hy - hh * 0.2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(hx + hw * 0.82, hy - hh * 0.7);
+    ctx.quadraticCurveTo(hx + hw * 0.88, hy - hh * 0.85, hx + hw * 0.82, hy - hh * 0.95);
+    ctx.stroke();
+
+    const dw = hw * 0.28;
+    const dh = hh * 0.55;
+    ctx.beginPath();
+    ctx.rect(hx + hw * 0.2, hy + hh - dh, dw, dh);
+    ctx.stroke();
+
+    const ww = hw * 0.26;
+    const wh = ww;
+    const wx = hx + hw * 0.58;
+    const wy = hy + hh * 0.25;
+    ctx.strokeRect(wx, wy, ww, wh);
+    ctx.beginPath();
+    ctx.moveTo(wx + ww / 2, wy);
+    ctx.lineTo(wx + ww / 2, wy + wh);
+    ctx.moveTo(wx, wy + wh / 2);
+    ctx.lineTo(wx + ww, wy + wh / 2);
+    ctx.stroke();
+
+    if (isSun) {
+      drawSketchSun(ctx, hx + hw + 38, hy - hh * 0.55, 24);
+    }
+    return true;
+  }
+
+  if (isSun) {
+    drawSketchSun(ctx, midX, midY, 44);
+    return true;
+  }
+
+  if (isTree) {
+    const tx = midX;
+    const ty = midY + 40;
+    ctx.beginPath();
+    ctx.moveTo(tx - 12, ty);
+    ctx.lineTo(tx - 10, ty - 60);
+    ctx.moveTo(tx + 12, ty);
+    ctx.lineTo(tx + 10, ty - 60);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(tx, ty - 95, 45, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(tx - 35, ty - 80, 30, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(tx + 35, ty - 80, 30, 0, Math.PI * 2);
+    ctx.stroke();
+    return true;
+  }
+
+  if (isStar) {
+    drawSketchStar(ctx, midX, midY, 55);
+    return true;
+  }
+
+  if (isHeart) {
+    drawSketchHeart(ctx, midX, midY, 50);
+    return true;
+  }
+
+  if (isBoat) {
+    drawSketchBoat(ctx, midX, midY);
+    return true;
+  }
+
+  if (isClock) {
+    drawSketchClock(ctx, midX, midY, 50);
+    return true;
+  }
+
+  if (isFlower) {
+    drawSketchFlower(ctx, midX, midY);
+    return true;
+  }
+
+  if (isCat) {
+    drawSketchCat(ctx, midX, midY);
+    return true;
+  }
+
+  if (isMoon) {
+    drawSketchMoon(ctx, midX, midY, 45);
+    return true;
+  }
+
+  if (isSmile) {
+    drawSketchSmile(ctx, midX, midY, 48);
+    return true;
+  }
+
+  return false;
+}
+
+function drawSketchSun(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  for (let i = 0; i < 8; i++) {
+    const angle = (i * Math.PI) / 4;
+    const r1 = r + 8;
+    const r2 = r + 22;
+    const x1 = cx + Math.cos(angle) * r1;
+    const y1 = cy + Math.sin(angle) * r1;
+    const x2 = cx + Math.cos(angle + 0.05) * r2;
+    const y2 = cy + Math.sin(angle + 0.05) * r2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+}
+
+function drawSketchStar(ctx, cx, cy, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a1 = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+    const x = cx + Math.cos(a1) * r;
+    const y = cy + Math.sin(a1) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+}
+
+function drawSketchHeart(ctx, cx, cy, size) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + size * 0.7);
+  ctx.bezierCurveTo(cx - size, cy, cx - size * 0.9, cy - size * 0.8, cx, cy - size * 0.35);
+  ctx.bezierCurveTo(cx + size * 0.9, cy - size * 0.8, cx + size, cy, cx, cy + size * 0.7);
+  ctx.stroke();
+}
+
+function drawSketchBoat(ctx, cx, cy) {
+  ctx.beginPath();
+  ctx.moveTo(cx - 50, cy + 20);
+  ctx.lineTo(cx + 60, cy + 20);
+  ctx.lineTo(cx + 45, cy + 42);
+  ctx.lineTo(cx - 35, cy + 42);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + 20);
+  ctx.lineTo(cx, cy - 45);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 42);
+  ctx.lineTo(cx + 45, cy + 12);
+  ctx.lineTo(cx, cy + 12);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - 60, cy + 50);
+  ctx.quadraticCurveTo(cx - 30, cy + 42, cx, cy + 50);
+  ctx.quadraticCurveTo(cx + 30, cy + 58, cx + 70, cy + 50);
+  ctx.stroke();
+}
+
+function drawSketchClock(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx, cy - r * 0.6);
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + r * 0.5, cy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy - r + 5, 2, 0, Math.PI * 2);
+  ctx.arc(cx + r - 5, cy, 2, 0, Math.PI * 2);
+  ctx.arc(cx, cy + r - 5, 2, 0, Math.PI * 2);
+  ctx.arc(cx - r + 5, cy, 2, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawSketchFlower(ctx, cx, cy) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + 70);
+  ctx.quadraticCurveTo(cx - 10, cy + 30, cx, cy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - 5, cy + 40);
+  ctx.quadraticCurveTo(cx - 25, cy + 35, cx - 20, cy + 50);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+  ctx.stroke();
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 2 * Math.PI) / 5;
+    const px = cx + Math.cos(a) * 26;
+    const py = cy + Math.sin(a) * 26;
+    ctx.beginPath();
+    ctx.arc(px, py, 12, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function drawSketchCat(ctx, cx, cy) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - 30, cy - 25);
+  ctx.lineTo(cx - 40, cy - 65);
+  ctx.lineTo(cx - 10, cy - 38);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx + 30, cy - 25);
+  ctx.lineTo(cx + 40, cy - 65);
+  ctx.lineTo(cx + 10, cy - 38);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx - 15, cy - 8, 4, 0, Math.PI * 2);
+  ctx.arc(cx + 15, cy - 8, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy + 6, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx - 12, cy + 6);
+  ctx.lineTo(cx - 45, cy);
+  ctx.moveTo(cx - 12, cy + 10);
+  ctx.lineTo(cx - 45, cy + 15);
+  ctx.moveTo(cx + 12, cy + 6);
+  ctx.lineTo(cx + 45, cy);
+  ctx.moveTo(cx + 12, cy + 10);
+  ctx.lineTo(cx + 45, cy + 15);
+  ctx.stroke();
+}
+
+function drawSketchMoon(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, -Math.PI * 0.45, Math.PI * 0.45, false);
+  ctx.quadraticCurveTo(cx + r * 0.3, cy, cx + r * Math.cos(-Math.PI * 0.45), cy + r * Math.sin(-Math.PI * 0.45));
+  ctx.stroke();
+}
+
+function drawSketchSmile(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx - r * 0.35, cy - r * 0.2, 3.5, 0, Math.PI * 2);
+  ctx.arc(cx + r * 0.35, cy - r * 0.2, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy + r * 0.05, r * 0.55, 0.2, Math.PI - 0.2);
+  ctx.stroke();
 }
 
 // ==========================================
@@ -3808,6 +4335,40 @@ if ($('notesStartViewSelect')) {
     state.notesStartView = e.target.value;
     localStorage.setItem('mindpad_notes_start_view', state.notesStartView);
   };
+}
+
+if ($('notesDoodleDupModeSelect')) {
+  $('notesDoodleDupModeSelect').value = state.doodleDuplicationMode;
+  $('notesDoodleDupModeSelect').onchange = (e) => {
+    state.doodleDuplicationMode = e.target.value;
+    localStorage.setItem('mindpad_doodle_dup_mode', state.doodleDuplicationMode);
+    updateNotesDoodleDupModePill();
+    redrawNotesDoodleCanvas();
+  };
+}
+
+if ($('notesDoodleVarianceSelect')) {
+  $('notesDoodleVarianceSelect').value = state.doodleVarianceLevel;
+  $('notesDoodleVarianceSelect').onchange = (e) => {
+    state.doodleVarianceLevel = e.target.value;
+    localStorage.setItem('mindpad_doodle_var_level', state.doodleVarianceLevel);
+    redrawNotesDoodleCanvas();
+  };
+}
+
+if ($('notesToggleDupModeBtn')) {
+  $('notesToggleDupModeBtn').onclick = (e) => {
+    e.stopPropagation();
+    const modes = ['organic', 'conceptual', 'exact'];
+    const idx = modes.indexOf(state.doodleDuplicationMode);
+    state.doodleDuplicationMode = modes[(idx + 1) % modes.length];
+    localStorage.setItem('mindpad_doodle_dup_mode', state.doodleDuplicationMode);
+    if ($('notesDoodleDupModeSelect')) $('notesDoodleDupModeSelect').value = state.doodleDuplicationMode;
+    updateNotesDoodleDupModePill();
+    redrawNotesDoodleCanvas();
+    triggerHaptic([35]);
+  };
+  updateNotesDoodleDupModePill();
 }
 
 if ($('quickOpenNotesBtn5')) $('quickOpenNotesBtn5').onclick = () => enterStealthMode('notes');

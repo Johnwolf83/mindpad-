@@ -1,5 +1,5 @@
-// MindPad Service Worker v26 — Cache para funcionamiento offline
-const CACHE_NAME = 'mindpad-x10-v26';
+// MindPad Service Worker v27 — Cache para funcionamiento offline
+const CACHE_NAME = 'mindpad-x10-v27';
 const ASSETS = [
   './',
   './index.html',

@@ -1695,6 +1695,28 @@ button.primary {
   color: #94a3b8;
   flex-shrink: 0;
 }
+.notes-mode-pill {
+  background: rgba(234, 179, 8, 0.12);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.notes-mode-pill:hover {
+  background: rgba(234, 179, 8, 0.22);
+}
+.fake-notes.theme-light .notes-mode-pill {
+  background: rgba(180, 83, 9, 0.1);
+  color: #b45309;
+  border-color: rgba(180, 83, 9, 0.25);
+}
 .notes-draw-canvas-container {
   flex: 1;
   position: relative;
