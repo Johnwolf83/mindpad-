@@ -1301,8 +1301,9 @@ function enterStealthMode(forcedMode) {
   $('stealthView').style.display = 'block';
   document.body.className = 'mode-stealth';
 
+  const isDoodle = activeMode === 'doodle';
   const isCalc = activeMode === 'calculator';
-  const isNotes = activeMode === 'notes';
+  const isNotes = activeMode === 'notes' || isDoodle;
   const isPlayer = activeMode === 'player';
   const isLock = activeMode === 'lockscreen';
   const isAOD = activeMode === 'aod' || (!isCalc && !isNotes && !isPlayer && !isLock);
@@ -1316,12 +1317,20 @@ function enterStealthMode(forcedMode) {
   if (isNotes) {
     applyNotesTheme(state.notesTheme);
     updateDreamNoteDOM();
-    showNoteView(state.notesStartView || 'dream');
-    if ((state.notesStartView || 'dream') === 'dream') {
-      switchNotesTab(state.notesInitialTab || 'text');
+    if (isDoodle) {
+      showNoteView('dream');
+      switchNotesTab('draw');
+    } else {
+      showNoteView(state.notesStartView || 'dream');
+      if ((state.notesStartView || 'dream') === 'dream') {
+        switchNotesTab(state.notesInitialTab || 'text');
+      }
     }
     setTimeout(() => {
       initNotesDoodle();
+      if (typeof redrawNotesDoodleCanvas === 'function') {
+        redrawNotesDoodleCanvas();
+      }
     }, 40);
   }
 
@@ -4251,6 +4260,9 @@ if ($('calcModeBtn')) {
 if ($('notesModeBtn')) {
   $('notesModeBtn').onclick = () => enterStealthMode('notes');
 }
+if ($('doodleModeBtn')) {
+  $('doodleModeBtn').onclick = () => enterStealthMode('doodle');
+}
 if ($('musicModeBtn')) {
   $('musicModeBtn').onclick = () => enterStealthMode('player');
 }
@@ -4372,6 +4384,7 @@ if ($('notesToggleDupModeBtn')) {
 }
 
 if ($('quickOpenNotesBtn5')) $('quickOpenNotesBtn5').onclick = () => enterStealthMode('notes');
+if ($('quickOpenDoodlePadBtn5')) $('quickOpenDoodlePadBtn5').onclick = () => enterStealthMode('doodle');
 if ($('quickSyncDreamBtn5')) {
   $('quickSyncDreamBtn5').onclick = () => {
     updateDreamNoteDOM();
@@ -4662,6 +4675,9 @@ function initAppTabs() {
   }
   if ($('liveNotesBtn')) {
     $('liveNotesBtn').onclick = () => enterStealthMode('notes');
+  }
+  if ($('liveDoodleBtn')) {
+    $('liveDoodleBtn').onclick = () => enterStealthMode('doodle');
   }
   if ($('liveMusicBtn')) {
     $('liveMusicBtn').onclick = () => enterStealthMode('player');

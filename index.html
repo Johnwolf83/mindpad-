@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=27" />
+  <link rel="stylesheet" href="styles.css?v=28" />
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js?v=27').then((reg) => {
@@ -43,6 +43,10 @@
         <button id="notesModeBtn" class="btn header-pill-btn" title="Abrir Bloc de Notas Camuflado">
           <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
           <span>Notas</span>
+        </button>
+        <button id="doodleModeBtn" class="btn header-pill-btn" title="Abrir Doodle Pad (Duplicación de Dibujo Camuflado)">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+          <span>Doodle Pad</span>
         </button>
         <button id="musicModeBtn" class="btn header-pill-btn" title="Reproductor de Música Camuflado">
           <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -184,6 +188,12 @@
                 <svg class="ui-icon" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
               </span>
               <span class="btn-text">Bloc Notas</span>
+            </button>
+            <button id="liveDoodleBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#facc15; border:1px solid rgba(250,204,21,0.4);">
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+              </span>
+              <span class="btn-text">Doodle Pad</span>
             </button>
             <button id="liveMusicBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#34d399; border:1px solid rgba(52,211,153,0.4);">
               <span class="btn-icon">
@@ -363,16 +373,20 @@
                 <option value="creative">Creativa (Elementos con estilo libre)</option>
               </select>
             </div>
-            <div style="display:flex; gap:8px; margin-top:8px;">
-              <button id="quickOpenNotesBtn5" class="btn small cta" style="flex:1; background:#0284c7; color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+              <button id="quickOpenDoodlePadBtn5" class="btn small cta" style="flex:1 1 45%; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                <span>Doodle Pad (Boceto)</span>
+              </button>
+              <button id="quickOpenNotesBtn5" class="btn small secondary" style="flex:1 1 45%; background:#0284c7; color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
-                <span>Abrir Notas</span>
+                <span>Ver Texto Nota</span>
               </button>
-              <button id="quickSyncDreamBtn5" class="btn small secondary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <button id="quickSyncDreamBtn5" class="btn small secondary" style="flex:1 1 45%; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <span>Actualizar Nota</span>
+                <span>Sincronizar</span>
               </button>
-              <button id="quickSpeakDreamBtn5" class="btn small secondary" title="Dictar por audífono BT" style="display:inline-flex; align-items:center; gap:5px;">
+              <button id="quickSpeakDreamBtn5" class="btn small secondary" title="Dictar por audífono BT" style="flex:1 1 45%; display:inline-flex; align-items:center; justify-content:center; gap:5px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                 <span>Audio</span>
               </button>
@@ -747,6 +761,7 @@
               <option value="lockscreen">Pantalla de Bloqueo Real (Reloj + Notificación)</option>
               <option value="calculator">Calculadora Realista (Peek en Display)</option>
               <option value="notes">Bloc de Notas Realista (Texto & Boceto)</option>
+              <option value="doodle">🎨 Doodle Pad (Boceto de Dibujo Directo)</option>
               <option value="player">Reproductor de Música (Canción Pensada)</option>
             </select>
           </div>
@@ -1562,6 +1577,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <span style="font-family:'Caveat';">Preload</span>
   </div>
 
-  <script src="mindpad.js?v=27" type="module"></script>
+  <script src="mindpad.js?v=28" type="module"></script>
 </body>
 </html>
