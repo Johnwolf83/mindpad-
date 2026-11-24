@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="stylesheet" href="styles.css?v=26" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=20').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=26').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -26,7 +26,9 @@
   <div id="setupView" class="view">
     <header class="app-header">
       <div class="logo">
-        <span class="icon">🔮</span>
+        <span class="icon" style="display:flex; align-items:center; color:#eab308;">
+          <svg class="ui-icon lg" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
         <h1>MindPad <span>Pro</span></h1>
         <div id="liveStatusPill" class="live-status-pill disconnected" title="Estado Bluetooth">
           <span class="status-dot"></span>
@@ -34,33 +36,45 @@
         </div>
       </div>
       <div class="header-actions">
-        <button id="calcModeBtn" class="btn header-pill-btn" title="Abrir Calculadora Camuflada">🧮 <span>Calculadora</span></button>
-        <button id="notesModeBtn" class="btn header-pill-btn" title="Abrir Bloc de Notas Camuflado">📝 <span>Notas</span></button>
-        <button id="musicModeBtn" class="btn header-pill-btn" title="Reproductor de Música Camuflado">🎵 <span>Música</span></button>
-        <button id="stealthBtn" class="btn header-stealth-btn pulse" title="Entrar en Modo Sigiloso">🤫 <span>Sigilo</span></button>
+        <button id="calcModeBtn" class="btn header-pill-btn" title="Abrir Calculadora Camuflada">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14"/><line x1="16" x2="16" y1="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
+          <span>Calculadora</span>
+        </button>
+        <button id="notesModeBtn" class="btn header-pill-btn" title="Abrir Bloc de Notas Camuflado">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+          <span>Notas</span>
+        </button>
+        <button id="musicModeBtn" class="btn header-pill-btn" title="Reproductor de Música Camuflado">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <span>Música</span>
+        </button>
+        <button id="stealthBtn" class="btn header-stealth-btn pulse" title="Entrar en Modo Sigiloso">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+          <span>Sigilo</span>
+        </button>
       </div>
     </header>
 
     <!-- BARRA DE PESTAÑAS PRINCIPALES -->
     <nav class="app-nav-tabs" aria-label="Navegación de secciones">
       <button class="app-tab-btn active" data-tab="tab-live">
-        <span class="tab-icon">⚡</span>
+        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
         <span class="tab-label">En Vivo</span>
       </button>
       <button class="app-tab-btn" data-tab="tab-routines">
-        <span class="tab-icon">🎭</span>
+        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-9.17 4.16a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-9.17 4.16a2 2 0 0 1-1.66 0L2 17.5"/></svg></span>
         <span class="tab-label">Rutinas</span>
       </button>
       <button class="app-tab-btn" data-tab="tab-slate">
-        <span class="tab-icon">📟</span>
+        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg></span>
         <span class="tab-label">Pizarra E-Ink</span>
       </button>
       <button class="app-tab-btn" data-tab="tab-settings">
-        <span class="tab-icon">⚙️</span>
+        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/></svg></span>
         <span class="tab-label">Ajustes</span>
       </button>
       <button class="app-tab-btn" data-tab="tab-dossier">
-        <span class="tab-icon">📖</span>
+        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
         <span class="tab-label">Grimorio</span>
       </button>
     </nav>
@@ -71,12 +85,20 @@
         <!-- Tarjeta Conexión Bluetooth -->
         <section class="card ble-card">
           <div class="card-title">
-            <span>📡 Conexión Huion Note X10 (BLE)</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+              </span>
+              Conexión Huion Note X10 (BLE)
+            </span>
             <span id="bleStatusBadge" class="badge disconnected">Desconectada</span>
           </div>
           <p class="desc">Conexión inalámbrica directa por Bluetooth Low Energy. Sin app oficial ni drivers.</p>
           <div class="btn-group">
-            <button id="bleConnectBtn" class="btn cta">⚡ Conectar Tableta BLE</button>
+            <button id="bleConnectBtn" class="btn cta" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Conectar Tableta BLE</span>
+            </button>
             <button id="bleDisconnectBtn" class="btn secondary" style="display:none;">Desconectar</button>
           </div>
           <div id="bleInfo" class="meta-row">
@@ -89,19 +111,36 @@
         <!-- Monitor de Prueba en Pantalla (Canvas interactivo) -->
         <section class="card monitor-card">
           <div class="card-title">
-            <span>👁️ Monitor de Telepatía en Vivo</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+              Monitor de Telepatía en Vivo
+            </span>
             <div style="display:flex; gap:6px; align-items:center;">
               <span id="pageBadge" class="badge page-num">Espectador 1</span>
-              <button id="clearMonitorBtn" class="btn small">🧹 Limpiar</button>
+              <button id="clearMonitorBtn" class="btn small" style="display:inline-flex; align-items:center; gap:5px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <span>Limpiar</span>
+              </button>
             </div>
           </div>
           <div class="preview-box">
             <canvas id="previewCanvas"></canvas>
           </div>
           <div class="multi-row" style="margin-top:8px;">
-            <button id="prevPageBtn" class="btn small">◀ Anterior</button>
-            <button id="newPageBtn" class="btn small primary">+ Nuevo Espectador</button>
-            <button id="nextPageBtn" class="btn small">Siguiente ▶</button>
+            <button id="prevPageBtn" class="btn small" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>Anterior</span>
+            </button>
+            <button id="newPageBtn" class="btn small primary" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Nuevo Espectador</span>
+            </button>
+            <button id="nextPageBtn" class="btn small" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+              <span>Siguiente</span>
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
           </div>
           <div class="result-box">
             <div class="result-label">Último Reconocimiento:</div>
@@ -113,28 +152,43 @@
         <!-- Acceso Rápido a Salidas Secretas -->
         <section class="card quick-actions-card">
           <div class="card-title">
-            <span>⚡ Salidas Secretas & Camuflajes</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </span>
+              Salidas Secretas & Camuflajes
+            </span>
             <span style="font-size:11px; color:#eab308; font-weight:700;">1 Toque</span>
           </div>
           <div class="quick-actions-grid">
             <button id="liveRevealSlateBtn" class="btn quick-action-btn cta">
-              <span class="btn-icon">💥</span>
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+              </span>
               <span class="btn-text">Revelar Pizarra</span>
             </button>
             <button id="liveStealthBtn" class="btn quick-action-btn" style="background:#1c1d24; border:1px solid #ca8a04; color:#facc15;">
-              <span class="btn-icon">🤫</span>
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+              </span>
               <span class="btn-text">Modo Sigilo</span>
             </button>
             <button id="liveCalcBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#f59e0b; border:1px solid rgba(245,158,11,0.4);">
-              <span class="btn-icon">🧮</span>
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14"/><line x1="16" x2="16" y1="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
+              </span>
               <span class="btn-text">Calculadora</span>
             </button>
             <button id="liveNotesBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#38bdf8; border:1px solid rgba(56,189,248,0.4);">
-              <span class="btn-icon">📝</span>
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+              </span>
               <span class="btn-text">Bloc Notas</span>
             </button>
             <button id="liveMusicBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#34d399; border:1px solid rgba(52,211,153,0.4);">
-              <span class="btn-icon">🎵</span>
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              </span>
               <span class="btn-text">Música YT</span>
             </button>
           </div>
@@ -146,63 +200,89 @@
         <!-- Tarjeta: Capas de Presentación & Rutinas Profesionales -->
         <section class="card" style="border: 1px solid rgba(255, 255, 255, 0.08); background: #14151b;">
           <div class="card-title">
-            <span>🎭 Capas de Presentación & Rutinas</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-9.17 4.16a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-9.17 4.16a2 2 0 0 1-1.66 0L2 17.5"/></svg>
+              </span>
+              Capas de Presentación & Rutinas
+            </span>
             <span id="activeLayerBadge" class="badge" style="background:#ca8a04; color:#000; font-weight:700;">Capa 1: Post-it</span>
           </div>
           <p class="desc">Selecciona el modo según el escenario de actuación (casual, redes o teatro).</p>
 
           <!-- Selector de Capas -->
           <div class="layer-selector" style="display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;">
-            <button id="layer1Btn" class="btn small primary active" style="flex:1; min-width:110px;">1️⃣ Post-it (Casual)</button>
-            <button id="layer2Btn" class="btn small secondary" style="flex:1; min-width:110px;">2️⃣ Redes / VIP</button>
-            <button id="layer3Btn" class="btn small secondary" style="flex:1; min-width:110px;">3️⃣ TV / Sprocket</button>
-            <button id="layer4Btn" class="btn small secondary" style="flex:1; min-width:110px;">4️⃣ Pizarra E-Ink</button>
-            <button id="layer5Btn" class="btn small secondary" style="flex:1; min-width:110px;">5️⃣ El Sueño (Notas)</button>
-            <button id="layer6Btn" class="btn small secondary" style="flex:1; min-width:110px;">6️⃣ Canción Pensada</button>
-            <button id="viewDossierBtn" class="btn small outline" style="border-color:#ca8a04; color:#fef08a; min-width:120px;">📖 Ver Dossier de Rutinas</button>
+            <button id="layer1Btn" class="btn small primary active" style="flex:1; min-width:110px;"><span class="layer-num-badge">1</span> Post-it (Casual)</button>
+            <button id="layer2Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">2</span> Redes / VIP</button>
+            <button id="layer3Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">3</span> TV / Sprocket</button>
+            <button id="layer4Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">4</span> Pizarra E-Ink</button>
+            <button id="layer5Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">5</span> El Sueño (Notas)</button>
+            <button id="layer6Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">6</span> Canción Pensada</button>
+            <button id="viewDossierBtn" class="btn small outline" style="border-color:#ca8a04; color:#fef08a; min-width:120px; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              <span>Ver Dossier</span>
+            </button>
           </div>
 
           <!-- Capa 1: Casual / Calle / Escenario (Duplicación Post-it) -->
           <div id="layer1Content" class="layer-panel" style="display:block;">
             <div style="background:#191b24; border-left:3px solid #facc15; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>🎪 Rutina Post-it:</strong> Duplicación inmediata. El espectador dibuja/escribe en la Huion Note X10. Tú recibes el susurro en el audífono y duplicas el trazo idéntico en un Post-it en tiempo real frente al público.
+              <strong>Rutina Post-it:</strong> Duplicación inmediata. El espectador dibuja/escribe en la Huion Note X10. Tú recibes el susurro en el audífono y duplicas el trazo idéntico en un Post-it en tiempo real frente al público.
             </div>
             <div style="display:flex; gap:8px;">
-              <button id="quickOpenCalcBtn1" class="btn small cta" style="flex:1;">🧮 Abrir Calculadora Camuflada</button>
-              <button id="quickOpenStealthBtn1" class="btn small secondary" style="flex:1;">🤫 Abrir Modo Sigilo (Pantalla Negra)</button>
+              <button id="quickOpenCalcBtn1" class="btn small cta" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14"/><line x1="16" x2="16" y1="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
+                <span>Abrir Calculadora</span>
+              </button>
+              <button id="quickOpenStealthBtn1" class="btn small secondary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                <span>Modo Sigilo (AOD)</span>
+              </button>
             </div>
           </div>
 
           <!-- Capa 2: Redes Sociales / Celebridades / VIP (Prueba de Tiempo) -->
           <div id="layer2Content" class="layer-panel" style="display:none;">
             <div style="background:#191b24; border-left:3px solid #38bdf8; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>⭐ Rutina VIP / Redes:</strong> Viaje en el tiempo digital. La IA crea la predicción con fecha retroactiva EXIF. El famoso abre tu galería (álbum de predicciones) o publica en Instagram Stories con el sticker de fecha original.
+              <strong>Rutina VIP / Redes:</strong> Viaje en el tiempo digital. La IA crea la predicción con fecha retroactiva EXIF. El famoso abre tu galería (álbum de predicciones) o publica en Instagram Stories con el sticker de fecha original.
             </div>
             <div class="field-row" style="margin-bottom:8px;">
               <label for="vipEventName" style="font-size:11.5px; color:#38bdf8; font-weight:600;">Carpeta / Evento VIP:</label>
               <input id="vipEventName" type="text" placeholder="Ej: Entrevista con [Nombre] / Programa Hoy" style="flex:1; background:#0d0e12; border:1px solid rgba(255,255,255,0.1); color:#fff; padding:6px 10px; border-radius:6px; font-size:12px;" />
             </div>
             <div style="display:flex; gap:8px;">
-              <button id="quickDownloadVipBtn" class="btn small primary" style="flex:1;">💾 Guardar Prueba para Galería</button>
-              <button id="quickShareStoryBtn" class="btn small cta" style="flex:1; background:#ca8a04; color:#000;">📸 Instagram Stories (Manual)</button>
+              <button id="quickDownloadVipBtn" class="btn small primary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span>Guardar para Galería</span>
+              </button>
+              <button id="quickShareStoryBtn" class="btn small cta" style="flex:1; background:#ca8a04; color:#000; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                <span>Instagram Stories</span>
+              </button>
             </div>
           </div>
 
           <!-- Capa 3: Teatro / Televisión (HP Sprocket) -->
           <div id="layer3Content" class="layer-panel" style="display:none;">
             <div style="background:#191b24; border-left:3px solid #10b981; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>🖨️ Rutina HP Sprocket:</strong> Impresión silenciosa en el bolsillo. Genera la imagen y MacroDroid la imprime en segundo plano (~45-60s). Emplea este minuto en teatralidad y lectura de mente hasta sacar la foto física tibia.
+              <strong>Rutina HP Sprocket:</strong> Impresión silenciosa en el bolsillo. Genera la imagen y MacroDroid la imprime en segundo plano (~45-60s). Emplea este minuto en teatralidad y lectura de mente hasta sacar la foto física tibia.
             </div>
             <div style="background:#111216; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <span style="font-size:12px; font-weight:700; color:#34d399;">⏱️ Cronómetro Teatral de Bolsillo:</span>
+                <span style="font-size:12px; font-weight:700; color:#34d399; display:inline-flex; align-items:center; gap:5px;">
+                  <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Cronómetro Teatral de Bolsillo:
+                </span>
                 <span id="theatricalTimerDisplay" style="font-family:monospace; font-size:18px; font-weight:bold; color:#a7f3d0;">00:00</span>
               </div>
               <div id="theatricalScriptHint" style="font-size:11.5px; color:#6ee7b7; font-style:italic; min-height:30px; margin-bottom:6px;">
                 Presiona "Iniciar Teatralidad" cuando la IA comience a imprimir.
               </div>
               <div style="display:flex; gap:8px;">
-                <button id="startTheatricalTimerBtn" class="btn small cta" style="flex:1; background:#059669; color:#fff;">▶ Iniciar Teatralidad (60s)</button>
+                <button id="startTheatricalTimerBtn" class="btn small cta" style="flex:1; background:#059669; color:#fff; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                  <svg class="ui-icon sm" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span>Iniciar Teatralidad (60s)</span>
+                </button>
                 <button id="resetTheatricalTimerBtn" class="btn small secondary">↺ Reiniciar</button>
               </div>
             </div>
@@ -211,18 +291,24 @@
           <!-- Capa 4: Pizarra E-Ink / Monitor Kindle (Gis Blanco sobre Pizarra) -->
           <div id="layer4Content" class="layer-panel" style="display:none;">
             <div style="background:#191b24; border-left:3px solid #facc15; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>📟 Rutina Pizarra E-Ink:</strong> Proyección silenciosa en un monitor de tinta electrónica o e-reader tipo Kindle en el escenario. Como si una mano invisible dibujara con tiza blanca sobre pizarra negra.
+              <strong>Rutina Pizarra E-Ink:</strong> Proyección silenciosa en un monitor de tinta electrónica o e-reader tipo Kindle en el escenario. Como si una mano invisible dibujara con tiza blanca sobre pizarra negra.
             </div>
             <div style="display:flex; gap:8px;">
-              <button id="quickOpenSlateBtn" class="btn small cta" style="flex:1; background:#ca8a04; color:#000; font-weight:700;">📟 Abrir Pizarra en Pantalla</button>
-              <button id="quickRevealSlateBtn" class="btn small primary" style="flex:1;">💥 Revelar en Pizarra Ahora</button>
+              <button id="quickOpenSlateBtn" class="btn small cta" style="flex:1; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg>
+                <span>Abrir Pizarra</span>
+              </button>
+              <button id="quickRevealSlateBtn" class="btn small primary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                <span>Revelar en Pizarra</span>
+              </button>
             </div>
           </div>
 
           <!-- Capa 5: La Rutina del Sueño & Bloc de Notas Camuflado -->
           <div id="layer5Content" class="layer-panel" style="display:none;">
             <div style="background:#191b24; border-left:3px solid #38bdf8; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>🌙 Rutina del Sueño:</strong> Pides al espectador que escriba: Hora, Nombre, Lugar y Comida favorita en una hoja y la doble. Tu app de Notas camuflada completa una premonición fechada hace días o dibuja el doodle silenciosamente mientras el móvil está boca abajo en la mesa.
+              <strong>Rutina del Sueño:</strong> Pides al espectador que escriba: Hora, Nombre, Lugar y Comida favorita en una hoja y la doble. Tu app de Notas camuflada completa una premonición fechada hace días o dibuja el doodle silenciosamente mientras el móvil está boca abajo en la mesa.
             </div>
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">1. Hora exacta:</label>
@@ -243,40 +329,52 @@
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">Tema de Notas:</label>
               <select id="notesThemeSelect" style="flex:1;">
-                <option value="dark" selected>🌙 Modo Oscuro (Apple Notes Negro / Carbón)</option>
-                <option value="light">☀️ Modo Claro (Apple Notes Blanco / Papel)</option>
+                <option value="dark" selected>Modo Oscuro (Apple Notes Carbón)</option>
+                <option value="light">Modo Claro (Apple Notes Papel)</option>
               </select>
             </div>
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">Vista al abrir:</label>
               <select id="notesStartViewSelect" style="flex:1;">
-                <option value="dream" selected>📌 Directo a Nota del Sueño (Premonición)</option>
-                <option value="list">📁 Lista de Notas (Pancita, Compras, Manager)</option>
+                <option value="dream" selected>Directo a Nota del Sueño (Premonición)</option>
+                <option value="list">Lista de Notas (Pancita, Compras, Manager)</option>
               </select>
             </div>
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">Pestaña en Nota:</label>
               <select id="notesInitialTabSelect" style="flex:1;">
-                <option value="text" selected>📝 Nota de Texto (Premonición Fechada)</option>
-                <option value="draw">🎨 Pestaña Boceto (Lienzo Dibujo Libre)</option>
+                <option value="text" selected>Nota de Texto (Premonición Fechada)</option>
+                <option value="draw">Pestaña Boceto (Lienzo Dibujo Libre)</option>
               </select>
             </div>
             <div style="display:flex; gap:8px; margin-top:8px;">
-              <button id="quickOpenNotesBtn5" class="btn small cta" style="flex:1; background:#0284c7; color:#fff; font-weight:700;">📝 Abrir Notas Camufladas</button>
-              <button id="quickSyncDreamBtn5" class="btn small secondary" style="flex:1;">🔄 Actualizar Nota & Pizarra</button>
-              <button id="quickSpeakDreamBtn5" class="btn small secondary" title="Dictar por audífono BT">📢 Audio BT</button>
+              <button id="quickOpenNotesBtn5" class="btn small cta" style="flex:1; background:#0284c7; color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+                <span>Abrir Notas</span>
+              </button>
+              <button id="quickSyncDreamBtn5" class="btn small secondary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Actualizar Nota</span>
+              </button>
+              <button id="quickSpeakDreamBtn5" class="btn small secondary" title="Dictar por audífono BT" style="display:inline-flex; align-items:center; gap:5px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <span>Audio</span>
+              </button>
             </div>
           </div>
 
           <!-- Capa 6: La Canción Pensada & Justificación de Audífono -->
           <div id="layer6Content" class="layer-panel" style="display:none;">
             <div style="background:#191b24; border-left:3px solid #10b981; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>🎵 Rutina Melodía Pensada:</strong> El espectador piensa y anota su canción favorita. La app la busca en tiempo real en la base mundial de iTunes. Te quitas el auricular: <em>"¿Por qué nombraste esa canción?... Mira, me quito el audífono, es exactamente lo que estaba escuchando"</em>. Le das play al reproductor y suena de verdad.
+              <strong>Rutina Melodía Pensada:</strong> El espectador piensa y anota su canción favorita. La app la busca en tiempo real en la base mundial de iTunes. Te quitas el auricular: <em>"¿Por qué nombraste esa canción?... Mira, me quito el audífono, es exactamente lo que estaba escuchando"</em>. Le das play al reproductor y suena de verdad.
             </div>
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">Canción o Artista:</label>
               <input id="dreamSongInput" type="text" value="Bohemian Rhapsody" style="flex:1;" placeholder="ej. Hotel California, Imagine..." />
-              <button id="searchSongBtn" class="btn small primary" style="padding:6px 12px;">🔍 Buscar</button>
+              <button id="searchSongBtn" class="btn small primary" style="padding:6px 12px; display:inline-flex; align-items:center; gap:5px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>Buscar</span>
+              </button>
             </div>
             <div id="songFoundPreview" style="display:flex; align-items:center; gap:10px; background:#101116; padding:8px 10px; border-radius:6px; margin:8px 0; border:1px solid rgba(255,255,255,0.08);">
               <img id="songFoundCover" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=80&q=80" style="width:40px; height:40px; border-radius:4px; object-fit:cover;" />
@@ -284,14 +382,17 @@
                 <div id="songFoundTitle" style="font-weight:600; font-size:12px; color:#fff; white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">Bohemian Rhapsody</div>
                 <div id="songFoundArtist" style="font-size:11px; color:#94a3b8;">Queen • 5:54</div>
               </div>
-              <button id="songFoundPlayTestBtn" class="btn small" style="background:#10b981; color:#000; font-weight:700; border:none; padding:4px 8px;">▶ Probar</button>
+              <button id="songFoundPlayTestBtn" class="btn small" style="background:#10b981; color:#000; font-weight:700; border:none; padding:4px 8px; display:inline-flex; align-items:center; gap:4px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Probar</span>
+              </button>
             </div>
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">Estilo Reproductor:</label>
               <select id="musicPlayerThemeSelect" style="flex:1;">
-                <option value="ytmusic" selected>🔴 YouTube Music (Oficial Google / Rojo & Negro)</option>
-                <option value="spotify">🟢 Spotify (Verde & Negro)</option>
-                <option value="apple">🍎 Apple Music (Gris & Azul)</option>
+                <option value="ytmusic" selected>YouTube Music (Rojo & Negro)</option>
+                <option value="spotify">Spotify (Verde & Negro)</option>
+                <option value="apple">Apple Music (Gris & Azul)</option>
               </select>
             </div>
             <div class="field-row">
@@ -304,7 +405,7 @@
             <div class="field-row">
               <label class="toggle-label" style="font-size:11.5px; color:#a7f3d0;">
                 <input id="musicLoopCheck" type="checkbox" checked />
-                <span>🔁 Audio continuo sin cortes (Bucle automático del coro)</span>
+                <span>Audio continuo sin cortes (Bucle automático del coro)</span>
               </label>
             </div>
             <div class="field-row">
@@ -312,8 +413,11 @@
               <input id="customMp3UrlInput" type="text" placeholder="https://.../cancion_completa.mp3" style="flex:1;" />
             </div>
             <div style="display:flex; gap:8px;">
-              <button id="quickOpenMusicBtn6" class="btn small cta" style="flex:1; background:#059669; color:#fff; font-weight:700;">🎵 Abrir Reproductor Camuflado</button>
-              <button id="openOfficialYTMusicBtn" class="btn small" style="flex:1; background:#dc2626; color:#fff; font-weight:700; border:none; padding:7px 10px;" title="Abrir en tu app instalada de YouTube Music">🔴 Abrir en App YT Music</button>
+              <button id="quickOpenMusicBtn6" class="btn small cta" style="flex:1; background:#059669; color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <span>Abrir Reproductor</span>
+              </button>
+              <button id="openOfficialYTMusicBtn" class="btn small" style="flex:1; background:#dc2626; color:#fff; font-weight:700; border:none; padding:7px 10px;" title="Abrir en tu app instalada de YouTube Music">Abrir App YT Music</button>
             </div>
           </div>
         </section>
@@ -321,7 +425,12 @@
         <!-- Tarjeta PREDICCIÓN IA (Generador de Imágenes / Instagram) -->
         <section class="card ai-card">
           <div class="card-title">
-            <span>🎨 Predicción IA (Estilo Nano Banana)</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+              </span>
+              Predicción IA (Estilo Nano Banana)
+            </span>
             <span class="badge" style="background:#2a1c0d; color:#facc15; border:1px solid #78350f;">Instagram Ready</span>
           </div>
           <p class="desc">Convierte automáticamente los trazos, palabras y números del espectador en una imagen fotorrealista para predecir su pensamiento.</p>
@@ -330,15 +439,15 @@
           <div class="field-row">
             <label for="aiProviderSelect">Motor de Generación:</label>
             <select id="aiProviderSelect">
-              <option value="pollinations" selected>⚡ Pollinations AI (Gratis - Sin Token - FLUX.1)</option>
-              <option value="openrouter">🚀 OpenRouter (Con Token - Nano Banana, FLUX.2, GPT)</option>
+              <option value="pollinations" selected>Pollinations AI (Gratis - Sin Token - FLUX.1)</option>
+              <option value="openrouter">OpenRouter (Con Token - Nano Banana, FLUX.2, GPT)</option>
             </select>
           </div>
 
           <!-- Panel de Configuración OpenRouter -->
           <div id="openRouterSettings" style="display:none; background:#101116; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; margin-bottom:12px;">
             <div class="field-row" style="margin-bottom:8px;">
-              <label for="openRouterKey" style="color:#facc15; font-weight:600;">🔑 Token OpenRouter:</label>
+              <label for="openRouterKey" style="color:#facc15; font-weight:600;">Token OpenRouter:</label>
               <div style="display:flex; gap:6px; flex:1;">
                 <input id="openRouterKey" type="password" placeholder="sk-or-v1-..." style="flex:1;" />
                 <button id="testOpenRouterBtn" class="btn small" style="white-space:nowrap; padding:4px 8px; font-size:11px;">Validar</button>
@@ -349,14 +458,14 @@
             <div class="field-row" style="margin-bottom:8px;">
               <label for="openRouterModel">Modelo de Imagen:</label>
               <select id="openRouterModel">
-                <option value="google/gemini-2.5-flash-image" selected>🍌 Google: Nano Banana (Flash) — ~$0.45 MXN</option>
-                <option value="google/gemini-3.1-flash-image">🍌 Google: Nano Banana 2 — ~$0.60 MXN</option>
-                <option value="bytedance-seed/seedream-5-0-flash">⚡ ByteDance: Seedream 5.0 Flash — ~$0.35 MXN</option>
-                <option value="black-forest-labs/flux.2-pro">🎨 Black Forest: FLUX.2 Pro — ~$0.65 MXN</option>
-                <option value="black-forest-labs/flux-3-image">🎨 Black Forest: FLUX 3 Image — ~$0.80 MXN</option>
-                <option value="openai/gpt-image-2.6-sunburst">🤖 OpenAI: GPT Image 2.6 — ~$0.55 MXN</option>
-                <option value="recraft/recraft-v4.1-flash-v2:free">🆓 Recraft V4.1 Flash — Gratis ($0.00 MXN)</option>
-                <option value="custom">✏️ Modelo Personalizado (Ingresar ID)...</option>
+                <option value="google/gemini-2.5-flash-image" selected>Google: Nano Banana (Flash) — ~$0.45 MXN</option>
+                <option value="google/gemini-3.1-flash-image">Google: Nano Banana 2 — ~$0.60 MXN</option>
+                <option value="bytedance-seed/seedream-5-0-flash">ByteDance: Seedream 5.0 Flash — ~$0.35 MXN</option>
+                <option value="black-forest-labs/flux.2-pro">Black Forest: FLUX.2 Pro — ~$0.65 MXN</option>
+                <option value="black-forest-labs/flux-3-image">Black Forest: FLUX 3 Image — ~$0.80 MXN</option>
+                <option value="openai/gpt-image-2.6-sunburst">OpenAI: GPT Image 2.6 — ~$0.55 MXN</option>
+                <option value="recraft/recraft-v4.1-flash-v2:free">Recraft V4.1 Flash — Gratis ($0.00 MXN)</option>
+                <option value="custom">Modelo Personalizado (Ingresar ID)...</option>
               </select>
             </div>
             <div id="customModelRow" class="field-row" style="display:none; margin-bottom:8px;">
@@ -367,7 +476,7 @@
             <div class="field-row" style="margin-bottom:0;">
               <label class="toggle-label" style="font-size:11.5px; color:#cbd5e1;">
                 <input id="openRouterVisionCheck" type="checkbox" checked />
-                <span>🧠 Usar Gemini Vision para descifrar el trazo manuscrito (100% infalible)</span>
+                <span>Usar Gemini Vision para descifrar el trazo manuscrito</span>
               </label>
             </div>
           </div>
@@ -385,15 +494,15 @@
           <!-- Conceptos extraídos (editables con 1 toque) -->
           <div class="concept-chips-row">
             <div class="concept-field">
-              <label>🎨 Figura:</label>
+              <label>Figura:</label>
               <input id="conceptDrawing" type="text" value="árbol de navidad" placeholder="ej. gato" />
             </div>
             <div class="concept-field">
-              <label>✍️ Palabra:</label>
+              <label>Palabra:</label>
               <input id="conceptWord" type="text" value="Navidad" placeholder="ej. Holanda" />
             </div>
             <div class="concept-field">
-              <label>🔢 Número:</label>
+              <label>Número:</label>
               <input id="conceptNumber" type="text" value="532142" placeholder="ej. 32143" />
             </div>
           </div>
@@ -408,13 +517,13 @@
           <div class="field-row">
             <label class="toggle-label" style="font-size:11.5px; color:#facc15; font-weight:600;">
               <input id="useReferenceImageCheck" type="checkbox" checked />
-              <span>🖼️ Enviar captura del trazo como Imagen de Referencia (Image-to-Image)</span>
+              <span>Enviar captura del trazo como Imagen de Referencia (Image-to-Image)</span>
             </label>
           </div>
 
           <!-- Ajustes de Fecha Retro EXIF & Auto-Publicación Instagram -->
           <div class="field-row">
-            <label for="exifDaysBackSelect">📅 Fecha Retro EXIF (Sticker de Instagram):</label>
+            <label for="exifDaysBackSelect">Fecha Retro EXIF (Sticker de Instagram):</label>
             <select id="exifDaysBackSelect">
               <option value="3" selected>Hace 3 días (Recomendado)</option>
               <option value="1">Hace 1 día (Ayer)</option>
@@ -427,20 +536,20 @@
           <div class="field-row">
             <label class="toggle-label" style="font-size:11.5px; color:#38bdf8; font-weight:600;">
               <input id="autoPublishInstagramCheck" type="checkbox" />
-              <span>🚀 Auto-Publicar en Instagram (En segundo plano con tu cuenta Pro)</span>
+              <span>Auto-Publicar en Instagram (En segundo plano con tu cuenta Pro)</span>
             </label>
           </div>
 
           <div class="field-row">
             <label class="toggle-label" style="font-size:11.5px; color:#10b981; font-weight:600;">
               <input id="autoSavePocketPrinterCheck" type="checkbox" checked />
-              <span>🖨️ Auto-guardar para Impresora de Bolsillo (prediccion_print.jpg)</span>
+              <span>Auto-guardar para Impresora de Bolsillo (prediccion_print.jpg)</span>
             </label>
           </div>
 
           <div id="instagramWebhookSettings" style="display:none; background:#101116; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; margin-bottom:12px;">
             <div class="field-row" style="margin-bottom:8px;">
-              <label for="igWebhookUrl" style="font-size:11.5px; color:#38bdf8;">🔗 Webhook Make / Zapier:</label>
+              <label for="igWebhookUrl" style="font-size:11.5px; color:#38bdf8;">Webhook Make / Zapier:</label>
               <div style="display:flex; gap:6px; flex:1;">
                 <input id="igWebhookUrl" type="url" value="https://hook.us2.make.com/c1m5cxamuyeinjpsrixx42y16j8okxy1" placeholder="https://hook.make.com/..." style="flex:1; font-size:11px;" />
                 <button id="testIgWebhookBtn" class="btn small" style="white-space:nowrap; padding:4px 8px; font-size:11px;">Probar</button>
@@ -459,8 +568,14 @@
           </div>
 
           <div class="btn-group" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-            <button id="generateAIBtn" class="btn cta" style="flex:1;">⚡ Generar Imagen IA Ahora</button>
-            <button id="copyPromptBtn" class="btn small" style="min-width:110px;">📋 Copiar Prompt</button>
+            <button id="generateAIBtn" class="btn cta" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Generar Imagen IA Ahora</span>
+            </button>
+            <button id="copyPromptBtn" class="btn small" style="min-width:110px; display:inline-flex; align-items:center; justify-content:center; gap:5px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span>Copiar Prompt</span>
+            </button>
           </div>
 
           <div id="aiImageContainer" class="ai-preview-container" style="display:none; margin-top:12px;">
@@ -480,10 +595,19 @@
 
             <div class="btn-group" style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
               <div style="display:flex; gap:8px;">
-                <button id="shareInstagramBtn" class="btn primary" style="flex:1;">📸 Enviar a Instagram Stories (Manual)</button>
-                <button id="publishWebhookNowBtn" class="btn cta" style="flex:1; background:#0284c7; color:#fff;">🚀 Publicar al Feed (Make)</button>
+                <button id="shareInstagramBtn" class="btn primary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                  <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                  <span>Instagram Stories</span>
+                </button>
+                <button id="publishWebhookNowBtn" class="btn cta" style="flex:1; background:#0284c7; color:#fff; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                  <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>Publicar Feed (Make)</span>
+                </button>
               </div>
-              <button id="downloadOriginalBtn" class="btn secondary full">💾 Guardar Trazo Original</button>
+              <button id="downloadOriginalBtn" class="btn secondary full" style="display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span>Guardar Trazo Original</span>
+              </button>
             </div>
           </div>
         </section>
@@ -494,7 +618,12 @@
         <!-- Tarjeta PIZARRA E-INK & MONITOR KINDLE (SEGUNDA PANTALLA) -->
         <section class="card" style="border: 1px solid rgba(255, 255, 255, 0.08); background: #14151b;">
           <div class="card-title">
-            <span style="color:#fef08a;">📟 Pizarra E-Ink & Monitor Kindle (Segunda Pantalla)</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg>
+              </span>
+              Pizarra E-Ink & Monitor Kindle
+            </span>
             <span id="slateStatusBadge" class="badge" style="background:#ca8a04; color:#000; font-weight:700;">Gis en Pizarra</span>
           </div>
           <p class="desc" style="color:#e2e8f0;">
@@ -504,13 +633,19 @@
           <!-- Enlace & QR para Kindle / Segunda Pantalla -->
           <div style="background:#101116; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <label style="font-size:11.5px; color:#facc15; font-weight:700;">🔗 URL para el navegador del Kindle / Segunda Pantalla:</label>
+              <label style="font-size:11.5px; color:#facc15; font-weight:700;">URL para el navegador del Kindle / Segunda Pantalla:</label>
               <span id="slateRoomCode" style="font-family:monospace; font-size:11px; background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px;">Sala: SLATE</span>
             </div>
             <div style="display:flex; gap:6px;">
               <input id="slateRemoteUrlInput" type="text" readonly style="flex:1; background:#000; border:1px solid rgba(255,255,255,0.15); color:#f8fafc; font-size:11.5px; padding:6px 8px; border-radius:4px;" />
-              <button id="copySlateUrlBtn" class="btn small secondary">📋 Copiar</button>
-              <button id="openSlateWindowBtn" class="btn small cta" style="background:#ca8a04; color:#000; font-weight:700;">📟 Abrir</button>
+              <button id="copySlateUrlBtn" class="btn small secondary" style="display:inline-flex; align-items:center; gap:4px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span>Copiar</span>
+              </button>
+              <button id="openSlateWindowBtn" class="btn small cta" style="background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg>
+                <span>Abrir</span>
+              </button>
             </div>
           </div>
 
@@ -553,14 +688,20 @@
           <div class="field-row">
             <label class="toggle-label" style="font-size:11.5px; color:#facc15; font-weight:600;">
               <input id="slateLiveSyncCheck" type="checkbox" checked />
-              <span>⚡ Transmitir en Vivo Trazo a Trazo (o desmarcar para Revelación Clímax)</span>
+              <span>Transmitir en Vivo Trazo a Trazo (o desmarcar para Revelación Clímax)</span>
             </label>
           </div>
 
           <!-- Botones de Acción de Pizarra -->
           <div style="display:flex; gap:8px; margin-top:10px;">
-            <button id="slateRevealBtn" class="btn primary full" style="flex:2; background:#ca8a04; color:#000; font-weight:700;">💥 Revelar en Pizarra Ahora</button>
-            <button id="slateClearBtn" class="btn secondary" style="flex:1;">🧹 Borrar Pizarra</button>
+            <button id="slateRevealBtn" class="btn primary full" style="flex:2; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+              <span>Revelar en Pizarra Ahora</span>
+            </button>
+            <button id="slateClearBtn" class="btn secondary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              <span>Borrar Pizarra</span>
+            </button>
           </div>
         </section>
       </div>
@@ -570,22 +711,27 @@
         <!-- Tarjeta Mentalismo, Audio & Camuflaje -->
         <section class="card">
           <div class="card-title">
-            <span>🎭 Ajustes de Mentalismo & Camuflaje</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/></svg>
+              </span>
+              Ajustes de Mentalismo & Camuflaje
+            </span>
           </div>
           <div class="field-row">
             <label class="toggle-label" style="font-size:11.5px; color:#facc15; font-weight:600;">
               <input id="launchDirectCalcCheck" type="checkbox" checked />
-              <span>🧮 Abrir app directo en Calculadora al iniciar</span>
+              <span>Abrir app directo en Calculadora al iniciar</span>
             </label>
           </div>
           <div class="field-row">
             <label for="stealthCamouflage">Pantalla de Modo Sigilo:</label>
             <select id="stealthCamouflage">
-              <option value="aod" selected>⬛ AOD Pantalla Negra Minimalista (Protector / Apagada)</option>
-              <option value="lockscreen">🔒 Pantalla de Bloqueo Real (Reloj + WhatsApp)</option>
-              <option value="calculator">🧮 Calculadora Realista (Peek en Display)</option>
-              <option value="notes">📝 Bloc de Notas Realista (Texto & Boceto)</option>
-              <option value="player">🎵 Reproductor de Música (Spotify / Canción Pensada)</option>
+              <option value="aod" selected>AOD Pantalla Negra Minimalista (Apagada)</option>
+              <option value="lockscreen">Pantalla de Bloqueo Real (Reloj + Notificación)</option>
+              <option value="calculator">Calculadora Realista (Peek en Display)</option>
+              <option value="notes">Bloc de Notas Realista (Texto & Boceto)</option>
+              <option value="player">Reproductor de Música (Canción Pensada)</option>
             </select>
           </div>
           <div class="field-row">
@@ -622,18 +768,32 @@
               <span>Vibración silenciosa en bolsillo al completar</span>
             </label>
           </div>
-          <button id="testAudioBtn" class="btn secondary full">🔊 Probar Audio en Auricular</button>
+          <button id="testAudioBtn" class="btn secondary full" style="display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+            <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            <span>Probar Audio en Auricular</span>
+          </button>
         </section>
 
         <!-- Tarjeta Multi-Espectador & Smartwatch Haylou -->
         <section class="card">
           <div class="card-title">
-            <span>👥 Smartwatch Haylou & Notificaciones ⌚</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"/><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"/></svg>
+              </span>
+              Smartwatch Haylou & Notificaciones
+            </span>
           </div>
           <p class="desc">Control silencioso en la muñeca o mediante botón del auricular bluetooth.</p>
           <div class="btn-group-col" style="display:flex; flex-direction:column; gap:8px;">
-            <button id="watchNotifyBtn" class="btn secondary full">⌚ Activar Notificaciones Smartwatch</button>
-            <button id="testHaylouBtn" class="btn small outline full">🔔 Probar Notificación en Haylou Solar</button>
+            <button id="watchNotifyBtn" class="btn secondary full" style="display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/></svg>
+              <span>Activar Notificaciones Smartwatch</span>
+            </button>
+            <button id="testHaylouBtn" class="btn small outline full" style="display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span>Probar Notificación en Haylou Solar</span>
+            </button>
           </div>
           <p class="hint-small">Para Haylou Solar: abre la app <strong>Haylou Fun</strong> en tu móvil -> Dispositivo -> Avisos de aplicaciones -> activa <strong>Chrome</strong> o <strong>MindPad</strong>.</p>
         </section>
@@ -641,7 +801,12 @@
         <!-- Tarjeta Orientación del Bloc -->
         <section class="card">
           <div class="card-title">
-            <span>📐 Orientación del Bloc</span>
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              </span>
+              Orientación del Bloc
+            </span>
           </div>
           <div class="field-row">
             <label for="orientationSelect">Posición de la Libreta:</label>
@@ -660,7 +825,12 @@
         <!-- DOSSIER DE PRESENTACIONES PROFESIONALES (GUÍA COMERCIAL) -->
         <section id="routinesDossier" class="card dossier-card">
         <div class="card-title">
-          <span style="color:#fef08a;">📖 Dossier de Rutinas & Casos de Éxito</span>
+          <span class="card-title-left">
+            <span class="icon-badge-box">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </span>
+            Dossier de Rutinas & Casos de Éxito
+          </span>
           <span class="dossier-header-badge">Guía Profesional</span>
         </div>
         <p class="desc" style="color:#cbd5e1;">
@@ -670,7 +840,7 @@
         <!-- Rutina 1 -->
         <div class="routine-box">
           <div class="routine-title-row">
-            <span class="routine-title">🎪 Rutina 1: Duplicación en Post-It</span>
+            <span class="routine-title">Rutina 1: Duplicación en Post-It</span>
             <span class="routine-badge street">Casual / Street / Close-Up</span>
           </div>
           <div class="routine-desc">
@@ -691,14 +861,14 @@
             </div>
           </div>
           <div class="routine-pro-tip">
-            💡 <strong>Valor Comercial:</strong> Cero sospechas tecnológicas. El espectador solo recuerda papel, tinta y una nota adhesiva real.
+            <strong>Valor Comercial:</strong> Cero sospechas tecnológicas. El espectador solo recuerda papel, tinta y una nota adhesiva real.
           </div>
         </div>
 
         <!-- Rutina 2 -->
         <div class="routine-box">
           <div class="routine-title-row">
-            <span class="routine-title">⭐ Rutina 2: La Premonición en Redes & Galería</span>
+            <span class="routine-title">Rutina 2: La Premonición en Redes & Galería</span>
             <span class="routine-badge vip">VIP / Famosos / Redes Sociales</span>
           </div>
           <div class="routine-desc">
@@ -723,14 +893,14 @@
             </div>
           </div>
           <div class="routine-pro-tip">
-            💡 <strong>Valor Comercial:</strong> Ideal para conseguir contratos de influencers, sponsors y presencia televisiva.
+            <strong>Valor Comercial:</strong> Ideal para conseguir contratos de influencers, sponsors y presencia televisiva.
           </div>
         </div>
 
         <!-- Rutina 3 -->
         <div class="routine-box">
           <div class="routine-title-row">
-            <span class="routine-title">🖨️ Rutina 3: La Materialización en el Bolsillo</span>
+            <span class="routine-title">Rutina 3: La Materialización en el Bolsillo</span>
             <span class="routine-badge stage">Teatro / Televisión / Auditorio</span>
           </div>
           <div class="routine-desc">
@@ -759,14 +929,14 @@
             </div>
           </div>
           <div class="routine-pro-tip">
-            💡 <strong>Valor Comercial:</strong> El efecto culminante ("Closer") definitivo para teatro y congresos corporativos.
+            <strong>Valor Comercial:</strong> El efecto culminante ("Closer") definitivo para teatro y congresos corporativos.
           </div>
         </div>
 
         <!-- Rutina 4 -->
         <div class="routine-box">
           <div class="routine-title-row">
-            <span class="routine-title">🧮 Rutina 4: El Test de la Calculadora Mental</span>
+            <span class="routine-title">Rutina 4: El Test de la Calculadora Mental</span>
             <span class="routine-badge impromptu">Impromptu / Cero Sospechas</span>
           </div>
           <div class="routine-desc">
@@ -787,28 +957,28 @@
             </div>
           </div>
           <div class="routine-pro-tip">
-            💡 <strong>Valor Comercial:</strong> El espectador mismo tuvo el teléfono en sus manos segundos antes, eliminando cualquier sospecha de app mágica.
+            <strong>Valor Comercial:</strong> El espectador mismo tuvo el teléfono en sus manos segundos antes, eliminando cualquier sospecha de app mágica.
           </div>
         </div>
 
         <!-- Rutina 5 -->
         <div class="routine-box">
           <div class="routine-title-row">
-            <span class="routine-title">👥 Rutina 5: Triple Transmisión Multi-Espectador</span>
+            <span class="routine-title">Rutina 5: Triple Transmisión Multi-Espectador</span>
             <span class="routine-badge stage">Salón / Convención (3 Mentes)</span>
           </div>
           <div class="routine-desc">
             <strong>Efecto:</strong> La libreta viaja de mano en mano entre 3 espectadores en diferentes filas del público. Adivinas los 3 dibujos o números de forma consecutiva con el control ciego en el bolsillo o smartwatch sin mirar tu móvil ni una sola vez.
           </div>
           <div class="routine-pro-tip">
-            💡 <strong>Valor Comercial:</strong> Multiplica el impacto por tres, ideal para rutinas de mentalismo colectivo en empresas y conferencias.
+            <strong>Valor Comercial:</strong> Multiplica el impacto por tres, ideal para rutinas de mentalismo colectivo en empresas y conferencias.
           </div>
         </div>
 
         <!-- Rutina 6 -->
         <div class="routine-box">
           <div class="routine-title-row">
-            <span class="routine-title">📟 Rutina 6: La Pizarra Espiritual E-Ink (Slate of Mind)</span>
+            <span class="routine-title">Rutina 6: La Pizarra Espiritual E-Ink (Slate of Mind)</span>
             <span class="routine-badge stage">Teatro / Caballete / E-Ink</span>
           </div>
           <div class="routine-desc">
@@ -833,14 +1003,14 @@
             </div>
           </div>
           <div class="routine-pro-tip">
-            💡 <strong>Valor Comercial:</strong> Parece un objeto victoriano o de escuela antigua pero opera con la tecnología más puntera. Cero reflejos, estética teatral insuperable.
+            <strong>Valor Comercial:</strong> Parece un objeto victoriano o de escuela antigua pero opera con la tecnología más puntera. Cero reflejos, estética teatral insuperable.
           </div>
         </div>
 
         <!-- Rutina 7 -->
         <div class="routine-box">
           <div class="routine-title-row">
-            <span class="routine-title">🌙 Rutina 7: La Premonición del Sueño (El Bloc de Notas Fechado & Modo Doodle)</span>
+            <span class="routine-title">Rutina 7: La Premonición del Sueño (El Bloc de Notas Fechado & Modo Doodle)</span>
             <span class="routine-badge stage">Mesa / Close-up / Mentalismo Psicológico</span>
           </div>
           <div class="routine-desc">
@@ -865,14 +1035,14 @@
             </div>
           </div>
           <div class="routine-pro-tip">
-            💡 <strong>Valor Comercial:</strong> Impacto emocional profundo. La fecha retroactiva destruye cualquier teoría de que el mago lo escribió en ese instante.
+            <strong>Valor Comercial:</strong> Impacto emocional profundo. La fecha retroactiva destruye cualquier teoría de que el mago lo escribió en ese instante.
           </div>
         </div>
 
         <!-- Rutina 8 -->
         <div class="routine-box">
           <div class="routine-title-row">
-            <span class="routine-title">🎵 Rutina 8: La Melodía Telepática (Justificación del Audífono & iTunes)</span>
+            <span class="routine-title">Rutina 8: La Melodía Telepática (Justificación del Audífono & iTunes)</span>
             <span class="routine-badge close-up">Casual / Social / TV / Conexión Emocional</span>
           </div>
           <div class="routine-desc">
@@ -897,7 +1067,7 @@
             </div>
           </div>
           <div class="routine-pro-tip">
-            💡 <strong>Valor Comercial:</strong> Convierte el audífono (que normalmente es el talón de Aquiles de un mago) en la prueba irrefutable del milagro.
+            <strong>Valor Comercial:</strong> Convierte el audífono (que normalmente es el talón de Aquiles de un mago) en la prueba irrefutable del milagro.
           </div>
         </div>
       </section>
@@ -912,9 +1082,9 @@
       <div class="fake-status-bar">
         <span id="lockStatusTime">12:00</span>
         <div class="fake-icons">
-          <span>📶 5G</span>
+          <span>5G</span>
           <span>Wi-Fi</span>
-          <span>🔋 84%</span>
+          <span>84%</span>
         </div>
       </div>
       <div class="fake-clock-box">
@@ -925,7 +1095,10 @@
       <!-- Notificación falsa de WhatsApp para disimulo total en la mesa -->
       <div class="fake-notification">
         <div class="notif-header">
-          <span class="notif-app">💬 WhatsApp</span>
+          <span class="notif-app" style="display:inline-flex; align-items:center; gap:5px;">
+            <svg class="ui-icon sm" viewBox="0 0 24 24" style="color:#22c55e;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            WhatsApp
+          </span>
           <span class="notif-time">hace 3 min</span>
         </div>
         <div class="notif-title">Mamá</div>
@@ -933,7 +1106,9 @@
       </div>
 
       <div class="fake-lock-footer">
-        <div class="fake-lock-icon">🔒</div>
+        <div class="fake-lock-icon">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
         <div class="fake-swipe-hint">Desliza para desbloquear</div>
       </div>
     </div>
@@ -941,7 +1116,7 @@
     <!-- CAMUFLAJE 2: Reloj Always-On Minimalista (AOD) -->
     <div id="aodClock" class="aod-display" style="display: none;">
       <div id="clockTime" class="aod-time">12:00</div>
-      <div class="aod-battery">🔋 84%</div>
+      <div class="aod-battery">84%</div>
       <div class="aod-hint">Mantén presionado para ver trazo</div>
     </div>
 
@@ -950,8 +1125,8 @@
       <div class="calc-status-bar">
         <span id="calcTime">12:00</span>
         <div class="fake-icons">
-          <span>📶 5G</span>
-          <span>🔋 84%</span>
+          <span>5G</span>
+          <span>84%</span>
         </div>
       </div>
 
@@ -993,9 +1168,11 @@
       <div id="notesStatusBar" class="notes-status-bar">
         <span id="notesStatusTime" class="notes-status-time">12:00</span>
         <div class="notes-status-icons">
-          <span id="notesQuickThemeToggle" class="notes-theme-pill-small" title="Alternar Modo Claro/Oscuro">☀️</span>
-          <span class="notes-status-badge">📶 5G</span>
-          <span class="notes-status-badge">🔋 84%</span>
+          <span id="notesQuickThemeToggle" class="notes-theme-pill-small" title="Alternar Modo Claro/Oscuro">
+            <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </span>
+          <span class="notes-status-badge">5G</span>
+          <span class="notes-status-badge">84%</span>
         </div>
       </div>
 
@@ -1004,11 +1181,13 @@
         <div class="notes-list-header">
           <div class="notes-folder-crumb">
             <span id="notesExitFromListBtn" class="notes-gold-link">‹ Carpetas</span>
-            <span id="notesThemeToggleListBtn" class="notes-theme-pill">☀️ Claro</span>
+            <span id="notesThemeToggleListBtn" class="notes-theme-pill">Tema</span>
           </div>
           <h1 class="notes-main-heading">Notas</h1>
           <div class="notes-search-box">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
             <input type="text" placeholder="Buscar" readonly />
           </div>
         </div>
@@ -1018,13 +1197,13 @@
           <div class="notes-section-label">FIJADAS</div>
           <div id="noteItemDream" class="notes-list-card pinned">
             <div class="note-card-top">
-              <span class="note-card-title">📌 Un sueño extraño (Premonición)</span>
+              <span class="note-card-title">Un sueño extraño (Premonición)</span>
               <span class="note-card-date">14/11/26</span>
             </div>
             <div id="noteDreamSnippet" class="note-card-snippet">
               Tuve un sueño muy raro de esos que cuando despiertas recuerdas casi todos los detalles, yo lo llamo premonición. Notaba que en mi mano el reloj marcaba las...
             </div>
-            <div class="note-card-folder">📁 Notas personales</div>
+            <div class="note-card-folder">Notas personales</div>
           </div>
 
           <div class="notes-section-label" style="margin-top:10px;">ANTERIORES</div>
@@ -1032,43 +1211,45 @@
           <!-- NOTA 2: RECETA DE PANCITA -->
           <div id="noteItemPancita" class="notes-list-card">
             <div class="note-card-top">
-              <span class="note-card-title">🍲 Receta de pancita de la abuela</span>
+              <span class="note-card-title">Receta de pancita de la abuela</span>
               <span class="note-card-date">08/11/26</span>
             </div>
             <div class="note-card-snippet">
               1 kg de pancita (menudo) bien lavada con limón y sal de grano, 1 pata de res limpia, epazote fresco, chile guajillo, orégano y garbanzos...
             </div>
-            <div class="note-card-folder">📁 Recetas familiares</div>
+            <div class="note-card-folder">Recetas familiares</div>
           </div>
 
           <!-- NOTA 3: LISTA DE COMPRAS SEMANAL -->
           <div id="noteItemCompras" class="notes-list-card">
             <div class="note-card-top">
-              <span class="note-card-title">🛒 Lista de compras semanal</span>
+              <span class="note-card-title">Lista de compras semanal</span>
               <span class="note-card-date">03/11/26</span>
             </div>
             <div class="note-card-snippet">
               ☑ Aguacates Hass maduros, ☑ Café Chiapas, ☐ Leche deslactosada light, ☐ Pechuga de pollo, ☐ Huevos orgánicos...
             </div>
-            <div class="note-card-folder">📁 Supermercado</div>
+            <div class="note-card-folder">Supermercado</div>
           </div>
 
           <!-- NOTA 4: REUNIÓN CON MI MANAGER -->
           <div id="noteItemManager" class="notes-list-card">
             <div class="note-card-top">
-              <span class="note-card-title">👔 Notas reunión con mi manager</span>
+              <span class="note-card-title">Notas reunión con mi manager</span>
               <span class="note-card-date">27/10/26</span>
             </div>
             <div class="note-card-snippet">
               Fechas de gira teatral 2027 (CDMX, GDL, MTY), rider técnico con audio in-ear discreto, propuesta de streaming...
             </div>
-            <div class="note-card-folder">📁 Trabajo & Espectáculos</div>
+            <div class="note-card-folder">Trabajo & Espectáculos</div>
           </div>
         </div>
 
         <div class="notes-bottom-bar">
           <span id="notesCountLabel">4 notas</span>
-          <span style="font-size:18px; color:#eab308; cursor:pointer;" title="Nueva nota">📝</span>
+          <span style="display:inline-flex; align-items:center; color:#eab308; cursor:pointer;" title="Nueva nota">
+            <svg class="ui-icon md" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </span>
         </div>
       </div>
 
@@ -1079,13 +1260,25 @@
             <span>‹</span> <span>Notas</span>
           </div>
           <div id="notesDreamTabsGroup" class="notes-segmented-nav">
-            <button id="notesTabBtnText" class="notes-segment-btn active">📝 Nota</button>
-            <button id="notesTabBtnDraw" class="notes-segment-btn">🎨 Boceto</button>
+            <button id="notesTabBtnText" class="notes-segment-btn active" style="display:inline-flex; align-items:center; gap:5px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/></svg>
+              <span>Nota</span>
+            </button>
+            <button id="notesTabBtnDraw" class="notes-segment-btn" style="display:inline-flex; align-items:center; gap:5px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+              <span>Boceto</span>
+            </button>
           </div>
           <div class="notes-actions">
-            <span id="notesToggleThemeDetailBtn" title="Cambiar a Modo Claro / Oscuro">☀️</span>
-            <span id="notesToggleDoodleBtn" title="Cambiar a Boceto">🖍️</span>
-            <span title="Compartir">📤</span>
+            <span id="notesToggleThemeDetailBtn" title="Cambiar a Modo Claro / Oscuro" style="display:inline-flex; align-items:center;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+            </span>
+            <span id="notesToggleDoodleBtn" title="Cambiar a Boceto" style="display:inline-flex; align-items:center;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            </span>
+            <span title="Compartir" style="display:inline-flex; align-items:center;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </span>
           </div>
         </div>
 
@@ -1105,8 +1298,14 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
 
           <div id="notesDrawTabContent" class="notes-draw-view" style="display: none;">
             <div class="notes-draw-header">
-              <span>✏️ Boceto & Garabatos a mano alzada</span>
-              <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11.5px; cursor:pointer; font-weight:600;">🗑️ Limpiar Lienzo</button>
+              <span style="display:inline-flex; align-items:center; gap:6px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+                Boceto & Garabatos a mano alzada
+              </span>
+              <button id="notesClearDoodleBtn" style="background:transparent; border:none; color:#ef4444; font-size:11.5px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                Limpiar Lienzo
+              </button>
             </div>
             <div class="notes-draw-canvas-container">
               <canvas id="notesDoodleCanvas"></canvas>
@@ -1119,8 +1318,8 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
                 <div class="doodle-color-dot" data-color="#eab308" style="background:#eab308;" title="Amarillo Resaltador"></div>
               </div>
               <div class="notes-draw-tools">
-                <button id="notesBrushFineBtn" class="draw-tool-btn active">✏️ Fino</button>
-                <button id="notesBrushThickBtn" class="draw-tool-btn">🖌️ Grueso</button>
+                <button id="notesBrushFineBtn" class="draw-tool-btn active">Fino</button>
+                <button id="notesBrushThickBtn" class="draw-tool-btn">Grueso</button>
               </div>
             </div>
           </div>
@@ -1129,7 +1328,7 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
         <!-- CONTENIDO DETALLE: NOTA 2 - RECETA DE PANCITA -->
         <div id="noteDetailPancitaContent" class="notes-scroll-body" style="display: none;">
           <div class="notes-meta-date">8 de noviembre de 2026, 14:20</div>
-          <div class="notes-title">🍲 Receta de pancita de la abuela (Menudo norteño)</div>
+          <div class="notes-title">Receta de pancita de la abuela (Menudo norteño)</div>
           <div class="notes-content-text"><strong>Ingredientes principales:</strong>
 • 1 kg de pancita de res (panza y libro) bien lavada con limón y sal de grano.
 • 1 pata de res limpia partida en trozos para darle consistencia al caldo.
@@ -1151,7 +1350,7 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
         <!-- CONTENIDO DETALLE: NOTA 3 - LISTA DE COMPRAS SEMANAL -->
         <div id="noteDetailComprasContent" class="notes-scroll-body" style="display: none;">
           <div class="notes-meta-date">3 de noviembre de 2026, 10:45</div>
-          <div class="notes-title">🛒 Lista de compras semanal</div>
+          <div class="notes-title">Lista de compras semanal</div>
           <div class="notes-checklist">
             <label class="notes-check-item checked">
               <input type="checkbox" checked />
@@ -1195,7 +1394,7 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
         <!-- CONTENIDO DETALLE: NOTA 4 - REUNIÓN CON MI MANAGER -->
         <div id="noteDetailManagerContent" class="notes-scroll-body" style="display: none;">
           <div class="notes-meta-date">27 de octubre de 2026, 17:30</div>
-          <div class="notes-title">👔 Notas reunión con mi manager (Temporada 2027)</div>
+          <div class="notes-title">Notas reunión con mi manager (Temporada 2027)</div>
           <div class="notes-content-text"><strong>Puntos acordados con Carlos & Producción:</strong>
 
 1. <strong>Fechas de Gira:</strong>
@@ -1222,7 +1421,9 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <div id="fakeMusicPlayer" class="fake-music-player theme-ytmusic" style="display: none;">
       <div class="music-top-bar">
         <div class="music-service-tag">
-          <span id="musicServiceIcon">▶</span>
+          <span id="musicServiceIcon" style="display:inline-flex; align-items:center;">
+            <svg class="ui-icon sm" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </span>
           <span id="musicServiceName">Music</span>
         </div>
         <div id="ytMusicPillToggle" class="ytmusic-pill-toggle">
@@ -1230,7 +1431,7 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
           <span>Video</span>
         </div>
         <div class="music-bt-badge">
-          <span>🎧</span>
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
           <span>Auricular BT</span>
         </div>
       </div>
@@ -1255,17 +1456,27 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
       </div>
 
       <div class="music-controls-row">
-        <button class="music-btn-sub">🔀</button>
-        <button class="music-btn-sub">⏮</button>
-        <button id="musicPlayBtn" class="music-play-circle" title="Play / Pausa">▶</button>
-        <button class="music-btn-sub">⏭</button>
-        <button class="music-btn-sub">🔁</button>
+        <button class="music-btn-sub" title="Aleatorio">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+        </button>
+        <button class="music-btn-sub" title="Anterior">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+        </button>
+        <button id="musicPlayBtn" class="music-play-circle" title="Play / Pausa">
+          <svg class="ui-icon md" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <button class="music-btn-sub" title="Siguiente">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+        </button>
+        <button class="music-btn-sub" title="Repetir">
+          <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
       </div>
 
       <!-- Acceso Rápido para saltar a la App Oficial de YouTube Music de tu teléfono -->
       <div style="display:flex; justify-content:center; margin-top:8px;">
         <button id="playerJumpToYTMusicBtn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; color:#f87171; font-size:11px; padding:4px 12px; cursor:pointer; display:flex; align-items:center; gap:5px;">
-          <span>🔴</span> <span>Abrir en YouTube Music Oficial</span>
+          <span>Abrir en YouTube Music Oficial</span>
         </button>
       </div>
 
@@ -1299,11 +1510,26 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
 
     <!-- Barra de Controles Flotante Discreta (se oculta sola en 3s) -->
     <div id="slateControlsBar" class="slate-controls-bar">
-      <button id="slateToggleInvertBtn" class="slate-btn" title="Alternar Blanco / Negro">🌓 Invertir</button>
-      <button id="slateToggleFrameBtn" class="slate-btn" title="Alternar Marco de Madera">🖼️ Marco</button>
-      <button id="slateClearCanvasBtn" class="slate-btn" title="Limpiar Pizarra">🧹 Limpiar</button>
-      <button id="slateFullscreenBtn" class="slate-btn" title="Pantalla Completa">⛶ Pantalla Completa</button>
-      <button id="slateExitBtn" class="slate-btn" title="Salir al Panel">⚙️ Salir</button>
+      <button id="slateToggleInvertBtn" class="slate-btn" title="Alternar Blanco / Negro" style="display:inline-flex; align-items:center; gap:5px;">
+        <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20Z" fill="currentColor"/></svg>
+        <span>Invertir</span>
+      </button>
+      <button id="slateToggleFrameBtn" class="slate-btn" title="Alternar Marco de Madera" style="display:inline-flex; align-items:center; gap:5px;">
+        <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><rect width="12" height="12" x="6" y="6" rx="1"/></svg>
+        <span>Marco</span>
+      </button>
+      <button id="slateClearCanvasBtn" class="slate-btn" title="Limpiar Pizarra" style="display:inline-flex; align-items:center; gap:5px;">
+        <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+        <span>Limpiar</span>
+      </button>
+      <button id="slateFullscreenBtn" class="slate-btn" title="Pantalla Completa" style="display:inline-flex; align-items:center; gap:5px;">
+        <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        <span>Pantalla Completa</span>
+      </button>
+      <button id="slateExitBtn" class="slate-btn" title="Salir al Panel" style="display:inline-flex; align-items:center; gap:5px;">
+        <svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>Salir</span>
+      </button>
     </div>
   </div>
 
@@ -1317,6 +1543,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <span style="font-family:'Caveat';">Preload</span>
   </div>
 
-  <script src="mindpad.js?v=25" type="module"></script>
+  <script src="mindpad.js?v=26" type="module"></script>
 </body>
 </html>
