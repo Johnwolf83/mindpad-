@@ -389,6 +389,9 @@ function handlePenPacket(event) {
       state.currentStroke = null;
       clearTimeout(state.inactivityTimer);
       state.inactivityTimer = setTimeout(onParticipantFinished, state.delayMs);
+      if (typeof redrawNotesDoodleCanvas === 'function') {
+        redrawNotesDoodleCanvas();
+      }
     }
   }
 }
@@ -636,6 +639,9 @@ async function onParticipantFinished() {
       };
 
       $('stealthStatusDot').className = 'stealth-dot ready';
+      if (typeof redrawNotesDoodleCanvas === 'function') {
+        redrawNotesDoodleCanvas();
+      }
       return;
     }
   }
@@ -813,6 +819,9 @@ async function onParticipantFinished() {
   }
 
   $('stealthStatusDot').className = 'stealth-dot ready';
+  if (typeof redrawNotesDoodleCanvas === 'function') {
+    redrawNotesDoodleCanvas();
+  }
 }
 
 // ----------------------------------------------------
@@ -1332,6 +1341,12 @@ function enterStealthMode(forcedMode) {
         redrawNotesDoodleCanvas();
       }
     }, 40);
+    setTimeout(() => {
+      initNotesDoodle();
+      if (typeof redrawNotesDoodleCanvas === 'function') {
+        redrawNotesDoodleCanvas();
+      }
+    }, 120);
   }
 
   startClocks();
@@ -3009,8 +3024,8 @@ function initNotesDoodle() {
 
   const rect = container.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  const cw = Math.floor(rect.width || container.clientWidth || window.innerWidth);
-  const ch = Math.floor(rect.height || container.clientHeight || (window.innerHeight - 150));
+  const cw = Math.floor(rect.width || container.clientWidth || container.offsetWidth || window.innerWidth || 360);
+  const ch = Math.floor(rect.height || container.clientHeight || container.offsetHeight || (window.innerHeight - 160) || 520);
 
   if (cw <= 0 || ch <= 0) {
     requestAnimationFrame(initNotesDoodle);
@@ -3208,9 +3223,15 @@ function redrawNotesDoodleCanvas() {
     notesDoodleCtx.stroke();
   });
 
-  // 2. Si la tableta Huion envió trazos, dibujarlos con el motor de duplicación de dibujo
-  if (state.strokes && state.strokes.length > 0) {
-    renderOrganicDoodleDuplication(notesDoodleCtx, state.strokes, cw, ch, {
+  // 2. Si la tableta Huion o el monitor tienen trazos, dibujarlos con el motor de duplicación de dibujo
+  const strokesToRender = (state.strokes && state.strokes.length > 0)
+    ? state.strokes
+    : (state.pages && state.pages[state.currentPageIndex]?.strokes && state.pages[state.currentPageIndex].strokes.length > 0)
+      ? state.pages[state.currentPageIndex].strokes
+      : (state.pages && state.pages.find((p) => p.strokes && p.strokes.length > 0)?.strokes) || [];
+
+  if (strokesToRender && strokesToRender.length > 0) {
+    renderOrganicDoodleDuplication(notesDoodleCtx, strokesToRender, cw, ch, {
       mode: state.doodleDuplicationMode,
       variance: state.doodleVarianceLevel,
       theme: state.notesTheme,
@@ -3251,79 +3272,118 @@ function renderOrganicDoodleDuplication(ctx, rawStrokes, cw, ch, options = {}) {
   const theme = options.theme || 'dark';
   const strokeColor = theme === 'light' ? '#1c1c1e' : '#f8fafc';
 
-  if (mode === 'exact') {
-    renderExactStrokes(ctx, rawStrokes, cw, ch, strokeColor);
-    return;
-  }
-
   if (mode === 'conceptual') {
     const concept = (options.concept || state.currentDrawing || '').toLowerCase();
     const handled = renderConceptualDoodle(ctx, concept, cw, ch, strokeColor);
     if (handled) return;
   }
 
-  // MODO ORGÁNICO: Variación humana auténtica (mismos elementos, pero redibujados como con el dedo)
-  renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, variance);
-}
-
-function renderExactStrokes(ctx, strokes, cw, ch, strokeColor) {
-  const isPortrait = state.orientation.startsWith('portrait');
-  const maxX = isPortrait ? 28200 : 37400;
-  const maxY = isPortrait ? 37400 : 28200;
-  const pad = 24;
-  const scaleX = (cw - pad * 2) / maxX;
-  const scaleY = (ch - pad * 2) / maxY;
-  const scale = Math.min(scaleX, scaleY);
-
-  ctx.strokeStyle = strokeColor;
-  ctx.lineWidth = 2.4;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  strokes.forEach((stroke) => {
-    if (!stroke.points || stroke.points.length < 2) return;
-    ctx.beginPath();
-    ctx.moveTo(pad + stroke.points[0].x * scale, pad + stroke.points[0].y * scale);
-    for (let i = 1; i < stroke.points.length; i++) {
-      ctx.lineTo(pad + stroke.points[i].x * scale, pad + stroke.points[i].y * scale);
-    }
-    ctx.stroke();
-  });
-}
-
-function renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, varianceLevel) {
-  let minX = Infinity, minY = Infinity, maxXRaw = -Infinity, maxYRaw = -Infinity;
+  // 1. Filtrar trazos válidos
   const validStrokes = [];
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
   rawStrokes.forEach((s) => {
-    if (!s.points || s.points.length < 2) return;
-    const pts = s.points.filter((p) => typeof p.x === 'number' && typeof p.y === 'number');
-    if (pts.length < 2) return;
+    if (!s || !s.points || s.points.length === 0) return;
+    const pts = s.points.filter((p) => p && typeof p.x === 'number' && typeof p.y === 'number' && !isNaN(p.x) && !isNaN(p.y));
+    if (pts.length === 0) return;
     validStrokes.push(pts);
     pts.forEach((p) => {
       if (p.x < minX) minX = p.x;
-      if (p.x > maxXRaw) maxXRaw = p.x;
+      if (p.x > maxX) maxX = p.x;
       if (p.y < minY) minY = p.y;
-      if (p.y > maxYRaw) maxYRaw = p.y;
+      if (p.y > maxY) maxY = p.y;
     });
   });
 
   if (!validStrokes.length) return;
 
-  const rawW = Math.max(10, maxXRaw - minX);
-  const rawH = Math.max(10, maxYRaw - minY);
+  // 2. Normalización de coordenadas a rango 0.0 .. 1.0 (funciona con coordenadas normalizadas y raw)
+  const isRaw = (maxX > 2.0 || maxY > 2.0);
+  const factorX = isRaw ? (state.maxX || 28200) : 1.0;
+  const factorY = isRaw ? (state.maxY || 37400) : 1.0;
 
-  const pad = 34;
-  const targetW = cw - pad * 2;
-  const targetH = ch - pad * 2;
-  const fitScale = Math.min(targetW / rawW, targetH / rawH, 1.4);
-  const drawW = rawW * fitScale;
-  const drawH = rawH * fitScale;
+  const normStrokes = validStrokes.map((pts) => {
+    return pts.map((p) => ({
+      x: isRaw ? (p.x / factorX) : p.x,
+      y: isRaw ? (p.y / factorY) : p.y,
+      p: p.p !== undefined ? p.p : 0.7
+    }));
+  });
+
+  // Recomputar bounding box normalizado
+  let nMinX = Infinity, nMinY = Infinity, nMaxX = -Infinity, nMaxY = -Infinity;
+  normStrokes.forEach((pts) => {
+    pts.forEach((p) => {
+      if (p.x < nMinX) nMinX = p.x;
+      if (p.x > nMaxX) nMaxX = p.x;
+      if (p.y < nMinY) nMinY = p.y;
+      if (p.y > nMaxY) nMaxY = p.y;
+    });
+  });
+
+  const spanX = Math.max(0.005, nMaxX - nMinX);
+  const spanY = Math.max(0.005, nMaxY - nMinY);
+
+  // 3. Ajuste al lienzo con márgenes estéticos
+  const padX = Math.max(18, cw * 0.07);
+  const padY = Math.max(20, ch * 0.07);
+  const targetW = Math.max(10, cw - padX * 2);
+  const targetH = Math.max(10, ch - padY * 2);
+
+  const scale = Math.min(targetW / spanX, targetH / spanY);
+  const drawW = spanX * scale;
+  const drawH = spanY * scale;
   const originX = (cw - drawW) / 2;
   const originY = (ch - drawH) / 2;
 
-  // 2. Agrupación en Clusters (Componentes separados, ej: casa y sol)
-  const strokeBoxes = validStrokes.map((pts) => {
+  if (mode === 'exact') {
+    renderExactStrokes(ctx, normStrokes, nMinX, nMinY, scale, originX, originY, strokeColor);
+    return;
+  }
+
+  // 4. MODO ORGÁNICO: Misma idea y composición, redibujada con variaciones naturales humanas
+  renderHumanizedStrokes(ctx, normStrokes, nMinX, nMinY, spanX, spanY, scale, originX, originY, strokeColor, variance);
+}
+
+function renderExactStrokes(ctx, normStrokes, nMinX, nMinY, scale, originX, originY, strokeColor) {
+  ctx.save();
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 2.4;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  normStrokes.forEach((pts) => {
+    if (pts.length === 1) {
+      const sx = originX + (pts[0].x - nMinX) * scale;
+      const sy = originY + (pts[0].y - nMinY) * scale;
+      ctx.fillStyle = strokeColor;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    const screenPts = pts.map((p) => ({
+      x: originX + (p.x - nMinX) * scale,
+      y: originY + (p.y - nMinY) * scale
+    }));
+
+    ctx.beginPath();
+    ctx.moveTo(screenPts[0].x, screenPts[0].y);
+    for (let i = 1; i < screenPts.length - 1; i++) {
+      const xc = (screenPts[i].x + screenPts[i + 1].x) / 2;
+      const yc = (screenPts[i].y + screenPts[i + 1].y) / 2;
+      ctx.quadraticCurveTo(screenPts[i].x, screenPts[i].y, xc, yc);
+    }
+    ctx.lineTo(screenPts[screenPts.length - 1].x, screenPts[screenPts.length - 1].y);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function renderHumanizedStrokes(ctx, normStrokes, nMinX, nMinY, spanX, spanY, scale, originX, originY, strokeColor, varianceLevel) {
+  // 1. Agrupar trazos en componentes conexos por proximidad
+  const strokeBoxes = normStrokes.map((pts) => {
     let sMinX = Infinity, sMinY = Infinity, sMaxX = -Infinity, sMaxY = -Infinity;
     pts.forEach((p) => {
       if (p.x < sMinX) sMinX = p.x;
@@ -3343,7 +3403,7 @@ function renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, varianceLe
 
   const clusters = [];
   const visited = new Set();
-  const thresholdDist = Math.max(rawW, rawH) * 0.18;
+  const thresholdDist = Math.max(spanX, spanY) * 0.16;
 
   strokeBoxes.forEach((sb, idx) => {
     if (visited.has(idx)) return;
@@ -3351,7 +3411,7 @@ function renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, varianceLe
     visited.add(idx);
 
     for (let j = idx + 1; j < strokeBoxes.length; j++) {
-      if (visited.has(j)) return;
+      if (visited.has(j)) continue;
       const other = strokeBoxes[j];
       const dist = Math.hypot(sb.cx - other.cx, sb.cy - other.cy);
       if (dist < thresholdDist) {
@@ -3364,19 +3424,20 @@ function renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, varianceLe
 
   let varMult = 1.0;
   if (varianceLevel === 'subtle') varMult = 0.55;
-  if (varianceLevel === 'creative') varMult = 1.75;
+  if (varianceLevel === 'creative') varMult = 1.6;
 
+  ctx.save();
   ctx.strokeStyle = strokeColor;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
   clusters.forEach((cluster, cIdx) => {
-    const seed = cIdx * 997 + Math.round(minX * 0.1);
-    const clusterShiftX = (seededPseudoRandom(seed + 1) - 0.5) * 14 * varMult;
-    const clusterShiftY = (seededPseudoRandom(seed + 2) - 0.5) * 14 * varMult;
-    const clusterScaleX = 1 + (seededPseudoRandom(seed + 3) - 0.5) * 0.14 * varMult;
-    const clusterScaleY = 1 + (seededPseudoRandom(seed + 4) - 0.5) * 0.14 * varMult;
-    const clusterRot = (seededPseudoRandom(seed + 5) - 0.5) * 0.07 * varMult;
+    const seed = cIdx * 997 + Math.round(nMinX * 1000);
+    // Desplazamiento sutil por elemento (en píxeles)
+    const clusterShiftX = (seededPseudoRandom(seed + 1) - 0.5) * 8 * varMult;
+    const clusterShiftY = (seededPseudoRandom(seed + 2) - 0.5) * 8 * varMult;
+    const clusterScale = 1 + (seededPseudoRandom(seed + 3) - 0.5) * 0.08 * varMult; // ±4%
+    const clusterRot = (seededPseudoRandom(seed + 4) - 0.5) * 0.06 * varMult; // ±1.7°
 
     let cMinX = Infinity, cMinY = Infinity, cMaxX = -Infinity, cMaxY = -Infinity;
     cluster.forEach((b) => {
@@ -3390,18 +3451,24 @@ function renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, varianceLe
 
     cluster.forEach((sb, sIdx) => {
       const strokeSeed = seed + sIdx * 137;
-      const strokePoints = [];
-
       const rawPts = sb.pts;
-      const step = Math.max(1, Math.floor(rawPts.length / 28));
+      if (rawPts.length === 1) {
+        const sx = originX + (rawPts[0].x - nMinX) * scale + clusterShiftX;
+        const sy = originY + (rawPts[0].y - nMinY) * scale + clusterShiftY;
+        ctx.fillStyle = strokeColor;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+      }
+
+      const screenPoints = [];
+      const step = Math.max(1, Math.floor(rawPts.length / 32));
 
       for (let i = 0; i < rawPts.length; i += step) {
         const p = rawPts[i];
-        let dx = p.x - clusterCenterX;
-        let dy = p.y - clusterCenterY;
-
-        dx *= clusterScaleX;
-        dy *= clusterScaleY;
+        let dx = (p.x - clusterCenterX) * clusterScale;
+        let dy = (p.y - clusterCenterY) * clusterScale;
 
         const rx = dx * Math.cos(clusterRot) - dy * Math.sin(clusterRot);
         const ry = dx * Math.sin(clusterRot) + dy * Math.cos(clusterRot);
@@ -3409,44 +3476,46 @@ function renderHumanizedStrokes(ctx, rawStrokes, cw, ch, strokeColor, varianceLe
         const worldX = clusterCenterX + rx;
         const worldY = clusterCenterY + ry;
 
-        let screenX = originX + (worldX - minX) * fitScale + clusterShiftX;
-        let screenY = originY + (worldY - minY) * fitScale + clusterShiftY;
+        let screenX = originX + (worldX - nMinX) * scale + clusterShiftX;
+        let screenY = originY + (worldY - nMinY) * scale + clusterShiftY;
 
         const pointRatio = i / rawPts.length;
-        const jitterX = Math.sin(pointRatio * Math.PI * 4 + strokeSeed) * 1.8 * varMult;
-        const jitterY = Math.cos(pointRatio * Math.PI * 3 + strokeSeed) * 1.8 * varMult;
+        const jitterX = Math.sin(pointRatio * Math.PI * 4 + strokeSeed) * 1.2 * varMult;
+        const jitterY = Math.cos(pointRatio * Math.PI * 3 + strokeSeed) * 1.2 * varMult;
 
-        strokePoints.push({
+        screenPoints.push({
           x: screenX + jitterX,
           y: screenY + jitterY
         });
       }
 
+      // Asegurar punto final exacto
       const lastRaw = rawPts[rawPts.length - 1];
-      let dx = (lastRaw.x - clusterCenterX) * clusterScaleX;
-      let dy = (lastRaw.y - clusterCenterY) * clusterScaleY;
-      const rx = dx * Math.cos(clusterRot) - dy * Math.sin(clusterRot);
-      const ry = dx * Math.sin(clusterRot) + dy * Math.cos(clusterRot);
-      strokePoints.push({
-        x: originX + (clusterCenterX + rx - minX) * fitScale + clusterShiftX,
-        y: originY + (clusterCenterY + ry - minY) * fitScale + clusterShiftY
+      const ldx = (lastRaw.x - clusterCenterX) * clusterScale;
+      const ldy = (lastRaw.y - clusterCenterY) * clusterScale;
+      const lrx = ldx * Math.cos(clusterRot) - ldy * Math.sin(clusterRot);
+      const lry = ldx * Math.sin(clusterRot) + dy * Math.cos(clusterRot);
+      screenPoints.push({
+        x: originX + (clusterCenterX + lrx - nMinX) * scale + clusterShiftX,
+        y: originY + (clusterCenterY + lry - nMinY) * scale + clusterShiftY
       });
 
-      if (strokePoints.length < 2) return;
+      if (screenPoints.length < 2) return;
 
-      ctx.lineWidth = 2.4 + (seededPseudoRandom(strokeSeed) * 0.8 * varMult);
+      ctx.lineWidth = 2.2 + (seededPseudoRandom(strokeSeed) * 0.8 * varMult);
       ctx.beginPath();
-      ctx.moveTo(strokePoints[0].x, strokePoints[0].y);
+      ctx.moveTo(screenPoints[0].x, screenPoints[0].y);
 
-      for (let i = 1; i < strokePoints.length - 1; i++) {
-        const xc = (strokePoints[i].x + strokePoints[i + 1].x) / 2;
-        const yc = (strokePoints[i].y + strokePoints[i + 1].y) / 2;
-        ctx.quadraticCurveTo(strokePoints[i].x, strokePoints[i].y, xc, yc);
+      for (let i = 1; i < screenPoints.length - 1; i++) {
+        const xc = (screenPoints[i].x + screenPoints[i + 1].x) / 2;
+        const yc = (screenPoints[i].y + screenPoints[i + 1].y) / 2;
+        ctx.quadraticCurveTo(screenPoints[i].x, screenPoints[i].y, xc, yc);
       }
-      ctx.lineTo(strokePoints[strokePoints.length - 1].x, strokePoints[strokePoints.length - 1].y);
+      ctx.lineTo(screenPoints[screenPoints.length - 1].x, screenPoints[screenPoints.length - 1].y);
       ctx.stroke();
     });
   });
+  ctx.restore();
 }
 
 function renderConceptualDoodle(ctx, conceptStr, cw, ch, strokeColor) {
@@ -4585,6 +4654,9 @@ $('clearMonitorBtn').onclick = () => {
   $('lastResult').textContent = '— Esperando trazos —';
   $('confidenceList').innerHTML = '';
   redrawAllStrokes();
+  if (typeof redrawNotesDoodleCanvas === 'function') {
+    redrawNotesDoodleCanvas();
+  }
 };
 
 // Simulador táctil / mouse
@@ -4618,6 +4690,9 @@ previewCanvas.addEventListener('pointerup', () => {
     state.currentStroke = null;
     clearTimeout(state.inactivityTimer);
     state.inactivityTimer = setTimeout(onParticipantFinished, state.delayMs);
+    if (typeof redrawNotesDoodleCanvas === 'function') {
+      redrawNotesDoodleCanvas();
+    }
   }
 });
 
