@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=32" />
+  <link rel="stylesheet" href="styles.css?v=33" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=32').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=33').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -30,316 +30,66 @@
           <svg class="ui-icon lg" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         </span>
         <h1>MindPad <span>Pro</span></h1>
+      </div>
+      <div class="header-actions">
         <div id="liveStatusPill" class="live-status-pill disconnected" title="Estado Bluetooth">
           <span class="status-dot"></span>
           <span id="liveStatusText">BLE Desconectada</span>
         </div>
-      </div>
-      <div class="header-actions">
-        <button id="calcModeBtn" class="btn header-pill-btn" title="Abrir Calculadora Camuflada">
-          <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14"/><line x1="16" x2="16" y1="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
-          <span>Calculadora</span>
-        </button>
-        <button id="notesModeBtn" class="btn header-pill-btn" title="Abrir Bloc de Notas Camuflado">
-          <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
-          <span>Notas</span>
-        </button>
-        <button id="doodleModeBtn" class="btn header-pill-btn" title="Abrir Doodle Pad (Duplicación de Dibujo Camuflado)">
-          <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
-          <span>Doodle Pad</span>
-        </button>
-        <button id="musicModeBtn" class="btn header-pill-btn" title="Reproductor de Música Camuflado">
-          <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-          <span>Música</span>
-        </button>
-        <button id="stealthBtn" class="btn header-stealth-btn pulse" title="Entrar en Modo Sigiloso">
+        <button id="stealthBtn" class="btn header-stealth-btn" title="Entrar en Modo Sigilo">
           <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
           <span>Sigilo</span>
         </button>
       </div>
     </header>
 
-    <!-- BARRA DE AVISO DE RUTINA ACTIVA -->
-    <div class="active-routine-bar">
-      <div class="routine-indicator-box">
-        <span class="status-indicator-dot pulse"></span>
-        <span class="routine-caption">Rutina Activa:</span>
-        <span id="activeRoutineBadge" class="routine-badge-tag">🎨 Capa 7: Doodle Pad (Boceto)</span>
+    <!-- SELECTOR ÚNICO DE RUTINA -->
+    <div class="routine-bar">
+      <div class="routine-quick-selector" role="group" aria-label="Rutina activa">
+        <button class="routine-chip-btn" data-layer="7" aria-pressed="false">🎨 Boceto</button>
+        <button class="routine-chip-btn" data-layer="5" aria-pressed="false">💤 Sueño</button>
+        <button class="routine-chip-btn" data-layer="6" aria-pressed="false">🎵 Música</button>
+        <button class="routine-chip-btn" data-layer="4" aria-pressed="false">📋 Pizarra</button>
+        <button class="routine-chip-btn" data-layer="1" aria-pressed="false">📝 Post-it</button>
+        <button class="routine-chip-btn" data-layer="2" aria-pressed="false">📷 VIP</button>
+        <button class="routine-chip-btn" data-layer="3" aria-pressed="false">🖨️ Ticket</button>
       </div>
-      <div class="routine-quick-selector">
-        <button class="routine-chip-btn active" data-layer="7" title="Activar Doodle Pad (Boceto Duplicación)">🎨 Boceto</button>
-        <button class="routine-chip-btn" data-layer="5" title="Activar El Sueño (Notas)">💤 Sueño</button>
-        <button class="routine-chip-btn" data-layer="1" title="Activar Post-it Casual">📝 Post-it</button>
-        <button class="routine-chip-btn" data-layer="4" title="Activar Pizarra E-Ink">📋 Pizarra</button>
-        <button class="routine-chip-btn" data-layer="6" title="Activar Melodía Pensada">🎵 Música</button>
-        <button class="routine-chip-btn" data-layer="2" title="Activar Redes VIP">📷 VIP</button>
-        <button class="routine-chip-btn" data-layer="3" title="Activar Impresión">🖨️ Ticket</button>
-      </div>
+      <p class="routine-flow" aria-live="polite">
+        <span class="routine-flow-in" data-routine-flow="in"></span>
+        <span class="routine-flow-arrow" aria-hidden="true">→</span>
+        <span class="routine-flow-out" data-routine-flow="out"></span>
+      </p>
     </div>
 
-    <!-- BARRA DE PESTAÑAS PRINCIPALES -->
-    <nav class="app-nav-tabs" aria-label="Navegación de secciones">
-      <button class="app-tab-btn active" data-tab="tab-live">
-        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-        <span class="tab-label">En Vivo</span>
-      </button>
+    <nav class="app-nav-tabs" aria-label="Secciones">
       <button class="app-tab-btn" data-tab="tab-routines">
         <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-9.17 4.16a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-9.17 4.16a2 2 0 0 1-1.66 0L2 17.5"/></svg></span>
-        <span class="tab-label">Rutinas</span>
+        <span class="tab-label">Preparar</span>
       </button>
-      <button class="app-tab-btn" data-tab="tab-slate">
-        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg></span>
-        <span class="tab-label">Pizarra E-Ink</span>
+      <button class="app-tab-btn active" data-tab="tab-live">
+        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+        <span class="tab-label">Actuar</span>
       </button>
       <button class="app-tab-btn" data-tab="tab-settings">
         <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/></svg></span>
         <span class="tab-label">Ajustes</span>
       </button>
-      <button class="app-tab-btn" data-tab="tab-dossier">
-        <span class="tab-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
-        <span class="tab-label">Grimorio</span>
-      </button>
     </nav>
 
     <div class="content">
-      <!-- PESTAÑA 1: EN VIVO (CONSOLA DE ACTUACIÓN) -->
-      <div id="tab-live" class="tab-pane active">
-        <!-- Tarjeta Conexión Bluetooth -->
-        <section class="card ble-card">
-          <div class="card-title">
-            <span class="card-title-left">
-              <span class="icon-badge-box">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
-              </span>
-              Conexión Huion Note X10 (BLE)
-            </span>
-            <span id="bleStatusBadge" class="badge disconnected">Desconectada</span>
-          </div>
-          <p class="desc">Conexión inalámbrica directa por Bluetooth Low Energy. Sin app oficial ni drivers.</p>
-          <div class="btn-group">
-            <button id="bleConnectBtn" class="btn cta" style="display:flex; align-items:center; justify-content:center; gap:8px;">
-              <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span>Conectar Tableta BLE</span>
-            </button>
-            <button id="bleDisconnectBtn" class="btn secondary" style="display:none;">Desconectar</button>
-          </div>
-          <div id="bleInfo" class="meta-row">
-            <span>Lápiz: <strong id="penState">Fuera de rango</strong></span>
-            <span>Presión: <strong id="penPressure">0</strong></span>
-            <span>Batería: <strong id="tabletBattery">--%</strong></span>
-          </div>
-        </section>
-
-        <!-- Monitor de Prueba en Pantalla (Canvas interactivo) -->
-        <section class="card monitor-card">
-          <div class="card-title">
-            <span class="card-title-left">
-              <span class="icon-badge-box">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-              </span>
-              Monitor de Telepatía en Vivo
-            </span>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <span id="pageBadge" class="badge page-num">Espectador 1</span>
-              <button id="clearMonitorBtn" class="btn small" style="display:inline-flex; align-items:center; gap:5px;">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                <span>Limpiar</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Barra Rápida de Ajustes de Captura (Orientación, Auto-Ángulo y Grosor de Trazo) -->
-          <div class="monitor-quick-toolbar">
-            <div class="monitor-quick-group">
-              <span class="monitor-quick-label">Orientación:</span>
-              <button id="quickRotateMonitorBtn" class="tool-chip-btn" title="Girar vista 90° si el espectador escribió de lado">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <span id="quickRotateLabel">Girar 90°</span>
-              </button>
-              <button id="quickToggleDeskewBtn" class="tool-chip-btn toggle-active" title="Enderezar automáticamente texto escrito en ángulo o diagonal antes del OCR">
-                <span>📐 Auto-Ángulo: ON</span>
-              </button>
-            </div>
-            <div class="monitor-quick-group">
-              <span class="monitor-quick-label">Grosor:</span>
-              <button class="tool-chip-btn stroke-chip-btn" data-w="0.6" title="Grosor Ultra Fino">0.6 Fino</button>
-              <button class="tool-chip-btn stroke-chip-btn active" data-w="0.8" title="Grosor Fino Recomendado">0.8 Óptimo</button>
-              <button class="tool-chip-btn stroke-chip-btn" data-w="1.2" title="Grosor Medio">1.2 Medio</button>
-              <button class="tool-chip-btn stroke-chip-btn" data-w="1.8" title="Grosor Grueso">1.8 Grueso</button>
-            </div>
-          </div>
-
-          <div class="preview-box">
-            <canvas id="previewCanvas"></canvas>
-          </div>
-          <div class="multi-row" style="margin-top:8px;">
-            <button id="prevPageBtn" class="btn small" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
-              <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-              <span>Anterior</span>
-            </button>
-            <button id="newPageBtn" class="btn small primary" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
-              <svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span>Nuevo Espectador</span>
-            </button>
-            <button id="nextPageBtn" class="btn small" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
-              <span>Siguiente</span>
-              <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
-          <div class="result-box">
-            <div class="result-label">Último Reconocimiento:</div>
-            <div id="lastResult" class="result-text">— Esperando trazo en la tableta —</div>
-            <div id="confidenceList" class="alts"></div>
-          </div>
-
-          <!-- Mini Preview Boceto Live -->
-          <div id="liveDoodlePreviewContainer" class="console-doodle-preview-box" style="margin-top:10px;">
-            <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11px; font-weight:700; color:#facc15; display:inline-flex; align-items:center; gap:5px;">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
-                Vista Previa de Boceto (Duplicación que verá el público):
-              </span>
-              <button id="liveOpenDoodleQuickBtn" class="btn small" style="background:#ca8a04; color:#000; font-size:10.5px; font-weight:700; padding:2px 8px;">✏️ Abrir Boceto</button>
-            </div>
-            <canvas id="consoleDoodlePreviewCanvasLive" width="380" height="200" class="console-doodle-canvas"></canvas>
-          </div>
-
-          <!-- Auxilio Rápido de El Sueño (1 Toque / Letra Fea) -->
-          <div class="dream-emergency-box" style="margin-top:10px;">
-            <div class="dream-emergency-header">
-              <span style="font-size:11.5px; font-weight:700; color:#38bdf8; display:inline-flex; align-items:center; gap:5px;">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                Auxilio Rápido de El Sueño (Letra Fea / 1 Toque):
-              </span>
-            </div>
-            <div class="dream-override-grid">
-              <div class="dream-override-col">
-                <label>Hora:</label>
-                <div class="quick-chip-row">
-                  <button class="dream-chip" data-field="hour" data-val="03:45">03:45</button>
-                  <button class="dream-chip" data-field="hour" data-val="11:11">11:11</button>
-                  <button class="dream-chip" data-field="hour" data-val="08:30">08:30</button>
-                  <button class="dream-chip" data-field="hour" data-val="12:00">12:00</button>
-                </div>
-              </div>
-              <div class="dream-override-col">
-                <label>Nombre:</label>
-                <div class="quick-chip-row">
-                  <button class="dream-chip" data-field="name" data-val="Carlos">Carlos</button>
-                  <button class="dream-chip" data-field="name" data-val="Juan">Juan</button>
-                  <button class="dream-chip" data-field="name" data-val="Ana">Ana</button>
-                  <button class="dream-chip" data-field="name" data-val="Pedro">Pedro</button>
-                </div>
-              </div>
-              <div class="dream-override-col">
-                <label>Lugar:</label>
-                <div class="quick-chip-row">
-                  <button class="dream-chip" data-field="place" data-val="París">París</button>
-                  <button class="dream-chip" data-field="place" data-val="Roma">Roma</button>
-                  <button class="dream-chip" data-field="place" data-val="Madrid">Madrid</button>
-                  <button class="dream-chip" data-field="place" data-val="Tokio">Tokio</button>
-                </div>
-              </div>
-              <div class="dream-override-col">
-                <label>Comida:</label>
-                <div class="quick-chip-row">
-                  <button class="dream-chip" data-field="food" data-val="Tacos">Tacos</button>
-                  <button class="dream-chip" data-field="food" data-val="Pizza">Pizza</button>
-                  <button class="dream-chip" data-field="food" data-val="Sushi">Sushi</button>
-                  <button class="dream-chip" data-field="food" data-val="Hamburguesa">Burger</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Acceso Rápido a Salidas Secretas -->
-        <section class="card quick-actions-card">
-          <div class="card-title">
-            <span class="card-title-left">
-              <span class="icon-badge-box">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              </span>
-              Salidas Secretas & Camuflajes
-            </span>
-            <span style="font-size:11px; color:#eab308; font-weight:700;">1 Toque</span>
-          </div>
-          <div class="quick-actions-grid">
-            <button id="liveRevealSlateBtn" class="btn quick-action-btn cta">
-              <span class="btn-icon">
-                <svg class="ui-icon" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-              </span>
-              <span class="btn-text">Revelar Pizarra</span>
-            </button>
-            <button id="liveStealthBtn" class="btn quick-action-btn" style="background:#1c1d24; border:1px solid #ca8a04; color:#facc15;">
-              <span class="btn-icon">
-                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
-              </span>
-              <span class="btn-text">Modo Sigilo</span>
-            </button>
-            <button id="liveCalcBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#f59e0b; border:1px solid rgba(245,158,11,0.4);">
-              <span class="btn-icon">
-                <svg class="ui-icon" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14"/><line x1="16" x2="16" y1="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
-              </span>
-              <span class="btn-text">Calculadora</span>
-            </button>
-            <button id="liveNotesBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#38bdf8; border:1px solid rgba(56,189,248,0.4);">
-              <span class="btn-icon">
-                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
-              </span>
-              <span class="btn-text">Bloc Notas</span>
-            </button>
-            <button id="liveDoodleBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#facc15; border:1px solid rgba(250,204,21,0.4);">
-              <span class="btn-icon">
-                <svg class="ui-icon" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
-              </span>
-              <span class="btn-text">Doodle Pad</span>
-            </button>
-            <button id="liveMusicBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#34d399; border:1px solid rgba(52,211,153,0.4);">
-              <span class="btn-icon">
-                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-              </span>
-              <span class="btn-text">Música YT</span>
-            </button>
-          </div>
-        </section>
-      </div>
-
-      <!-- PESTAÑA 2: RUTINAS & CAPAS -->
+      <!-- PREPARAR: ajustes y guion de la rutina activa -->
       <div id="tab-routines" class="tab-pane">
-        <!-- Tarjeta: Capas de Presentación & Rutinas Profesionales -->
-        <section class="card" style="border: 1px solid rgba(255, 255, 255, 0.08); background: #14151b;">
-          <div class="card-title">
-            <span class="card-title-left">
-              <span class="icon-badge-box">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-9.17 4.16a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-9.17 4.16a2 2 0 0 1-1.66 0L2 17.5"/></svg>
-              </span>
-              Capas de Presentación & Rutinas
-            </span>
-            <span id="activeLayerBadge" class="badge" style="background:#ca8a04; color:#000; font-weight:700;">Capa 1: Post-it</span>
-          </div>
-          <p class="desc">Selecciona el modo según el escenario de actuación (casual, redes o teatro).</p>
-
-          <!-- Selector de Capas -->
-          <div class="layer-selector" style="display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;">
-            <button id="layer1Btn" class="btn small primary active" style="flex:1; min-width:110px;"><span class="layer-num-badge">1</span> Post-it (Casual)</button>
-            <button id="layer2Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">2</span> Redes / VIP</button>
-            <button id="layer3Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">3</span> TV / Sprocket</button>
-            <button id="layer4Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">4</span> Pizarra E-Ink</button>
-            <button id="layer5Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">5</span> El Sueño (Notas)</button>
-            <button id="layer6Btn" class="btn small secondary" style="flex:1; min-width:110px;"><span class="layer-num-badge">6</span> Canción Pensada</button>
-            <button id="layer7Btn" class="btn small secondary" style="flex:1; min-width:110px; background:#201c10; color:#facc15; border:1px solid rgba(250,204,21,0.4);"><span class="layer-num-badge" style="background:#ca8a04; color:#000;">7</span> 🎨 Doodle Pad</button>
-            <button id="viewDossierBtn" class="btn small outline" style="border-color:#ca8a04; color:#fef08a; min-width:120px; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
-              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-              <span>Ver Dossier</span>
-            </button>
+        <section class="card routine-card">
+          <div class="routine-card-head">
+            <h2 class="routine-card-name" data-routine-name></h2>
+            <p class="routine-flow">
+              <span class="routine-flow-in" data-routine-flow="in"></span>
+              <span class="routine-flow-arrow" aria-hidden="true">→</span>
+              <span class="routine-flow-out" data-routine-flow="out"></span>
+            </p>
           </div>
 
-          <!-- Capa 1: Casual / Calle / Escenario (Duplicación Post-it) -->
           <div id="layer1Content" class="layer-panel" style="display:block;">
-            <div style="background:#191b24; border-left:3px solid #facc15; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>Rutina Post-it:</strong> Duplicación inmediata. El espectador dibuja/escribe en la Huion Note X10. Tú recibes el susurro en el audífono y duplicas el trazo idéntico en un Post-it en tiempo real frente al público.
-            </div>
             <div style="display:flex; gap:8px;">
               <button id="quickOpenCalcBtn1" class="btn small cta" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14"/><line x1="16" x2="16" y1="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
@@ -347,20 +97,41 @@
               </button>
               <button id="quickOpenStealthBtn1" class="btn small secondary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
-                <span>Modo Sigilo (AOD)</span>
+                <span>Modo Sigilo</span>
               </button>
               <button id="clearLayer1Btn" class="btn small btn-routine-clear" title="Limpiar trazos de la rutina Post-it">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
                 <span>Limpiar</span>
               </button>
             </div>
+            <details class="routine-help">
+              <summary><span>Cómo se presenta</span><span class="routine-help-venue">Casual / Street / Close-Up</span></summary>
+              <div class="routine-help-body">
+          <div class="routine-desc">
+            <strong>Efecto:</strong> El espectador dibuja un símbolo o escribe una palabra secreta en tu bloc de notas real con tinta física. Sin que mires en ningún momento su libreta, sacas un taco de Post-its y un marcador de tu bolsillo y dibujas exactamente lo mismo con idéntica proporción e inclinación.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>Aislamiento:</strong> Le entregas la libreta Huion Note X10 al espectador y te giras de espaldas: <em>"Dibuja algo que signifique algo para ti... no me lo digas"</em>.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>Información Invisible:</strong> Mientras el espectador dibuja, el audífono te susurra al oído la palabra/figura o miras la calculadora en la mesa al pedirle un cálculo.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Clímax Orgánico:</strong> Sacas un Post-it común de tu saco, trazas tu dibujo, lo pegas sobre la mesa y ambos voltean sus dibujos al mismo tiempo.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            <strong>Valor Comercial:</strong> Cero sospechas tecnológicas. El espectador solo recuerda papel, tinta y una nota adhesiva real.
+          </div>
+              </div>
+            </details>
           </div>
 
-          <!-- Capa 2: Redes Sociales / Celebridades / VIP (Prueba de Tiempo) -->
           <div id="layer2Content" class="layer-panel" style="display:none;">
-            <div style="background:#191b24; border-left:3px solid #38bdf8; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>Rutina VIP / Redes:</strong> Viaje en el tiempo digital. La IA crea la predicción con fecha retroactiva EXIF. El famoso abre tu galería (álbum de predicciones) o publica en Instagram Stories con el sticker de fecha original.
-            </div>
             <div class="field-row" style="margin-bottom:8px;">
               <label for="vipEventName" style="font-size:11.5px; color:#38bdf8; font-weight:600;">Carpeta / Evento VIP:</label>
               <input id="vipEventName" type="text" placeholder="Ej: Entrevista con [Nombre] / Programa Hoy" style="flex:1; background:#0d0e12; border:1px solid rgba(255,255,255,0.1); color:#fff; padding:6px 10px; border-radius:6px; font-size:12px;" />
@@ -379,13 +150,38 @@
                 <span>Limpiar</span>
               </button>
             </div>
+            <details class="routine-help">
+              <summary><span>Cómo se presenta</span><span class="routine-help-venue">VIP / Famosos / Redes Sociales</span></summary>
+              <div class="routine-help-body">
+          <div class="routine-desc">
+            <strong>Efecto:</strong> La celebridad dibuja su destino soñado o una visión íntima. Al terminar, le pides que abra tu propia galería o Instagram Stories: allí ya existe una fotografía cinematográfica hiperrealista de esa misma visión... ¡tomada y fechada hace 4 días!
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>Personalización:</strong> Creas la carpeta o evento VIP (ej: <em>"Entrevista con [Celebridad]"</em>).</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>IA con Fecha Retroactiva:</strong> El motor fotográfico (Nano Banana / Flux) integra el dibujo en una escena hiperrealista inyectando metadatos EXIF reales del pasado.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>El Testigo Digital:</strong> Le pasas el teléfono a la celebridad. Al abrir Instagram Stories, la app reconoce los metadatos y añade el <em>Sticker Oficial de Fecha de Instagram</em> (ej: "10 NOV").</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>Viralidad:</strong> Te tomas una selfie con la celebridad y la suben a sus redes. Contenido de alto impacto que se vuelve viral.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            <strong>Valor Comercial:</strong> Ideal para conseguir contratos de influencers, sponsors y presencia televisiva.
+          </div>
+              </div>
+            </details>
           </div>
 
-          <!-- Capa 3: Teatro / Televisión (HP Sprocket) -->
           <div id="layer3Content" class="layer-panel" style="display:none;">
-            <div style="background:#191b24; border-left:3px solid #10b981; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>Rutina HP Sprocket:</strong> Impresión silenciosa en el bolsillo. Genera la imagen y MacroDroid la imprime en segundo plano (~45-60s). Emplea este minuto en teatralidad y lectura de mente hasta sacar la foto física tibia.
-            </div>
             <div style="background:#111216; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span style="font-size:12px; font-weight:700; color:#34d399; display:inline-flex; align-items:center; gap:5px;">
@@ -409,13 +205,42 @@
                 </button>
               </div>
             </div>
+            <details class="routine-help">
+              <summary><span>Cómo se presenta</span><span class="routine-help-venue">Teatro / Televisión / Auditorio</span></summary>
+              <div class="routine-help-body">
+          <div class="routine-desc">
+            <strong>Efecto:</strong> En un show en vivo, un espectador dibuja un paisaje o sueño. Mientras haces lectura en frío sobre su mente durante 50 segundos, metes tu mano vacía al bolsillo interior de tu saco y sacas una fotografía física a todo color, todavía tibia, impresa antes de que él decidiera su dibujo.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>Disparo Silencioso:</strong> La imagen se auto-guarda como <code>prediccion_print.jpg</code> y MacroDroid la envía a tu HP Sprocket 200 en tu bolsillo interior.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>La Danza del Tiempo (60 seg):</strong> Utilizas el Cronómetro Teatral con pautas de lectura en frío:
+                <br>• <em>0-15s:</em> "Cierra los ojos, concéntrate en los colores..."
+                <br>• <em>15-35s:</em> Lectura en frío de texturas y emociones.
+                <br>• <em>35-50s:</em> "Esta mañana tuve una premonición y traje algo físico en mi saco..."
+              </span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Señal Secreta:</strong> Tu audífono o reloj te confirma con una vibración: <em>"Foto impresa lista en el bolsillo"</em>.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>El Souvenir Imposible:</strong> Sacas la foto física tibia y se la firmas como recuerdo que atesorará para siempre.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            <strong>Valor Comercial:</strong> El efecto culminante ("Closer") definitivo para teatro y congresos corporativos.
+          </div>
+              </div>
+            </details>
           </div>
 
-          <!-- Capa 4: Pizarra E-Ink / Monitor Kindle (Gis Blanco sobre Pizarra) -->
           <div id="layer4Content" class="layer-panel" style="display:none;">
-            <div style="background:#191b24; border-left:3px solid #facc15; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>Rutina Pizarra E-Ink:</strong> Proyección silenciosa en un monitor de tinta electrónica o e-reader tipo Kindle en el escenario. Como si una mano invisible dibujara con tiza blanca sobre pizarra negra.
-            </div>
             <div style="display:flex; gap:8px;">
               <button id="quickOpenSlateBtn" class="btn small cta" style="flex:1; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg>
@@ -430,20 +255,122 @@
                 <span>Limpiar</span>
               </button>
             </div>
+            <div class="routine-subsection">
+              <h3 class="routine-subsection-title">Pantalla de la pizarra (Kindle / segunda pantalla)</h3>
+          <!-- Enlace & QR para Kindle / Segunda Pantalla -->
+          <div style="background:#101116; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label style="font-size:11.5px; color:#facc15; font-weight:700;">URL para el navegador del Kindle / Segunda Pantalla:</label>
+              <span id="slateRoomCode" style="font-family:monospace; font-size:11px; background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px;">Sala: SLATE</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <input id="slateRemoteUrlInput" type="text" readonly style="flex:1; background:#000; border:1px solid rgba(255,255,255,0.15); color:#f8fafc; font-size:11.5px; padding:6px 8px; border-radius:4px;" />
+              <button id="copySlateUrlBtn" class="btn small secondary" style="display:inline-flex; align-items:center; gap:4px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span>Copiar</span>
+              </button>
+              <button id="openSlateWindowBtn" class="btn small cta" style="background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg>
+                <span>Abrir</span>
+              </button>
+            </div>
           </div>
 
-          <!-- Capa 5: La Rutina del Sueño & Bloc de Notas Camuflado -->
-          <div id="layer5Content" class="layer-panel" style="display:none;">
-            <div style="background:#191b24; border-left:3px solid #38bdf8; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>Rutina del Sueño:</strong> Pides al espectador que escriba: Hora, Nombre, Lugar y Comida favorita en una hoja y la doble. Tu app de Notas camuflada completa una premonición fechada hace días o dibuja el doodle silenciosamente mientras el móvil está boca abajo en la mesa.
+          <!-- Ajustes de Estilo de Pizarra -->
+          <div class="field-row">
+            <label for="slateStyleSelect">Estilo de Pizarra:</label>
+            <select id="slateStyleSelect">
+              <option value="blackboard" selected>Gis Blanco sobre Pizarra Negra (Blackboard)</option>
+              <option value="inverted">Papel E-Ink (Tinta Negra sobre Blanco)</option>
+              <option value="wooden">Pizarra con Marco de Madera Vintage</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="slateContentTypeSelect">Contenido en Pizarra:</label>
+            <select id="slateContentTypeSelect">
+              <option value="text">Texto escrito en la Huion (Tipografía de Tiza)</option>
+              <option value="strokes" selected>Trazos de la Huion en Vivo (Duplicación en Gis)</option>
+              <option value="dream_list">Lista de Palabras / Rutina del Sueño en Gis</option>
+              <option value="card">Carta de Baraja en Gis (A♠, 7♥, etc.)</option>
+              <option value="word">Palabra / Código Secreto en Gis</option>
+              <option value="doodle">Doodle / Icono Minimalista en Gis</option>
+            </select>
+          </div>
+
+          <!-- Selector Rápido de Cartas de Baraja para Magos -->
+          <div id="slateCardRow" class="field-row" style="display:none; background:#1a1c25; padding:8px; border-radius:6px; border:1px solid #ca8a04;">
+            <label for="slatePlayingCardSelect" style="color:#facc15; font-weight:600;">Carta a Proyectar:</label>
+            <select id="slatePlayingCardSelect" style="flex:1;">
+              <option value="AS" selected>As de Picas (A♠)</option>
+              <option value="7H">7 de Corazones (7♥)</option>
+              <option value="KD">Rey de Diamantes (K♦)</option>
+              <option value="QC">Reina de Tréboles (Q♣)</option>
+              <option value="10S">10 de Picas (10♠)</option>
+              <option value="3D">3 de Diamantes (3♦)</option>
+              <option value="JH">Jota de Corazones (J♥)</option>
+              <option value="custom">Carta personalizada...</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label class="toggle-label" style="font-size:11.5px; color:#facc15; font-weight:600;">
+              <input id="slateLiveSyncCheck" type="checkbox" checked />
+              <span>Transmitir en Vivo Trazo a Trazo (o desmarcar para Revelación Clímax)</span>
+            </label>
+          </div>
+
+          <!-- Botones de Acción de Pizarra -->
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button id="slateRevealBtn" class="btn primary full" style="flex:2; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+              <span>Revelar en Pizarra Ahora</span>
+            </button>
+            <button id="slateClearBtn" class="btn secondary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+              <span>Borrar Pizarra</span>
+            </button>
+          </div>
             </div>
+            <details class="routine-help">
+              <summary><span>Cómo se presenta</span><span class="routine-help-venue">Teatro / Caballete / E-Ink</span></summary>
+              <div class="routine-help-body">
+          <div class="routine-desc">
+            <strong>Efecto:</strong> Sobre un atril o caballete a la vista del público descansa una pequeña pizarra negra (un monitor de tinta electrónica tipo Kindle o tablet e-ink). Nadie se acerca a ella. El espectador piensa o dibuja algo (o piensa en una carta de baraja). Cuando el mago lo ordena, la pantalla parpadea suavemente y aparece dibujado en <strong>tiza blanca con textura real</strong> exactamente lo que el espectador tenía en mente.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>Preparación Invisible:</strong> Colocas tu Kindle o tablet e-ink en el atril con la URL de la pizarra abierta en pantalla completa. La pantalla permanece negra o con un sutil marco de pizarra vacía.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>La Decisión del Espectador:</strong> El espectador dibuja en la Huion Note X10 (o nombra una carta de póker).</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Transmisión Silenciosa:</strong> MindPad sincroniza el trazo, carta o doodle en tiempo real hacia la pizarra E-Ink. Si estás en modo manual, presionas <em>"Revelar en Pizarra"</em> cuando llegue el clímax dramático.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>El Clímax de la Tiza:</strong> El público ve con asombro la predicción escrita en gis blanco como si una mano invisible lo hubiera trazado en ese mismo instante.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            <strong>Valor Comercial:</strong> Parece un objeto victoriano o de escuela antigua pero opera con la tecnología más puntera. Cero reflejos, estética teatral insuperable.
+          </div>
+              </div>
+            </details>
+          </div>
+
+          <div id="layer5Content" class="layer-panel" style="display:none;">
 
             <!-- PANEL DE AUXILIO Y CORRECCIÓN RÁPIDA (LETRA FEA / 1 TOQUE) -->
             <div class="dream-emergency-box">
               <div class="dream-emergency-header">
                 <span style="font-size:12px; font-weight:700; color:#facc15; display:inline-flex; align-items:center; gap:6px;">
                   <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                  Corrección Rápida / Auxilio (Letra Fea / 1 Toque)
+                  Corregir datos del sueño
                 </span>
                 <span style="font-size:11px; color:#94a3b8;">Si el espectador tiene letra ilegible o el OCR falló, toca una opción o escribe para corregir la nota en 0 segundos:</span>
               </div>
@@ -529,7 +456,7 @@
               </button>
               <button id="forceUpdateDreamNoteBtn" class="btn small primary" style="flex:1 1 45%; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <span>⚡ Guardar & Sincronizar</span>
+                <span>Guardar y sincronizar</span>
               </button>
               <button id="quickSpeakDreamBtn5" class="btn small secondary" title="Dictar por audífono BT" style="flex:1 1 45%; display:inline-flex; align-items:center; justify-content:center; gap:5px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -537,16 +464,41 @@
               </button>
               <button id="clearLayer5Btn" class="btn small btn-routine-clear" style="flex:1 1 45%;" title="Limpiar datos del sueño y reiniciar premonición">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
-                <span>🗑️ Limpiar Sueño</span>
+                <span>Limpiar</span>
               </button>
             </div>
+            <details class="routine-help">
+              <summary><span>Cómo se presenta</span><span class="routine-help-venue">Mesa / Close-up / Mentalismo Psicológico</span></summary>
+              <div class="routine-help-body">
+          <div class="routine-desc">
+            <strong>Efecto:</strong> El mago relata que hace 4 días tuvo un sueño premonitorio tan vívido que decidió anotarlo en el bloc de notas de su teléfono nada más despertar. Pide a un espectador que piense y anote en una hoja sobre la libreta: <strong>1. Una hora exacta</strong>, <strong>2. El nombre de alguien</strong>, <strong>3. Un país o ciudad</strong>, y <strong>4. Una comida</strong>. El espectador dobla la hoja. El mago nunca tocó la hoja ni el espectador mostró nada. El mago saca su móvil, abre la app de Notas y se la entrega en la mano al espectador: la nota está fechada hace días y relata exactamente el sueño conteniendo con precisión quirúrgica la hora, el nombre, la ciudad y la comida. Si prefiere modo dibujo, el mago muestra la pantalla vacía con pinceles y colores, hace un garabato con su dedo, lo borra y deja el móvil boca abajo sobre la mesa: al voltearlo, el dibujo del espectador ya apareció dentro de la nota.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>El Relato Inicial:</strong> Introduces la idea de los sueños premonitorios. Muestras tu bloc de notas fechado hace 4 días para que vean la fecha auténtica y lo dejas boca abajo en la mesa.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>Las 4 Decisiones Libres:</strong> El espectador anota: Hora, Nombre, Destino y Comida favorita en la libreta Huion.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Sincronización Silenciosa:</strong> MindPad rellena las 4 variables dentro del texto de la nota y envía la lista a la pizarra de tiza.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>El Clímax:</strong> El espectador toma el teléfono que estuvo en la mesa todo el tiempo y lee la nota en voz alta. Coincidencia al 100%.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            <strong>Valor Comercial:</strong> Impacto emocional profundo. La fecha retroactiva destruye cualquier teoría de que el mago lo escribió en ese instante.
+          </div>
+              </div>
+            </details>
           </div>
 
-          <!-- Capa 6: La Canción Pensada & Justificación de Audífono -->
           <div id="layer6Content" class="layer-panel" style="display:none;">
-            <div style="background:#191b24; border-left:3px solid #10b981; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>Rutina Melodía Pensada:</strong> El espectador piensa y anota su canción favorita. La app la busca en tiempo real en la base mundial de iTunes. Te quitas el auricular: <em>"¿Por qué nombraste esa canción?... Mira, me quito el audífono, es exactamente lo que estaba escuchando"</em>. Le das play al reproductor y suena de verdad.
-            </div>
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">Canción o Artista:</label>
               <input id="dreamSongInput" type="text" value="" style="flex:1;" placeholder="ej. The Power of Love, Imagine, Hotel California..." />
@@ -602,13 +554,38 @@
                 <span>Limpiar</span>
               </button>
             </div>
+            <details class="routine-help">
+              <summary><span>Cómo se presenta</span><span class="routine-help-venue">Casual / Social / TV / Conexión Emocional</span></summary>
+              <div class="routine-help-body">
+          <div class="routine-desc">
+            <strong>Efecto:</strong> Durante toda la conversación el mago lleva puesto un discreto audífono inalámbrico. Le pide al espectador que piense en una canción que signifique mucho para él y que la escriba en una hoja para congelar el pensamiento. En cuanto el espectador termina, el mago se detiene pasmado, se quita el audífono lentamente y dice: <em>"¿Por qué pensaste en esa canción?... No tiene sentido. Mira, me quito el audífono... escucha lo que estaba sonando"</em>. El mago acerca el auricular o pone el altavoz del móvil mostrando un reproductor de música con la carátula oficial y sonando la canción real.
+          </div>
+          <div class="routine-steps-list">
+            <div class="routine-step-item">
+              <span class="routine-step-num">1.</span>
+              <span><strong>El Audífono Visible:</strong> Comienzas tu actuación con un audífono puesto (o dices que estabas relajándote con música antes de empezar).</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">2.</span>
+              <span><strong>Canción Pensada:</strong> El espectador escribe el título o artista en la Huion Note.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">3.</span>
+              <span><strong>Búsqueda Instantánea:</strong> MindPad consulta en ~200ms la base mundial de iTunes, carga la carátula oficial y el audio original.</span>
+            </div>
+            <div class="routine-step-item">
+              <span class="routine-step-num">4.</span>
+              <span><strong>El Despegue & Revelación:</strong> Te quitas el audífono teatralmente, muestras la pantalla del reproductor y le das play frente a todos.</span>
+            </div>
+          </div>
+          <div class="routine-pro-tip">
+            <strong>Valor Comercial:</strong> Convierte el audífono (que normalmente es el talón de Aquiles de un mago) en la prueba irrefutable del milagro.
+          </div>
+              </div>
+            </details>
           </div>
 
-          <!-- Capa 7: Doodle Pad / Duplicación de Dibujo Telepático -->
           <div id="layer7Content" class="layer-panel" style="display:none;">
-            <div style="background:#191b24; border-left:3px solid #facc15; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.4; margin-bottom:10px;">
-              <strong>Rutina Doodle Pad (Boceto):</strong> El espectador dibuja cualquier objeto, figura o símbolo en la tableta Huion. Tu bloc de notas duplica el dibujo con un estilo natural y orgánico hecho a mano (no un clon digital idéntico sospechoso). Al abrir la nota frente al público, parece un boceto que dibujaste hace días.
-            </div>
             <div class="field-row">
               <label style="font-size:11px; color:#94a3b8; width:130px;">Modo Duplicación:</label>
               <select id="notesDoodleDupModeSelect7" style="flex:1;">
@@ -631,7 +608,7 @@
               <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:11px; font-weight:700; color:#facc15; display:inline-flex; align-items:center; gap:5px;">
                   <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
-                  Vista Previa en Vivo de la Duplicación (Boceto que verá el público):
+                  Boceto que verá el público:
                 </span>
                 <button id="rerollDoodleVarBtn7" class="btn small" style="background:#202230; font-size:10.5px; padding:2px 8px;" title="Generar otra variación natural">🔄 Variar</button>
               </div>
@@ -641,24 +618,30 @@
             <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
               <button id="quickOpenDoodlePadBtn7" class="btn small cta" style="flex:1 1 45%; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
-                <span>✏️ Abrir Doodle Pad en Teléfono</span>
+                <span>Abrir boceto</span>
               </button>
               <button id="clearLayer7Btn" class="btn small btn-routine-clear" style="flex:1 1 45%;" title="Limpiar trazos de tableta y boceto">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
-                <span>🗑️ Limpiar Boceto</span>
+                <span>Limpiar</span>
               </button>
             </div>
+            <details class="routine-help">
+              <summary><span>Cómo se presenta</span><span class="routine-help-venue">Mesa / Close-up</span></summary>
+              <div class="routine-help-body">
+                <div class="routine-desc"><strong>Efecto:</strong> El espectador dibuja cualquier objeto, figura o símbolo en la tableta Huion. Tu bloc de notas duplica el dibujo con un estilo natural hecho a mano (no un clon digital idéntico). Al abrir la nota frente al público, parece un boceto que dibujaste hace días.</div>
+              </div>
+            </details>
           </div>
         </section>
 
         <!-- Tarjeta PREDICCIÓN IA (Generador de Imágenes / Instagram) -->
-        <section class="card ai-card">
+        <section class="card ai-card" data-show-routine="2 3">
           <div class="card-title">
             <span class="card-title-left">
               <span class="icon-badge-box">
                 <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
               </span>
-              Predicción IA (Estilo Nano Banana)
+              Foto de predicción con IA
             </span>
             <span class="badge" style="background:#2a1c0d; color:#facc15; border:1px solid #78350f;">Instagram Ready</span>
           </div>
@@ -675,14 +658,6 @@
 
           <!-- Panel de Configuración OpenRouter -->
           <div id="openRouterSettings" style="display:none; background:#101116; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px; margin-bottom:12px;">
-            <div class="field-row" style="margin-bottom:8px;">
-              <label for="openRouterKey" style="color:#facc15; font-weight:600;">Token OpenRouter:</label>
-              <div style="display:flex; gap:6px; flex:1;">
-                <input id="openRouterKey" type="password" placeholder="sk-or-v1-..." style="flex:1;" />
-                <button id="testOpenRouterBtn" class="btn small" style="white-space:nowrap; padding:4px 8px; font-size:11px;">Validar</button>
-              </div>
-            </div>
-            <div id="openRouterTokenStatus" style="font-size:11px; margin-bottom:8px; display:none;"></div>
 
             <div class="field-row" style="margin-bottom:8px;">
               <label for="openRouterModel">Modelo de Imagen:</label>
@@ -702,12 +677,7 @@
               <input id="customModelInput" type="text" placeholder="ej. google/gemini-3-pro-image" />
             </div>
 
-            <div class="field-row" style="margin-bottom:0;">
-              <label class="toggle-label" style="font-size:11.5px; color:#cbd5e1;">
-                <input id="openRouterVisionCheck" type="checkbox" checked />
-                <span>Usar Gemini Vision para descifrar el trazo manuscrito</span>
-              </label>
-            </div>
+
           </div>
 
           <div class="field-row">
@@ -842,110 +812,256 @@
         </section>
       </div>
 
-      <!-- PESTAÑA 3: PIZARRA E-INK -->
-      <div id="tab-slate" class="tab-pane">
-        <!-- Tarjeta PIZARRA E-INK & MONITOR KINDLE (SEGUNDA PANTALLA) -->
-        <section class="card" style="border: 1px solid rgba(255, 255, 255, 0.08); background: #14151b;">
+      <!-- ACTUAR: conexión, lectura en vivo y revelación -->
+      <div id="tab-live" class="tab-pane active">
+        <!-- Tarjeta Conexión Bluetooth -->
+        <section class="card ble-card">
           <div class="card-title">
             <span class="card-title-left">
               <span class="icon-badge-box">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg>
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
               </span>
-              Pizarra E-Ink & Monitor Kindle
+              Conexión Huion Note X10 (BLE)
             </span>
-            <span id="slateStatusBadge" class="badge" style="background:#ca8a04; color:#000; font-weight:700;">Gis en Pizarra</span>
+            <span id="bleStatusBadge" class="badge disconnected">Desconectada</span>
           </div>
-          <p class="desc" style="color:#e2e8f0;">
-            Convierte cualquier e-reader Kindle, tablet de tinta electrónica o pantalla secundaria en una pizarra mágica que proyecta trazos, cartas, doodles o palabras en tiza blanca.
-          </p>
-
-          <!-- Enlace & QR para Kindle / Segunda Pantalla -->
-          <div style="background:#101116; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <label style="font-size:11.5px; color:#facc15; font-weight:700;">URL para el navegador del Kindle / Segunda Pantalla:</label>
-              <span id="slateRoomCode" style="font-family:monospace; font-size:11px; background:#1e293b; color:#38bdf8; padding:2px 6px; border-radius:4px;">Sala: SLATE</span>
-            </div>
-            <div style="display:flex; gap:6px;">
-              <input id="slateRemoteUrlInput" type="text" readonly style="flex:1; background:#000; border:1px solid rgba(255,255,255,0.15); color:#f8fafc; font-size:11.5px; padding:6px 8px; border-radius:4px;" />
-              <button id="copySlateUrlBtn" class="btn small secondary" style="display:inline-flex; align-items:center; gap:4px;">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                <span>Copiar</span>
-              </button>
-              <button id="openSlateWindowBtn" class="btn small cta" style="background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21"/><line x1="12" x2="12" y1="17"/></svg>
-                <span>Abrir</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Ajustes de Estilo de Pizarra -->
-          <div class="field-row">
-            <label for="slateStyleSelect">Estilo de Pizarra:</label>
-            <select id="slateStyleSelect">
-              <option value="blackboard" selected>Gis Blanco sobre Pizarra Negra (Blackboard)</option>
-              <option value="inverted">Papel E-Ink (Tinta Negra sobre Blanco)</option>
-              <option value="wooden">Pizarra con Marco de Madera Vintage</option>
-            </select>
-          </div>
-
-          <div class="field-row">
-            <label for="slateContentTypeSelect">Contenido en Pizarra:</label>
-            <select id="slateContentTypeSelect">
-              <option value="text">Texto escrito en la Huion (Tipografía de Tiza)</option>
-              <option value="strokes" selected>Trazos de la Huion en Vivo (Duplicación en Gis)</option>
-              <option value="dream_list">Lista de Palabras / Rutina del Sueño en Gis</option>
-              <option value="card">Carta de Baraja en Gis (A♠, 7♥, etc.)</option>
-              <option value="word">Palabra / Código Secreto en Gis</option>
-              <option value="doodle">Doodle / Icono Minimalista en Gis</option>
-            </select>
-          </div>
-
-          <!-- Selector Rápido de Cartas de Baraja para Magos -->
-          <div id="slateCardRow" class="field-row" style="display:none; background:#1a1c25; padding:8px; border-radius:6px; border:1px solid #ca8a04;">
-            <label for="slatePlayingCardSelect" style="color:#facc15; font-weight:600;">Carta a Proyectar:</label>
-            <select id="slatePlayingCardSelect" style="flex:1;">
-              <option value="AS" selected>As de Picas (A♠)</option>
-              <option value="7H">7 de Corazones (7♥)</option>
-              <option value="KD">Rey de Diamantes (K♦)</option>
-              <option value="QC">Reina de Tréboles (Q♣)</option>
-              <option value="10S">10 de Picas (10♠)</option>
-              <option value="3D">3 de Diamantes (3♦)</option>
-              <option value="JH">Jota de Corazones (J♥)</option>
-              <option value="custom">Carta personalizada...</option>
-            </select>
-          </div>
-
-          <div class="field-row">
-            <label class="toggle-label" style="font-size:11.5px; color:#facc15; font-weight:600;">
-              <input id="slateLiveSyncCheck" type="checkbox" checked />
-              <span>Transmitir en Vivo Trazo a Trazo (o desmarcar para Revelación Clímax)</span>
-            </label>
-          </div>
-
-          <!-- Botones de Acción de Pizarra -->
-          <div style="display:flex; gap:8px; margin-top:10px;">
-            <button id="slateRevealBtn" class="btn primary full" style="flex:2; background:#ca8a04; color:#000; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
-              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-              <span>Revelar en Pizarra Ahora</span>
+          <div class="btn-group">
+            <button id="bleConnectBtn" class="btn cta" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Conectar Tableta BLE</span>
             </button>
-            <button id="slateClearBtn" class="btn secondary" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
-              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-              <span>Borrar Pizarra</span>
+            <button id="bleDisconnectBtn" class="btn secondary" style="display:none;">Desconectar</button>
+          </div>
+          <div id="bleInfo" class="meta-row">
+            <span>Lápiz: <strong id="penState">Fuera de rango</strong></span>
+            <span>Presión: <strong id="penPressure">0</strong></span>
+            <span>Batería: <strong id="tabletBattery">--%</strong></span>
+          </div>
+        </section>
+
+        <!-- Monitor de Prueba en Pantalla (Canvas interactivo) -->
+        <section class="card monitor-card">
+          <div class="card-title">
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+              Lo que escribe el espectador
+            </span>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span id="pageBadge" class="badge page-num">Espectador 1</span>
+              <button id="clearMonitorBtn" class="btn small" style="display:inline-flex; align-items:center; gap:5px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <span>Limpiar</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="result-box">
+            <div class="result-label">Lectura</div>
+            <div id="lastResult" class="result-text">— Esperando trazo en la tableta —</div>
+            <div id="confidenceList" class="alts"></div>
+          </div>
+
+          <button id="revealRoutineBtn" class="btn reveal-btn">
+            <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+            <span id="revealRoutineLabel">Revelar</span>
+          </button>
+
+          <!-- Mini Preview Boceto Live -->
+          <div id="liveDoodlePreviewContainer" data-show-routine="7" class="console-doodle-preview-box" style="margin-top:10px;">
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#facc15; display:inline-flex; align-items:center; gap:5px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+                Boceto que verá el público:
+              </span>
+              <button id="liveOpenDoodleQuickBtn" class="btn small" style="background:#ca8a04; color:#000; font-size:10.5px; font-weight:700; padding:2px 8px;">Abrir boceto</button>
+            </div>
+            <canvas id="consoleDoodlePreviewCanvasLive" width="380" height="200" class="console-doodle-canvas"></canvas>
+          </div>
+
+          <!-- Auxilio Rápido de El Sueño (1 Toque / Letra Fea) -->
+          <div class="dream-emergency-box" data-show-routine="5" style="margin-top:10px;">
+            <div class="dream-emergency-header">
+              <span style="font-size:11.5px; font-weight:700; color:#38bdf8; display:inline-flex; align-items:center; gap:5px;">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Corregir el sueño con 1 toque:
+              </span>
+            </div>
+            <div class="dream-override-grid">
+              <div class="dream-override-col">
+                <label>Hora:</label>
+                <div class="quick-chip-row">
+                  <button class="dream-chip" data-field="hour" data-val="03:45">03:45</button>
+                  <button class="dream-chip" data-field="hour" data-val="11:11">11:11</button>
+                  <button class="dream-chip" data-field="hour" data-val="08:30">08:30</button>
+                  <button class="dream-chip" data-field="hour" data-val="12:00">12:00</button>
+                </div>
+              </div>
+              <div class="dream-override-col">
+                <label>Nombre:</label>
+                <div class="quick-chip-row">
+                  <button class="dream-chip" data-field="name" data-val="Carlos">Carlos</button>
+                  <button class="dream-chip" data-field="name" data-val="Juan">Juan</button>
+                  <button class="dream-chip" data-field="name" data-val="Ana">Ana</button>
+                  <button class="dream-chip" data-field="name" data-val="Pedro">Pedro</button>
+                </div>
+              </div>
+              <div class="dream-override-col">
+                <label>Lugar:</label>
+                <div class="quick-chip-row">
+                  <button class="dream-chip" data-field="place" data-val="París">París</button>
+                  <button class="dream-chip" data-field="place" data-val="Roma">Roma</button>
+                  <button class="dream-chip" data-field="place" data-val="Madrid">Madrid</button>
+                  <button class="dream-chip" data-field="place" data-val="Tokio">Tokio</button>
+                </div>
+              </div>
+              <div class="dream-override-col">
+                <label>Comida:</label>
+                <div class="quick-chip-row">
+                  <button class="dream-chip" data-field="food" data-val="Tacos">Tacos</button>
+                  <button class="dream-chip" data-field="food" data-val="Pizza">Pizza</button>
+                  <button class="dream-chip" data-field="food" data-val="Sushi">Sushi</button>
+                  <button class="dream-chip" data-field="food" data-val="Hamburguesa">Burger</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra Rápida de Ajustes de Captura (Orientación, Auto-Ángulo y Grosor de Trazo) -->
+          <div class="monitor-quick-toolbar">
+            <div class="monitor-quick-group">
+              <span class="monitor-quick-label">Orientación:</span>
+              <button id="quickRotateMonitorBtn" class="tool-chip-btn" title="Girar vista 90° si el espectador escribió de lado">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span id="quickRotateLabel">Girar 90°</span>
+              </button>
+              <button id="quickToggleDeskewBtn" class="tool-chip-btn toggle-active" title="Enderezar automáticamente texto escrito en ángulo o diagonal antes del OCR">
+                <span>📐 Auto-Ángulo: ON</span>
+              </button>
+            </div>
+            <div class="monitor-quick-group">
+              <span class="monitor-quick-label">Grosor:</span>
+              <button class="tool-chip-btn stroke-chip-btn" data-w="0.6" title="Grosor Ultra Fino">0.6 Fino</button>
+              <button class="tool-chip-btn stroke-chip-btn active" data-w="0.8" title="Grosor Fino Recomendado">0.8 Óptimo</button>
+              <button class="tool-chip-btn stroke-chip-btn" data-w="1.2" title="Grosor Medio">1.2 Medio</button>
+              <button class="tool-chip-btn stroke-chip-btn" data-w="1.8" title="Grosor Grueso">1.8 Grueso</button>
+            </div>
+          </div>
+
+          <div class="preview-box">
+            <canvas id="previewCanvas"></canvas>
+          </div>
+          <div class="multi-row" style="margin-top:8px;">
+            <button id="prevPageBtn" class="btn small" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>Anterior</span>
+            </button>
+            <button id="newPageBtn" class="btn small primary" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Nuevo Espectador</span>
+            </button>
+            <button id="nextPageBtn" class="btn small" style="display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+              <span>Siguiente</span>
+              <svg class="ui-icon sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- Acceso Rápido a Salidas Secretas -->
+        <section class="card quick-actions-card">
+          <div class="card-title">
+            <span class="card-title-left">
+              <span class="icon-badge-box">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </span>
+              Pantallas camufladas
+            </span>
+            
+          </div>
+          <div class="quick-actions-grid">
+            <button id="liveStealthBtn" class="btn quick-action-btn" style="background:#1c1d24; border:1px solid #ca8a04; color:#facc15;">
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+              </span>
+              <span class="btn-text">Modo Sigilo</span>
+            </button>
+            <button id="liveCalcBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#f59e0b; border:1px solid rgba(245,158,11,0.4);">
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14"/><line x1="16" x2="16" y1="18"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
+              </span>
+              <span class="btn-text">Calculadora</span>
+            </button>
+            <button id="liveNotesBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#38bdf8; border:1px solid rgba(56,189,248,0.4);">
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+              </span>
+              <span class="btn-text">Notas</span>
+            </button>
+            <button id="liveDoodleBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#facc15; border:1px solid rgba(250,204,21,0.4);">
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+              </span>
+              <span class="btn-text">Boceto</span>
+            </button>
+            <button id="liveMusicBtn" class="btn quick-action-btn" style="background:#1c1d24; color:#34d399; border:1px solid rgba(52,211,153,0.4);">
+              <span class="btn-icon">
+                <svg class="ui-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              </span>
+              <span class="btn-text">Reproductor</span>
             </button>
           </div>
         </section>
       </div>
 
-      <!-- PESTAÑA 4: AJUSTES -->
+      <!-- AJUSTES generales -->
       <div id="tab-settings" class="tab-pane">
-        <!-- Tarjeta Mentalismo, Audio & Camuflaje -->
         <section class="card">
           <div class="card-title">
             <span class="card-title-left">
-              <span class="icon-badge-box">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/></svg>
-              </span>
-              Ajustes de Mentalismo & Camuflaje
+              <span class="icon-badge-box"><svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+              Lectura de la tableta
+            </span>
+          </div>
+          <div class="field-row">
+            <label for="orientationSelect">Posición de la Libreta:</label>
+            <select id="orientationSelect">
+              <option value="portrait_cw" selected>Vertical (Espiral / Logo a la Izquierda)</option>
+              <option value="portrait_ccw">Vertical (Espiral / Logo a la Derecha)</option>
+              <option value="landscape">Horizontal (Apaisada)</option>
+              <option value="inverted">Invertida 180°</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="detectMode">Modo de Detección:</label>
+            <select id="detectMode">
+              <option value="both" selected>Híbrido (Dibujos + Texto + ESP)</option>
+              <option value="esp">Símbolos Zener / ESP (Offline)</option>
+              <option value="digits">Números / Códigos PIN (Offline)</option>
+              <option value="drawing">Solo Dibujos / Formas</option>
+              <option value="text">Solo Palabras / Ciudades</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="delayTimeout">Tiempo tras dejar de escribir:</label>
+            <select id="delayTimeout">
+              <option value="1200">1.2 segundos (Rápido)</option>
+              <option value="1800" selected>1.8 segundos (Recomendado)</option>
+              <option value="2500">2.5 segundos (Tranquilo)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="strokeWidthSlider">Grosor del Trazo (Peek):</label>
+            <input id="strokeWidthSlider" type="range" min="0.6" max="3.5" step="0.2" value="1.2" />
+            <span id="strokeWidthVal">1.2 (Fino)</span>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <span class="card-title-left">
+              <span class="icon-badge-box"><svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg></span>
+              Camuflaje
             </span>
           </div>
           <div class="field-row">
@@ -961,37 +1077,23 @@
               <option value="lockscreen">Pantalla de Bloqueo Real (Reloj + Notificación)</option>
               <option value="calculator">Calculadora Realista (Peek en Display)</option>
               <option value="notes">Bloc de Notas Realista (Texto & Boceto)</option>
-              <option value="doodle">🎨 Doodle Pad (Boceto de Dibujo Directo)</option>
-              <option value="player">Reproductor de Música (Canción Pensada)</option>
+              <option value="doodle">Boceto (dibujo duplicado)</option>
+              <option value="player">Reproductor de música</option>
             </select>
           </div>
-          <div class="field-row">
-            <label for="detectMode">Modo de Detección:</label>
-            <select id="detectMode">
-              <option value="both" selected>Híbrido (Dibujos + Texto + ESP)</option>
-              <option value="esp">Símbolos Zener / ESP (Offline)</option>
-              <option value="digits">Números / Códigos PIN (Offline)</option>
-              <option value="drawing">Solo Dibujos / Formas</option>
-              <option value="text">Solo Palabras / Ciudades</option>
-            </select>
-          </div>
-          <div class="field-row">
-            <label for="strokeWidthSlider">Grosor del Trazo (Peek):</label>
-            <input id="strokeWidthSlider" type="range" min="0.6" max="3.5" step="0.2" value="1.2" />
-            <span id="strokeWidthVal">1.2 (Fino)</span>
+        </section>
+
+        <section class="card">
+          <div class="card-title">
+            <span class="card-title-left">
+              <span class="icon-badge-box"><svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
+              Susurro y avisos
+            </span>
           </div>
           <div class="field-row">
             <label for="ttsRate">Velocidad del susurro:</label>
             <input id="ttsRate" type="range" min="0.8" max="1.8" step="0.1" value="1.2" />
             <span id="ttsRateVal">1.2x</span>
-          </div>
-          <div class="field-row">
-            <label for="delayTimeout">Tiempo tras dejar de escribir:</label>
-            <select id="delayTimeout">
-              <option value="1200">1.2 segundos (Rápido)</option>
-              <option value="1800" selected>1.8 segundos (Recomendado)</option>
-              <option value="2500">2.5 segundos (Tranquilo)</option>
-            </select>
           </div>
           <div class="field-row">
             <label class="toggle-label">
@@ -1003,18 +1105,7 @@
             <svg class="ui-icon sm" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
             <span>Probar Audio en Auricular</span>
           </button>
-        </section>
-
-        <!-- Tarjeta Multi-Espectador & Smartwatch Haylou -->
-        <section class="card">
-          <div class="card-title">
-            <span class="card-title-left">
-              <span class="icon-badge-box">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.85 4.65H8.34l-.85-4.65"/><path d="M7.49 6.65l.85-4.65h7.32l.85 4.65"/></svg>
-              </span>
-              Smartwatch Haylou & Notificaciones
-            </span>
-          </div>
+          <h3 class="routine-subsection-title">Smartwatch Haylou</h3>
           <p class="desc">Control silencioso en la muñeca o mediante botón del auricular bluetooth.</p>
           <div class="btn-group-col" style="display:flex; flex-direction:column; gap:8px;">
             <button id="watchNotifyBtn" class="btn secondary full" style="display:inline-flex; align-items:center; justify-content:center; gap:6px;">
@@ -1029,147 +1120,28 @@
           <p class="hint-small">Para Haylou Solar: abre la app <strong>Haylou Fun</strong> en tu móvil -> Dispositivo -> Avisos de aplicaciones -> activa <strong>Chrome</strong> o <strong>MindPad</strong>.</p>
         </section>
 
-        <!-- Tarjeta Orientación del Bloc -->
-        <section class="card">
-          <div class="card-title">
-            <span class="card-title-left">
-              <span class="icon-badge-box">
-                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-              </span>
-              Orientación del Bloc
-            </span>
-          </div>
-          <div class="field-row">
-            <label for="orientationSelect">Posición de la Libreta:</label>
-            <select id="orientationSelect">
-              <option value="portrait_cw" selected>Vertical (Espiral / Logo a la Izquierda)</option>
-              <option value="portrait_ccw">Vertical (Espiral / Logo a la Derecha)</option>
-              <option value="landscape">Horizontal (Apaisada)</option>
-              <option value="inverted">Invertida 180°</option>
-            </select>
-          </div>
-        </section>
-      </div>
+        <details class="card settings-advanced">
+          <summary><svg class="ui-icon sm" viewBox="0 0 24 24"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/></svg><span>Avanzado · Lectura con IA (OpenRouter)</span></summary>
+          <p class="desc">Con un token de OpenRouter, Gemini Vision lee la letra difícil en todas las rutinas. Sin token se usa el reconocedor gratuito de Google.</p>
+            <div class="field-row" style="margin-bottom:8px;">
+              <label for="openRouterKey" style="color:#facc15; font-weight:600;">Token OpenRouter:</label>
+              <div style="display:flex; gap:6px; flex:1;">
+                <input id="openRouterKey" type="password" placeholder="sk-or-v1-..." style="flex:1;" />
+                <button id="testOpenRouterBtn" class="btn small" style="white-space:nowrap; padding:4px 8px; font-size:11px;">Validar</button>
+              </div>
+            </div>
+            <div id="openRouterTokenStatus" style="font-size:11px; margin-bottom:8px; display:none;"></div>
+            <div class="field-row" style="margin-bottom:0;">
+              <label class="toggle-label" style="font-size:11.5px; color:#cbd5e1;">
+                <input id="openRouterVisionCheck" type="checkbox" checked />
+                <span>Usar Gemini Vision para descifrar el trazo manuscrito</span>
+              </label>
+            </div>
+        </details>
 
-      <!-- PESTAÑA 5: GRIMORIO / DOSSIER -->
-      <div id="tab-dossier" class="tab-pane">
-        <!-- DOSSIER DE PRESENTACIONES PROFESIONALES (GUÍA COMERCIAL) -->
-        <section id="routinesDossier" class="card dossier-card">
-        <div class="card-title">
-          <span class="card-title-left">
-            <span class="icon-badge-box">
-              <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            </span>
-            Dossier de Rutinas & Casos de Éxito
-          </span>
-          <span class="dossier-header-badge">Guía Profesional</span>
-        </div>
-        <p class="desc" style="color:#cbd5e1;">
-          Estrategias de puesta en escena, psicología teatral y flujos técnicos diseñados para mentalistas profesionales, magos corporativos y creadores de contenido.
-        </p>
-
-        <!-- Rutina 1 -->
-        <div class="routine-box">
-          <div class="routine-title-row">
-            <span class="routine-title">Rutina 1: Duplicación en Post-It</span>
-            <span class="routine-badge street">Casual / Street / Close-Up</span>
-          </div>
-          <div class="routine-desc">
-            <strong>Efecto:</strong> El espectador dibuja un símbolo o escribe una palabra secreta en tu bloc de notas real con tinta física. Sin que mires en ningún momento su libreta, sacas un taco de Post-its y un marcador de tu bolsillo y dibujas exactamente lo mismo con idéntica proporción e inclinación.
-          </div>
-          <div class="routine-steps-list">
-            <div class="routine-step-item">
-              <span class="routine-step-num">1.</span>
-              <span><strong>Aislamiento:</strong> Le entregas la libreta Huion Note X10 al espectador y te giras de espaldas: <em>"Dibuja algo que signifique algo para ti... no me lo digas"</em>.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">2.</span>
-              <span><strong>Información Invisible:</strong> Mientras el espectador dibuja, el audífono te susurra al oído la palabra/figura o miras la calculadora en la mesa al pedirle un cálculo.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">3.</span>
-              <span><strong>Clímax Orgánico:</strong> Sacas un Post-it común de tu saco, trazas tu dibujo, lo pegas sobre la mesa y ambos voltean sus dibujos al mismo tiempo.</span>
-            </div>
-          </div>
-          <div class="routine-pro-tip">
-            <strong>Valor Comercial:</strong> Cero sospechas tecnológicas. El espectador solo recuerda papel, tinta y una nota adhesiva real.
-          </div>
-        </div>
-
-        <!-- Rutina 2 -->
-        <div class="routine-box">
-          <div class="routine-title-row">
-            <span class="routine-title">Rutina 2: La Premonición en Redes & Galería</span>
-            <span class="routine-badge vip">VIP / Famosos / Redes Sociales</span>
-          </div>
-          <div class="routine-desc">
-            <strong>Efecto:</strong> La celebridad dibuja su destino soñado o una visión íntima. Al terminar, le pides que abra tu propia galería o Instagram Stories: allí ya existe una fotografía cinematográfica hiperrealista de esa misma visión... ¡tomada y fechada hace 4 días!
-          </div>
-          <div class="routine-steps-list">
-            <div class="routine-step-item">
-              <span class="routine-step-num">1.</span>
-              <span><strong>Personalización:</strong> Creas la carpeta o evento VIP (ej: <em>"Entrevista con [Celebridad]"</em>).</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">2.</span>
-              <span><strong>IA con Fecha Retroactiva:</strong> El motor fotográfico (Nano Banana / Flux) integra el dibujo en una escena hiperrealista inyectando metadatos EXIF reales del pasado.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">3.</span>
-              <span><strong>El Testigo Digital:</strong> Le pasas el teléfono a la celebridad. Al abrir Instagram Stories, la app reconoce los metadatos y añade el <em>Sticker Oficial de Fecha de Instagram</em> (ej: "10 NOV").</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">4.</span>
-              <span><strong>Viralidad:</strong> Te tomas una selfie con la celebridad y la suben a sus redes. Contenido de alto impacto que se vuelve viral.</span>
-            </div>
-          </div>
-          <div class="routine-pro-tip">
-            <strong>Valor Comercial:</strong> Ideal para conseguir contratos de influencers, sponsors y presencia televisiva.
-          </div>
-        </div>
-
-        <!-- Rutina 3 -->
-        <div class="routine-box">
-          <div class="routine-title-row">
-            <span class="routine-title">Rutina 3: La Materialización en el Bolsillo</span>
-            <span class="routine-badge stage">Teatro / Televisión / Auditorio</span>
-          </div>
-          <div class="routine-desc">
-            <strong>Efecto:</strong> En un show en vivo, un espectador dibuja un paisaje o sueño. Mientras haces lectura en frío sobre su mente durante 50 segundos, metes tu mano vacía al bolsillo interior de tu saco y sacas una fotografía física a todo color, todavía tibia, impresa antes de que él decidiera su dibujo.
-          </div>
-          <div class="routine-steps-list">
-            <div class="routine-step-item">
-              <span class="routine-step-num">1.</span>
-              <span><strong>Disparo Silencioso:</strong> La imagen se auto-guarda como <code>prediccion_print.jpg</code> y MacroDroid la envía a tu HP Sprocket 200 en tu bolsillo interior.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">2.</span>
-              <span><strong>La Danza del Tiempo (60 seg):</strong> Utilizas el Cronómetro Teatral con pautas de lectura en frío:
-                <br>• <em>0-15s:</em> "Cierra los ojos, concéntrate en los colores..."
-                <br>• <em>15-35s:</em> Lectura en frío de texturas y emociones.
-                <br>• <em>35-50s:</em> "Esta mañana tuve una premonición y traje algo físico en mi saco..."
-              </span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">3.</span>
-              <span><strong>Señal Secreta:</strong> Tu audífono o reloj te confirma con una vibración: <em>"Foto impresa lista en el bolsillo"</em>.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">4.</span>
-              <span><strong>El Souvenir Imposible:</strong> Sacas la foto física tibia y se la firmas como recuerdo que atesorará para siempre.</span>
-            </div>
-          </div>
-          <div class="routine-pro-tip">
-            <strong>Valor Comercial:</strong> El efecto culminante ("Closer") definitivo para teatro y congresos corporativos.
-          </div>
-        </div>
-
-        <!-- Rutina 4 -->
-        <div class="routine-box">
-          <div class="routine-title-row">
-            <span class="routine-title">Rutina 4: El Test de la Calculadora Mental</span>
-            <span class="routine-badge impromptu">Impromptu / Cero Sospechas</span>
-          </div>
+        <details class="card settings-advanced">
+          <summary><svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Técnicas extra</span></summary>
+          <h3 class="routine-subsection-title">El test de la calculadora</h3>
           <div class="routine-desc">
             <strong>Efecto:</strong> Justificación psicológica perfecta para tener el teléfono frente a los espectadores. Le pasas tu móvil al espectador para multiplicar números personales aleatorios (fecha de nacimiento × mes × día). Cuando termina y borra con "AC" a cero, tomas el móvil para mostrar que está limpio y en ese exacto segundo tienes el peek del dibujo.
           </div>
@@ -1190,119 +1162,16 @@
           <div class="routine-pro-tip">
             <strong>Valor Comercial:</strong> El espectador mismo tuvo el teléfono en sus manos segundos antes, eliminando cualquier sospecha de app mágica.
           </div>
-        </div>
-
-        <!-- Rutina 5 -->
-        <div class="routine-box">
-          <div class="routine-title-row">
-            <span class="routine-title">Rutina 5: Triple Transmisión Multi-Espectador</span>
-            <span class="routine-badge stage">Salón / Convención (3 Mentes)</span>
-          </div>
+          <h3 class="routine-subsection-title">Varios espectadores seguidos</h3>
           <div class="routine-desc">
             <strong>Efecto:</strong> La libreta viaja de mano en mano entre 3 espectadores en diferentes filas del público. Adivinas los 3 dibujos o números de forma consecutiva con el control ciego en el bolsillo o smartwatch sin mirar tu móvil ni una sola vez.
           </div>
           <div class="routine-pro-tip">
             <strong>Valor Comercial:</strong> Multiplica el impacto por tres, ideal para rutinas de mentalismo colectivo en empresas y conferencias.
           </div>
-        </div>
+        </details>
+      </div>
 
-        <!-- Rutina 6 -->
-        <div class="routine-box">
-          <div class="routine-title-row">
-            <span class="routine-title">Rutina 6: La Pizarra Espiritual E-Ink (Slate of Mind)</span>
-            <span class="routine-badge stage">Teatro / Caballete / E-Ink</span>
-          </div>
-          <div class="routine-desc">
-            <strong>Efecto:</strong> Sobre un atril o caballete a la vista del público descansa una pequeña pizarra negra (un monitor de tinta electrónica tipo Kindle o tablet e-ink). Nadie se acerca a ella. El espectador piensa o dibuja algo (o piensa en una carta de baraja). Cuando el mago lo ordena, la pantalla parpadea suavemente y aparece dibujado en <strong>tiza blanca con textura real</strong> exactamente lo que el espectador tenía en mente.
-          </div>
-          <div class="routine-steps-list">
-            <div class="routine-step-item">
-              <span class="routine-step-num">1.</span>
-              <span><strong>Preparación Invisible:</strong> Colocas tu Kindle o tablet e-ink en el atril con la URL de la pizarra abierta en pantalla completa. La pantalla permanece negra o con un sutil marco de pizarra vacía.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">2.</span>
-              <span><strong>La Decisión del Espectador:</strong> El espectador dibuja en la Huion Note X10 (o nombra una carta de póker).</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">3.</span>
-              <span><strong>Transmisión Silenciosa:</strong> MindPad sincroniza el trazo, carta o doodle en tiempo real hacia la pizarra E-Ink. Si estás en modo manual, presionas <em>"Revelar en Pizarra"</em> cuando llegue el clímax dramático.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">4.</span>
-              <span><strong>El Clímax de la Tiza:</strong> El público ve con asombro la predicción escrita en gis blanco como si una mano invisible lo hubiera trazado en ese mismo instante.</span>
-            </div>
-          </div>
-          <div class="routine-pro-tip">
-            <strong>Valor Comercial:</strong> Parece un objeto victoriano o de escuela antigua pero opera con la tecnología más puntera. Cero reflejos, estética teatral insuperable.
-          </div>
-        </div>
-
-        <!-- Rutina 7 -->
-        <div class="routine-box">
-          <div class="routine-title-row">
-            <span class="routine-title">Rutina 7: La Premonición del Sueño (El Bloc de Notas Fechado & Modo Doodle)</span>
-            <span class="routine-badge stage">Mesa / Close-up / Mentalismo Psicológico</span>
-          </div>
-          <div class="routine-desc">
-            <strong>Efecto:</strong> El mago relata que hace 4 días tuvo un sueño premonitorio tan vívido que decidió anotarlo en el bloc de notas de su teléfono nada más despertar. Pide a un espectador que piense y anote en una hoja sobre la libreta: <strong>1. Una hora exacta</strong>, <strong>2. El nombre de alguien</strong>, <strong>3. Un país o ciudad</strong>, y <strong>4. Una comida</strong>. El espectador dobla la hoja. El mago nunca tocó la hoja ni el espectador mostró nada. El mago saca su móvil, abre la app de Notas y se la entrega en la mano al espectador: la nota está fechada hace días y relata exactamente el sueño conteniendo con precisión quirúrgica la hora, el nombre, la ciudad y la comida. Si prefiere modo dibujo, el mago muestra la pantalla vacía con pinceles y colores, hace un garabato con su dedo, lo borra y deja el móvil boca abajo sobre la mesa: al voltearlo, el dibujo del espectador ya apareció dentro de la nota.
-          </div>
-          <div class="routine-steps-list">
-            <div class="routine-step-item">
-              <span class="routine-step-num">1.</span>
-              <span><strong>El Relato Inicial:</strong> Introduces la idea de los sueños premonitorios. Muestras tu bloc de notas fechado hace 4 días para que vean la fecha auténtica y lo dejas boca abajo en la mesa.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">2.</span>
-              <span><strong>Las 4 Decisiones Libres:</strong> El espectador anota: Hora, Nombre, Destino y Comida favorita en la libreta Huion.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">3.</span>
-              <span><strong>Sincronización Silenciosa:</strong> MindPad rellena las 4 variables dentro del texto de la nota y envía la lista a la pizarra de tiza.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">4.</span>
-              <span><strong>El Clímax:</strong> El espectador toma el teléfono que estuvo en la mesa todo el tiempo y lee la nota en voz alta. Coincidencia al 100%.</span>
-            </div>
-          </div>
-          <div class="routine-pro-tip">
-            <strong>Valor Comercial:</strong> Impacto emocional profundo. La fecha retroactiva destruye cualquier teoría de que el mago lo escribió en ese instante.
-          </div>
-        </div>
-
-        <!-- Rutina 8 -->
-        <div class="routine-box">
-          <div class="routine-title-row">
-            <span class="routine-title">Rutina 8: La Melodía Telepática (Justificación del Audífono & iTunes)</span>
-            <span class="routine-badge close-up">Casual / Social / TV / Conexión Emocional</span>
-          </div>
-          <div class="routine-desc">
-            <strong>Efecto:</strong> Durante toda la conversación el mago lleva puesto un discreto audífono inalámbrico. Le pide al espectador que piense en una canción que signifique mucho para él y que la escriba en una hoja para congelar el pensamiento. En cuanto el espectador termina, el mago se detiene pasmado, se quita el audífono lentamente y dice: <em>"¿Por qué pensaste en esa canción?... No tiene sentido. Mira, me quito el audífono... escucha lo que estaba sonando"</em>. El mago acerca el auricular o pone el altavoz del móvil mostrando un reproductor de música con la carátula oficial y sonando la canción real.
-          </div>
-          <div class="routine-steps-list">
-            <div class="routine-step-item">
-              <span class="routine-step-num">1.</span>
-              <span><strong>El Audífono Visible:</strong> Comienzas tu actuación con un audífono puesto (o dices que estabas relajándote con música antes de empezar).</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">2.</span>
-              <span><strong>Canción Pensada:</strong> El espectador escribe el título o artista en la Huion Note.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">3.</span>
-              <span><strong>Búsqueda Instantánea:</strong> MindPad consulta en ~200ms la base mundial de iTunes, carga la carátula oficial y el audio original.</span>
-            </div>
-            <div class="routine-step-item">
-              <span class="routine-step-num">4.</span>
-              <span><strong>El Despegue & Revelación:</strong> Te quitas el audífono teatralmente, muestras la pantalla del reproductor y le das play frente a todos.</span>
-            </div>
-          </div>
-          <div class="routine-pro-tip">
-            <strong>Valor Comercial:</strong> Convierte el audífono (que normalmente es el talón de Aquiles de un mago) en la prueba irrefutable del milagro.
-          </div>
-        </div>
-      </section>
-      </div> <!-- /#tab-dossier -->
     </div> <!-- /.content -->
   </div> <!-- /#setupView -->
 
@@ -1777,6 +1646,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <span style="font-family:'Caveat';">Preload</span>
   </div>
 
-  <script src="mindpad.js?v=32" type="module"></script>
+  <script src="mindpad.js?v=33" type="module"></script>
 </body>
 </html>

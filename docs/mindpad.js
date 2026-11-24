@@ -947,7 +947,9 @@ async function onParticipantFinished() {
     }
   }
 
-  const isSongModeActive = (state.currentLayer === 6 || state.activeCamouflageMode === 'player');
+  // activeCamouflageMode conserva el último camuflaje usado: solo cuenta si el reproductor sigue en pantalla
+  const playerOnScreen = state.activeCamouflageMode === 'player' && $('stealthView')?.style.display !== 'none';
+  const isSongModeActive = state.currentLayer === 6 || playerOnScreen;
   if (isSongModeActive && navigator.onLine) {
     if (await revealSongRoutine(pagePrefix)) return;
   }
@@ -2199,34 +2201,40 @@ function initCalculator() {
 let theatricalTimerInterval = null;
 let theatricalSeconds = 0;
 
+// Catálogo único de rutinas: nombre, qué escribe el espectador, dónde se revela y qué abre "Revelar"
+const ROUTINES = {
+  1: { name: 'Post-it', input: 'Escribe o dibuja', output: 'Tú lo duplicas en un Post-it', reveal: 'Ver lo escrito (peek)', revealBtn: 'quickOpenStealthBtn1' },
+  2: { name: 'VIP', input: 'Dibuja su visión', output: 'Foto IA fechada días atrás', reveal: 'Compartir en Instagram', revealBtn: 'quickShareStoryBtn' },
+  3: { name: 'Ticket', input: 'Dibuja un paisaje o sueño', output: 'Foto impresa en tu bolsillo', reveal: 'Iniciar los 60 s de teatralidad', revealBtn: 'startTheatricalTimerBtn' },
+  4: { name: 'Pizarra', input: 'Escribe una palabra o frase', output: 'Aparece con letra de tiza', reveal: 'Revelar en la pizarra', revealBtn: 'quickRevealSlateBtn' },
+  5: { name: 'Sueño', input: 'Escribe hora, nombre, lugar y comida', output: 'Se completan en la nota del sueño', reveal: 'Abrir la nota del sueño', revealBtn: 'quickOpenNotesBtn5' },
+  6: { name: 'Música', input: 'Escribe una canción', output: 'Suena en el reproductor', reveal: 'Abrir el reproductor', revealBtn: 'quickOpenMusicBtn6' },
+  7: { name: 'Boceto', input: 'Dibuja algo', output: 'Tu nota muestra un boceto parecido', reveal: 'Abrir el boceto', revealBtn: 'quickOpenDoodlePadBtn7' }
+};
+
 function switchPresentationLayer(layerNum) {
   state.currentLayer = layerNum;
   localStorage.setItem('mindpad_active_layer', layerNum);
+  const routine = ROUTINES[layerNum] || ROUTINES[7];
 
   for (let i = 1; i <= 7; i++) {
-    const btn = $(`layer${i}Btn`);
-    if (btn) btn.className = `btn small ${layerNum === i ? 'primary active' : 'secondary'}`;
     const content = $(`layer${i}Content`);
     if (content) content.style.display = layerNum === i ? 'block' : 'none';
   }
 
-  const badges = {
-    1: '📝 Capa 1: Post-it Casual',
-    2: '📷 Capa 2: Redes / VIP',
-    3: '🖨️ Capa 3: TV / Sprocket',
-    4: '📋 Capa 4: Pizarra E-Ink',
-    5: '💤 Capa 5: El Sueño (Notas)',
-    6: '🎵 Capa 6: Canción Pensada',
-    7: '🎨 Capa 7: Doodle Pad (Boceto)'
-  };
-  const badgeText = badges[layerNum] || `Capa ${layerNum}`;
-  if ($('activeLayerBadge')) $('activeLayerBadge').textContent = badgeText;
-  if ($('activeRoutineBadge')) $('activeRoutineBadge').textContent = badgeText;
+  document.querySelectorAll('[data-show-routine]').forEach((el) => {
+    const layersForEl = el.getAttribute('data-show-routine').split(/\s+/).map(Number);
+    el.style.display = layersForEl.includes(layerNum) ? '' : 'none';
+  });
+  document.querySelectorAll('[data-routine-name]').forEach((el) => { el.textContent = routine.name; });
+  document.querySelectorAll('[data-routine-flow="in"]').forEach((el) => { el.textContent = routine.input; });
+  document.querySelectorAll('[data-routine-flow="out"]').forEach((el) => { el.textContent = routine.output; });
+  if ($('revealRoutineLabel')) $('revealRoutineLabel').textContent = routine.reveal;
 
-  // Actualizar estado activo en los botones de acceso rápido de la barra superior
   document.querySelectorAll('.routine-chip-btn').forEach((chip) => {
-    const chipLayer = +chip.getAttribute('data-layer');
-    chip.classList.toggle('active', chipLayer === layerNum);
+    const isActive = +chip.getAttribute('data-layer') === layerNum;
+    chip.classList.toggle('active', isActive);
+    chip.setAttribute('aria-pressed', String(isActive));
   });
 
   if (layerNum === 2) {
@@ -4902,19 +4910,6 @@ if ($('conceptNumber')) {
   };
 }
 
-// Botones header de Modos Camuflados directos & Modo Sigilo
-if ($('calcModeBtn')) {
-  $('calcModeBtn').onclick = () => enterStealthMode('calculator');
-}
-if ($('notesModeBtn')) {
-  $('notesModeBtn').onclick = () => enterStealthMode('notes');
-}
-if ($('doodleModeBtn')) {
-  $('doodleModeBtn').onclick = () => enterStealthMode('doodle');
-}
-if ($('musicModeBtn')) {
-  $('musicModeBtn').onclick = () => enterStealthMode('player');
-}
 if ($('stealthBtn')) {
   $('stealthBtn').onclick = () => {
     // Modo Sigilo siempre abre la pantalla de sigilo: AOD pantalla negra o lockscreen
@@ -4923,20 +4918,6 @@ if ($('stealthBtn')) {
   };
 }
 
-// Capas de Presentación
-if ($('layer1Btn')) $('layer1Btn').onclick = () => switchPresentationLayer(1);
-if ($('layer2Btn')) $('layer2Btn').onclick = () => switchPresentationLayer(2);
-if ($('layer3Btn')) $('layer3Btn').onclick = () => switchPresentationLayer(3);
-if ($('layer4Btn')) $('layer4Btn').onclick = () => switchPresentationLayer(4);
-if ($('layer5Btn')) $('layer5Btn').onclick = () => switchPresentationLayer(5);
-if ($('layer6Btn')) $('layer6Btn').onclick = () => switchPresentationLayer(6);
-if ($('layer7Btn')) $('layer7Btn').onclick = () => switchPresentationLayer(7);
-
-// Botones de acceso rápido en la barra superior de rutina activa
-const ROUTINE_LISTEN_LABELS = {
-  1: 'Post-it', 2: 'VIP', 3: 'Ticket', 4: 'Pizarra', 5: 'Sueño', 6: 'Canción', 7: 'Boceto'
-};
-
 function startRoutineListening(layerNum) {
   switchPresentationLayer(layerNum);
   clearTimeout(state.inactivityTimer);
@@ -4944,7 +4925,7 @@ function startRoutineListening(layerNum) {
   state.currentStroke = null;
   state.lastSpokenText = '';
   if ($('confidenceList')) $('confidenceList').innerHTML = '';
-  if ($('lastResult')) $('lastResult').textContent = `👂 Escuchando · ${ROUTINE_LISTEN_LABELS[layerNum] || 'Rutina'}`;
+  if ($('lastResult')) $('lastResult').textContent = `👂 Escuchando · ${ROUTINES[layerNum]?.name || 'Rutina'}`;
   if ($('stealthStatusDot')) $('stealthStatusDot').className = 'stealth-dot active';
   redrawAllStrokes();
   if (typeof redrawNotesDoodleCanvas === 'function') redrawNotesDoodleCanvas();
@@ -4954,12 +4935,11 @@ function startRoutineListening(layerNum) {
 document.querySelectorAll('.routine-chip-btn').forEach((btn) => {
   btn.onclick = () => startRoutineListening(+btn.getAttribute('data-layer'));
 });
-if ($('viewDossierBtn')) {
-  $('viewDossierBtn').onclick = () => {
-    const tabBtn = document.querySelector('.app-tab-btn[data-tab="tab-dossier"]');
-    if (tabBtn) tabBtn.click();
-    const el = $('routinesDossier');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+
+if ($('revealRoutineBtn')) {
+  $('revealRoutineBtn').onclick = () => {
+    const target = $(ROUTINES[state.currentLayer]?.revealBtn);
+    if (target) target.click();
   };
 }
 
@@ -5563,26 +5543,18 @@ function initAppTabs() {
         resizeCanvases();
         if (targetId === 'tab-live') {
           redrawAllStrokes();
-        } else if (targetId === 'tab-slate') {
-          redrawChalkSlate();
+        } else if (targetId === 'tab-routines') {
+          if (typeof redrawNotesDoodleCanvas === 'function') redrawNotesDoodleCanvas();
         }
       });
     });
   });
 
-  // Restaurar última pestaña visitada
-  const savedTab = localStorage.getItem('mindpad_active_app_tab') || 'tab-live';
-  const activeBtn = document.querySelector(`.app-tab-btn[data-tab="${savedTab}"]`);
-  if (activeBtn) {
-    activeBtn.click();
-  }
+  const savedTab = localStorage.getItem('mindpad_active_app_tab');
+  const activeBtn = document.querySelector(`.app-tab-btn[data-tab="${savedTab}"]`) ||
+    document.querySelector('.app-tab-btn[data-tab="tab-live"]');
+  activeBtn.click();
 
-  // Vincular botones rápidos de En Vivo con sus respectivas acciones
-  if ($('liveRevealSlateBtn')) {
-    $('liveRevealSlateBtn').onclick = () => {
-      if ($('slateRevealBtn')) $('slateRevealBtn').click();
-    };
-  }
   if ($('liveStealthBtn')) {
     $('liveStealthBtn').onclick = () => {
       const stealthMode = state.stealthCamouflage === 'lockscreen' ? 'lockscreen' : 'aod';
