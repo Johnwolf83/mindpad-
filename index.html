@@ -12,10 +12,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gloria+Hallelujah&family=Gochi+Hand&family=Permanent+Marker&family=Reenie+Beanie&family=Rock+Salt&family=Walter+Turncoat&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=30" />
+  <link rel="stylesheet" href="styles.css?v=31" />
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=30').then((reg) => {
+      navigator.serviceWorker.register('./sw.js?v=31').then((reg) => {
         reg.update();
       }).catch(() => {});
     }
@@ -147,6 +147,28 @@
               </button>
             </div>
           </div>
+
+          <!-- Barra Rápida de Ajustes de Captura (Orientación, Auto-Ángulo y Grosor de Trazo) -->
+          <div class="monitor-quick-toolbar">
+            <div class="monitor-quick-group">
+              <span class="monitor-quick-label">Orientación:</span>
+              <button id="quickRotateMonitorBtn" class="tool-chip-btn" title="Girar vista 90° si el espectador escribió de lado">
+                <svg class="ui-icon sm" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span id="quickRotateLabel">Girar 90°</span>
+              </button>
+              <button id="quickToggleDeskewBtn" class="tool-chip-btn toggle-active" title="Enderezar automáticamente texto escrito en ángulo o diagonal antes del OCR">
+                <span>📐 Auto-Ángulo: ON</span>
+              </button>
+            </div>
+            <div class="monitor-quick-group">
+              <span class="monitor-quick-label">Grosor:</span>
+              <button class="tool-chip-btn stroke-chip-btn" data-w="0.6" title="Grosor Ultra Fino">0.6 Fino</button>
+              <button class="tool-chip-btn stroke-chip-btn active" data-w="0.8" title="Grosor Fino Recomendado">0.8 Óptimo</button>
+              <button class="tool-chip-btn stroke-chip-btn" data-w="1.2" title="Grosor Medio">1.2 Medio</button>
+              <button class="tool-chip-btn stroke-chip-btn" data-w="1.8" title="Grosor Grueso">1.8 Grueso</button>
+            </div>
+          </div>
+
           <div class="preview-box">
             <canvas id="previewCanvas"></canvas>
           </div>
@@ -1754,6 +1776,6 @@ Es raro pero cuando tengo estos sueños siempre los recuerdo con absoluta clarid
     <span style="font-family:'Caveat';">Preload</span>
   </div>
 
-  <script src="mindpad.js?v=30" type="module"></script>
+  <script src="mindpad.js?v=31" type="module"></script>
 </body>
 </html>

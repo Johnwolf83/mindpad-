@@ -172,9 +172,10 @@ const state = {
   isSlateViewActive: false,
 
   // Ajustes de mentalismo
-  orientation: 'portrait_cw',
+  orientation: localStorage.getItem('mindpad_orientation') || 'portrait_cw',
   detectMode: 'both',
-  strokeWidth: 1.2,
+  strokeWidth: +(localStorage.getItem('mindpad_stroke_width') || 0.8),
+  autoDeskew: localStorage.getItem('mindpad_auto_deskew') !== 'false',
   delayMs: 1800,
   vibrate: true,
   ttsRate: 1.2,
@@ -403,9 +404,159 @@ function rotateCoords(nx, ny, orient) {
   return [nx, ny];
 }
 
-function segmentStrokes(strokes) {
+// Detecta si un trazo es una línea separadora/divisoria accidental o de margen
+function isSeparatorLine(stroke) {
+  if (!stroke || !stroke.points || stroke.points.length < 2) return false;
+  const pts = stroke.points;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  pts.forEach((p) => {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  });
+  const spanX = maxX - minX;
+  const spanY = maxY - minY;
+  const diag = Math.hypot(spanX, spanY);
+
+  const pStart = pts[0];
+  const pEnd = pts[pts.length - 1];
+  const directDist = Math.hypot(pEnd.x - pStart.x, pEnd.y - pStart.y);
+  let totalLength = 0;
+  for (let i = 1; i < pts.length; i++) {
+    totalLength += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+  }
+  const straightness = totalLength > 0 ? (directDist / totalLength) : 0;
+
+  // Es línea divisoria si es muy larga (>32% del lienzo) y rectilínea (>75%)
+  return (diag > 0.32 && straightness > 0.75);
+}
+
+// Detecta el ángulo de inclinación / rotación de la escritura manuscrita (-55° a +55°)
+function detectDeskewAngle(strokes) {
+  const pts = [];
+  strokes.forEach((s) => {
+    if (isSeparatorLine(s)) return;
+    s.points.forEach((p) => pts.push(p));
+  });
+
+  if (pts.length < 15) return 0;
+
+  let sumX = 0, sumY = 0;
+  pts.forEach((p) => { sumX += p.x; sumY += p.y; });
+  const cx = sumX / pts.length;
+  const cy = sumY / pts.length;
+
+  const testAnglesDeg = [
+    -55, -50, -45, -40, -35, -30, -25, -20, -15, -10, -5,
+    0,
+    5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55
+  ];
+
+  let bestAngle = 0;
+  let maxScore = -1;
+
+  testAnglesDeg.forEach((deg) => {
+    const rad = (deg * Math.PI) / 180;
+    const cosA = Math.cos(rad);
+    const sinA = Math.sin(rad);
+
+    let minRotY = Infinity, maxRotY = -Infinity;
+    const rotYs = new Float32Array(pts.length);
+    for (let i = 0; i < pts.length; i++) {
+      const rx = pts[i].x - cx;
+      const ry = pts[i].y - cy;
+      const yRot = -rx * sinA + ry * cosA;
+      rotYs[i] = yRot;
+      if (yRot < minRotY) minRotY = yRot;
+      if (yRot > maxRotY) maxRotY = yRot;
+    }
+
+    const rangeY = maxRotY - minRotY;
+    if (rangeY <= 0.001) return;
+
+    const numBins = 32;
+    const bins = new Uint16Array(numBins);
+    for (let i = 0; i < pts.length; i++) {
+      const bIdx = Math.min(numBins - 1, Math.max(0, Math.floor(((rotYs[i] - minRotY) / rangeY) * numBins)));
+      bins[bIdx]++;
+    }
+
+    let emptyBins = 0;
+    const mean = pts.length / numBins;
+    let variance = 0;
+    for (let i = 0; i < numBins; i++) {
+      if (bins[i] === 0) emptyBins++;
+      const diff = bins[i] - mean;
+      variance += diff * diff;
+    }
+
+    const score = variance * (1 + emptyBins * 0.6);
+    if (score > maxScore) {
+      maxScore = score;
+      bestAngle = deg;
+    }
+  });
+
+  return bestAngle;
+}
+
+// Rota los trazos sobre su centro de masa para enderezarlos horizontalmente
+function rotateStrokes(strokes, angleDeg) {
+  if (Math.abs(angleDeg) < 3) return strokes;
+  const rad = (angleDeg * Math.PI) / 180;
+  const cosA = Math.cos(rad);
+  const sinA = Math.sin(rad);
+
+  let sumX = 0, sumY = 0, count = 0;
+  strokes.forEach((s) => {
+    s.points.forEach((p) => {
+      sumX += p.x;
+      sumY += p.y;
+      count++;
+    });
+  });
+  if (count === 0) return strokes;
+  const cx = sumX / count;
+  const cy = sumY / count;
+
+  return strokes.map((s) => {
+    return {
+      points: s.points.map((p) => {
+        const dx = p.x - cx;
+        const dy = p.y - cy;
+        const nx = cx + (dx * cosA + dy * sinA);
+        const ny = cy + (-dx * sinA + dy * cosA);
+        return {
+          x: nx,
+          y: ny,
+          p: p.p,
+          t: p.t
+        };
+      })
+    };
+  });
+}
+
+function segmentStrokes(strokes, autoDeskew = true) {
   if (strokes.length < 2) return [strokes];
-  const items = strokes.map((s) => {
+
+  // 1. Filtrar líneas separadoras / trazos parásitos de margen
+  const regularStrokes = strokes.filter((s) => !isSeparatorLine(s));
+  const effectiveStrokes = regularStrokes.length > 0 ? regularStrokes : strokes;
+
+  // 2. Si autoDeskew está activo, detectar ángulo e inclinación y enderezar
+  let workingStrokes = effectiveStrokes;
+  if (autoDeskew && state.autoDeskew !== false) {
+    const angle = detectDeskewAngle(effectiveStrokes);
+    if (Math.abs(angle) >= 6) {
+      console.log(`[MindPad Auto-Deskew] Ángulo detectado: ${angle}°. Enderezando trazos...`);
+      workingStrokes = rotateStrokes(effectiveStrokes, angle);
+    }
+  }
+
+  // 3. Segmentar renglones limpios
+  const items = workingStrokes.map((s) => {
     let minY = Infinity, maxY = -Infinity, minX = Infinity, maxX = -Infinity;
     s.points.forEach((p) => {
       if (p.x < minX) minX = p.x;
@@ -421,10 +572,10 @@ function segmentStrokes(strokes) {
   items.forEach((it) => {
     let added = false;
     for (const b of bands) {
-      // Strokes belong to the same band if they vertically overlap OR if distance between centers is small (< 0.045)
+      // Trazos pertenecen al mismo renglón si se solapan verticalmente o la distancia entre centros es reducida
       const overlap = it.minY <= b.maxY && it.maxY >= b.minY;
       const centerDist = Math.abs(it.cy - b.cy);
-      if (overlap || centerDist < 0.045) {
+      if (overlap || centerDist < 0.048) {
         b.items.push(it.s);
         b.minY = Math.min(b.minY, it.minY);
         b.maxY = Math.max(b.maxY, it.maxY);
@@ -512,20 +663,25 @@ const DREAM_DICTIONARIES = {
     'Lucía', 'Lucia', 'Elena', 'Fernando', 'Ricardo', 'Diego', 'Mateo', 'Valentina',
     'Camila', 'Santiago', 'Sebastián', 'Sebastian', 'Manuel', 'Pablo', 'Andrés', 'Andres',
     'Roberto', 'Javier', 'Mario', 'Carmen', 'Raúl', 'Raul', 'Rosa', 'Isabel', 'Paula',
-    'Miguel', 'Marcos', 'Victor', 'Clara', 'Gonzalo', 'Alex', 'Leo', 'Lucas'
+    'Miguel', 'Marcos', 'Victor', 'Clara', 'Gonzalo', 'Alex', 'Leo', 'Lucas', 'Iván', 'Ivan'
   ],
   places: [
     'París', 'Paris', 'Roma', 'Tokio', 'Tokyo', 'Madrid', 'Londres', 'London', 
     'Nueva York', 'New York', 'Cancún', 'Cancun', 'Berlín', 'Berlin', 'Barcelona', 
     'Venecia', 'Ámsterdam', 'Amsterdam', 'Grecia', 'Atenas', 'Egipto', 'El Cairo',
     'Buenos Aires', 'Río de Janeiro', 'Miami', 'Los Ángeles', 'Los Angeles', 'San Francisco',
-    'Hawái', 'Hawaii', 'Cartagena', 'Cusco', 'Praga', 'Viena', 'Sidney', 'Sydney', 'Las Vegas'
+    'Hawái', 'Hawaii', 'Cartagena', 'Cusco', 'Praga', 'Viena', 'Sidney', 'Sydney', 'Las Vegas',
+    'Rusia', 'Rusia.', 'México', 'Mexico', 'Sonora', 'Jalisco', 'Oaxaca', 'Yucatán', 'Yucatan',
+    'España', 'Espana', 'Italia', 'Francia', 'Alemania', 'Inglaterra', 'Canadá', 'Canada',
+    'Brasil', 'Argentina', 'Colombia', 'Chile', 'Perú', 'Peru', 'Japón', 'Japon', 'China',
+    'Estados Unidos', 'EEUU', 'Monterrey', 'Guadalajara', 'Suiza', 'Portugal'
   ],
   foods: [
     'Tacos', 'Pizza', 'Sushi', 'Hamburguesa', 'Pasta', 'Ensalada', 'Ceviche', 
     'Paella', 'Helado', 'Ramen', 'Burritos', 'Lasagna', 'Pozole', 'Quesadillas',
     'Tamales', 'Carnitas', 'Mariscos', 'Asado', 'Empanadas', 'Chiles Rellenos',
-    'Pancita', 'Menudo', 'Hot Dog', 'Tortas', 'Chilaquiles', 'Sopa', 'Carne Asada'
+    'Pancita', 'Menudo', 'Hot Dog', 'Tortas', 'Chilaquiles', 'Sopa', 'Carne Asada',
+    'Pollo', 'Carne', 'Pescado', 'Boneless', 'Alitas'
   ]
 };
 
@@ -551,7 +707,8 @@ function levenshteinDistance(a, b) {
 
 function fuzzyMatchDictionary(inputWord, dictionary, maxDistance = 2) {
   if (!inputWord) return null;
-  const clean = inputWord.trim();
+  // Limpiar signos de puntuación pegados como puntos, comas o comillas (ej: "Pizza." -> "Pizza")
+  const clean = inputWord.replace(/[.,:;!?¿¡_#]/g, '').trim();
   if (clean.length < 3) return null;
 
   // 1. Coincidencia exacta insensible a mayúsculas y acentos
@@ -592,14 +749,15 @@ function parseDreamRoutineText(rawLines) {
     const t = allTokens[i].trim();
     if (!t) continue;
 
-    // A. Detección de hora (03:45, 11.30, 345, 4am)
+    // A. Detección de hora (10:30, 03:45, 10.30, 1030, IO:30, l0:30, 4am)
     if (!detectedHour) {
-      if (t.match(/\b\d{1,2}[:.]\d{2}\b/) || t.match(/\b\d{1,2}(?:am|pm|hrs)\b/i)) {
-        detectedHour = t.replace('.', ':');
+      const hourNorm = t.replace(/[Oo]/g, '0').replace(/[Iil|]/g, '1');
+      if (hourNorm.match(/\b\d{1,2}[:.]\d{2}\b/) || hourNorm.match(/\b\d{1,2}(?:am|pm|hrs)\b/i)) {
+        detectedHour = hourNorm.replace('.', ':');
         continue;
       }
-      if (t.match(/^\d{3,4}$/)) {
-        const padded = t.padStart(4, '0');
+      if (hourNorm.match(/^\d{3,4}$/)) {
+        const padded = hourNorm.padStart(4, '0');
         detectedHour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
         continue;
       }
@@ -630,16 +788,18 @@ function parseDreamRoutineText(rawLines) {
     }
   }
 
-  // C. Si falta la hora pero el primer token tiene dígitos
-  if (!detectedHour && allTokens.length > 0 && /\d/.test(allTokens[0])) {
-    const rawNum = allTokens[0].replace(/[^\d:]/g, '');
-    if (rawNum.includes(':')) {
-      detectedHour = rawNum;
-    } else if (rawNum.length === 3 || rawNum.length === 4) {
-      const padded = rawNum.padStart(4, '0');
-      detectedHour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
-    } else if (rawNum.length <= 2) {
-      detectedHour = `${rawNum}:00`;
+  // C. Si falta la hora pero alguno de los tokens contiene dígitos
+  if (!detectedHour && allTokens.length > 0) {
+    for (let k = 0; k < allTokens.length; k++) {
+      const rawNum = allTokens[k].replace(/[Oo]/g, '0').replace(/[Iil|]/g, '1').replace(/[^\d:]/g, '');
+      if (rawNum.includes(':') && rawNum.length >= 3 && rawNum.length <= 5) {
+        detectedHour = rawNum;
+        break;
+      } else if (rawNum.length === 3 || rawNum.length === 4) {
+        const padded = rawNum.padStart(4, '0');
+        detectedHour = `${padded.slice(0, 2)}:${padded.slice(2)}`;
+        break;
+      }
     }
   }
 
@@ -1353,8 +1513,9 @@ function drawSeg(ctx, w, h, a, b, color, isStealth = false) {
   ctx.strokeStyle = color;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  const factor = isStealth ? state.strokeWidth : Math.max(0.9, state.strokeWidth * 1.1);
-  ctx.lineWidth = Math.max(0.6, (a.p + b.p) * factor);
+  const factor = state.strokeWidth || 0.8;
+  const avgP = ((a.p || 0.5) + (b.p || 0.5)) * 0.5;
+  ctx.lineWidth = Math.max(0.5, (0.35 + avgP * 0.75) * factor * 1.3);
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
@@ -4957,17 +5118,84 @@ if ($('stealthCamouflage')) {
   };
 }
 
+function updateOrientationUI() {
+  if ($('orientationSelect')) $('orientationSelect').value = state.orientation;
+  const names = {
+    portrait_cw: 'Vertical ↻',
+    landscape: 'Apaisada ↔',
+    portrait_ccw: 'Vertical ↺',
+    inverted: 'Invertida 180°'
+  };
+  if ($('quickRotateLabel')) $('quickRotateLabel').textContent = names[state.orientation] || 'Girar 90°';
+}
+
+function setStrokeWidth(w) {
+  state.strokeWidth = w;
+  localStorage.setItem('mindpad_stroke_width', w);
+  if ($('strokeWidthSlider')) $('strokeWidthSlider').value = w;
+  const label = state.strokeWidth <= 0.8 ? ' (Ultra Fino)' : state.strokeWidth <= 1.4 ? ' (Fino - Recomendado)' : state.strokeWidth <= 2.2 ? ' (Medio)' : ' (Grueso)';
+  if ($('strokeWidthVal')) $('strokeWidthVal').textContent = state.strokeWidth.toFixed(1) + label;
+  document.querySelectorAll('.stroke-chip-btn').forEach((b) => {
+    b.classList.toggle('active', Math.abs(parseFloat(b.getAttribute('data-w')) - w) < 0.15);
+  });
+  redrawAllStrokes();
+}
+
 $('detectMode').onchange = (e) => { state.detectMode = e.target.value; };
-$('orientationSelect').onchange = (e) => { state.orientation = e.target.value; redrawAllStrokes(); };
+$('orientationSelect').onchange = (e) => {
+  state.orientation = e.target.value;
+  localStorage.setItem('mindpad_orientation', state.orientation);
+  updateOrientationUI();
+  redrawAllStrokes();
+};
 $('delayTimeout').onchange = (e) => { state.delayMs = +e.target.value; };
 $('vibrateCheck').onchange = (e) => { state.vibrate = e.target.checked; };
 
 $('strokeWidthSlider').oninput = (e) => {
-  state.strokeWidth = +e.target.value;
-  const label = state.strokeWidth <= 0.8 ? ' (Ultra Fino)' : state.strokeWidth <= 1.4 ? ' (Fino - Recomendado)' : state.strokeWidth <= 2.2 ? ' (Medio)' : ' (Grueso)';
-  $('strokeWidthVal').textContent = state.strokeWidth.toFixed(1) + label;
-  redrawAllStrokes();
+  setStrokeWidth(+e.target.value);
 };
+
+// Orientación rápida del monitor (Girar 90°)
+if ($('quickRotateMonitorBtn')) {
+  $('quickRotateMonitorBtn').onclick = () => {
+    const cycle = ['portrait_cw', 'landscape', 'portrait_ccw', 'inverted'];
+    const idx = cycle.indexOf(state.orientation);
+    state.orientation = cycle[(idx + 1) % cycle.length];
+    localStorage.setItem('mindpad_orientation', state.orientation);
+    updateOrientationUI();
+    redrawAllStrokes();
+    triggerHaptic([30]);
+  };
+}
+
+// Auto-Deskew ON/OFF
+if ($('quickToggleDeskewBtn')) {
+  $('quickToggleDeskewBtn').classList.toggle('toggle-active', state.autoDeskew !== false);
+  const span = $('quickToggleDeskewBtn').querySelector('span');
+  if (span) span.textContent = state.autoDeskew !== false ? '📐 Auto-Ángulo: ON' : '📐 Auto-Ángulo: OFF';
+
+  $('quickToggleDeskewBtn').onclick = () => {
+    state.autoDeskew = state.autoDeskew === false ? true : false;
+    localStorage.setItem('mindpad_auto_deskew', state.autoDeskew ? 'true' : 'false');
+    $('quickToggleDeskewBtn').classList.toggle('toggle-active', state.autoDeskew);
+    const s = $('quickToggleDeskewBtn').querySelector('span');
+    if (s) s.textContent = state.autoDeskew ? '📐 Auto-Ángulo: ON' : '📐 Auto-Ángulo: OFF';
+    triggerHaptic([30]);
+  };
+}
+
+// Chips de selección rápida de grosor
+document.querySelectorAll('.stroke-chip-btn').forEach((btn) => {
+  btn.onclick = () => {
+    const w = parseFloat(btn.getAttribute('data-w')) || 0.8;
+    setStrokeWidth(w);
+    triggerHaptic([25]);
+  };
+});
+
+// Sincronizar estado inicial de UI
+updateOrientationUI();
+setStrokeWidth(state.strokeWidth);
 
 $('ttsRate').oninput = (e) => {
   state.ttsRate = +e.target.value;
